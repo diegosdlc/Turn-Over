@@ -1,5 +1,6 @@
 import { legalActionsFor, optionsFor } from '../core/rules.js?v=20260821-evolution-3';
-import { applyRookShieldRejection, applyRoyalSwap, completeUnitMove } from '../core/GameState.js?v=20260821-budget-1';
+import { applyRookShieldRejection, applyRoyalSwap, completeUnitMove } from '../core/GameState.js?v=20260822-victory-1';
+import { objectiveScoreFor, victoryResultFor } from '../core/victory.js?v=20260822-victory-1';
 
 export class AIController {
   constructor(config = {}) {
@@ -20,6 +21,9 @@ export class AIController {
       material: 1,
       captured: 0.65,
       mobility: 2,
+      objective: 1,
+      prisonerSafety: 0.8,
+      rescuePotential: 0.55,
       ...(config.weights ?? {})
     };
   }
@@ -50,11 +54,11 @@ export function legalActions(state, level) {
 }
 
 function minimax(state, level, depth, alpha, beta, aiTeam, ai) {
-  const winner = winnerFor(state);
-  if (winner || depth <= 0) return evaluate(state, level, aiTeam, ai, winner);
+  const result = victoryResultFor(state, level);
+  if (result || depth <= 0) return evaluate(state, level, aiTeam, ai, result);
 
   const actions = legalActions(state, level);
-  if (!actions.length) return evaluate(state, level, aiTeam, ai, winner);
+  if (!actions.length) return evaluate(state, level, aiTeam, ai, result);
   const maximizing = state.currentTurn === aiTeam;
 
   if (maximizing) {
@@ -76,6 +80,12 @@ function minimax(state, level, depth, alpha, beta, aiTeam, ai) {
   return best;
 }
 
+function advanceTurn(state) {
+  const completedRound = state.currentTurn === 'enemy';
+  state.currentTurn = state.currentTurn === 'player' ? 'enemy' : 'player';
+  if (completedRound) state.roundsElapsed = (state.roundsElapsed ?? 0) + 1;
+}
+
 function simulate(state, level, action) {
   const next = cloneState(state);
   const unit = next.units.find(piece => piece.id === action.unitId);
@@ -84,14 +94,14 @@ function simulate(state, level, action) {
   if (action.kind === 'royal-swap') {
     const partner = next.units.find(piece => piece.id === action.targetId);
     if (partner) applyRoyalSwap(next, unit, partner);
-    next.currentTurn = next.currentTurn === 'player' ? 'enemy' : 'player';
+    advanceTurn(next);
     return next;
   }
 
   if (action.kind === 'capture' || action.kind === 'destroy') {
     const target = next.units.find(piece => piece.id === action.targetId);
     if (target && applyRookShieldRejection(next, level, unit, target)) {
-      next.currentTurn = next.currentTurn === 'player' ? 'enemy' : 'player';
+      advanceTurn(next);
       return next;
     }
   }
@@ -122,7 +132,7 @@ function simulate(state, level, action) {
   }
 
   completeUnitMove(next, level, unit, action);
-  next.currentTurn = next.currentTurn === 'player' ? 'enemy' : 'player';
+  advanceTurn(next);
   return next;
 }
 
@@ -137,6 +147,7 @@ function cloneState(state) {
     ...state,
     units,
     teamEvolution,
+    roundsElapsed: state.roundsElapsed ?? 0,
     active(unit) { return Boolean(unit && !unit.captured && !unit.destroyed && !unit.inReserve); },
     activeAt(x, y) { return this.units.find(unit => this.active(unit) && unit.x === x && unit.y === y) ?? null; },
     prisonersAt(x, y) { return this.units.filter(unit => unit.captured && !unit.destroyed && unit.x === x && unit.y === y); }
@@ -152,16 +163,8 @@ function releaseFriendlyPrisoners(state, x, y, team) {
     });
 }
 
-function winnerFor(state) {
-  const player = state.units.some(unit => state.active(unit) && unit.team === 'player');
-  const enemy = state.units.some(unit => state.active(unit) && unit.team === 'enemy');
-  if (!player) return 'enemy';
-  if (!enemy) return 'player';
-  return null;
-}
-
-function evaluate(state, level, aiTeam, ai, winner) {
-  if (winner) return winner === aiTeam ? 100000 : -100000;
+function evaluate(state, level, aiTeam, ai, result) {
+  if (result) return result.winner === aiTeam ? 100000 : -100000;
   const opponent = aiTeam === 'player' ? 'enemy' : 'player';
 
   let score = 0;
@@ -172,8 +175,57 @@ function evaluate(state, level, aiTeam, ai, winner) {
     else if (unit.captured && !unit.destroyed) score -= sign * value * ai.weights.captured;
   }
 
+  score += prisonerPositionScore(state, level, aiTeam, ai);
   score += (mobilityFor(state, level, aiTeam) - mobilityFor(state, level, opponent)) * ai.weights.mobility;
+  score += objectiveScoreFor(state, level, aiTeam) * ai.weights.objective;
   return score;
+}
+
+function prisonerPositionScore(state, level, aiTeam, ai) {
+  let score = 0;
+
+  for (const prisoner of state.units) {
+    if (!prisoner.captured || prisoner.destroyed || prisoner.x == null || prisoner.y == null) continue;
+
+    const prisonerValue = ai.values[prisoner.pieceType] ?? 250;
+    const captor = state.activeAt(prisoner.x, prisoner.y);
+    const owner = prisoner.team;
+    const capturingTeam = prisoner.capturedBy;
+
+    // A prisoner that can already be reached by its own side is much closer to returning
+    // than the flat captured-material score suggests.
+    if (canTeamReachSquare(state, level, owner, prisoner.x, prisoner.y, ['move-frozen'])) {
+      const recovery = prisonerValue * ai.weights.rescuePotential;
+      score += owner === aiTeam ? recovery : -recovery;
+    }
+
+    if (!captor || !capturingTeam || captor.team !== capturingTeam) continue;
+
+    // The key exchange pattern: if the opposing side can immediately capture the piece
+    // standing on its prisoner, the capture is insecure. Discount the prisoner and charge
+    // part of the exposed captor's value, because the following exchange tends to restore
+    // the frozen material instead of creating a durable material lead.
+    if (canTeamReachSquare(state, level, owner, captor.x, captor.y, ['capture'])) {
+      const captorValue = ai.values[captor.pieceType] ?? 250;
+      const risk = (prisonerValue + captorValue * 0.5) * ai.weights.prisonerSafety;
+      score += capturingTeam === aiTeam ? -risk : risk;
+    }
+  }
+
+  return score;
+}
+
+function canTeamReachSquare(state, level, team, x, y, kinds) {
+  const previousTurn = state.currentTurn;
+  state.currentTurn = team;
+  try {
+    return state.units.some(unit =>
+      state.active(unit) && unit.team === team &&
+      optionsFor(state, level, unit).some(option => option.x === x && option.y === y && kinds.includes(option.kind))
+    );
+  } finally {
+    state.currentTurn = previousTurn;
+  }
 }
 
 function mobilityFor(state, level, team) {

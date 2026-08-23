@@ -37,3 +37,16 @@ Los laboratorios pueden usar un límite explícito distinto del valor de la band
 ## Evolución y coste
 
 El coste se resuelve por `pieceType` y `evolutionStage`. Una pieza evolucionada usa siempre el valor `evolved`. Una pieza en reserva mantiene su estado y su coste para niveles posteriores, pero no consume presupuesto en el encuentro actual.
+
+## Parámetros de evaluación de IA
+
+La evaluación de la IA distingue entre material activo, material congelado y la posibilidad de recuperar piezas capturadas. Los pesos por defecto viven en `AIController` y pueden sobrescribirse por nivel mediante `level.ai.weights`.
+
+- `material` (1.0): valor del material activo.
+- `captured` (0.65): valor base de una pieza congelada antes de considerar su posición.
+- `mobility` (2.0): diferencia de movimientos disponibles.
+- `objective` (1.0): peso del objetivo específico del escenario.
+- `prisonerSafety` (0.8): penaliza capturas en las que la pieza captora queda inmediatamente expuesta a una recaptura sobre la misma casilla. La penalización considera tanto el valor del prisionero como parte del valor de la pieza captora, porque esa recaptura suele devolver el material congelado al rival.
+- `rescuePotential` (0.55): devuelve parte del valor de una pieza congelada si su propio bando ya puede alcanzar legalmente su casilla para rescatarla.
+
+Estos dos últimos parámetros existen para evitar que la IA trate una captura reversible como una ganancia material equivalente a una pieza realmente neutralizada. Un valor alto de `prisonerSafety` produce una IA más conservadora con intercambios; un valor alto de `rescuePotential` hace que valore más la posibilidad de recuperar sus propias piezas y menos las capturas enemigas que todavía son fáciles de revertir.

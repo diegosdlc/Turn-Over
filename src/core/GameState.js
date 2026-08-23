@@ -16,6 +16,10 @@ function clone(value) {
     : JSON.parse(JSON.stringify(value));
 }
 
+function physicallyActive(unit) {
+  return Boolean(unit && !unit.captured && !unit.destroyed && !unit.inReserve);
+}
+
 export function completeUnitMove(state, level, unit, action) {
   if (!unit || !Number.isInteger(action?.x) || !Number.isInteger(action?.y)) return false;
   unit.x = action.x;
@@ -34,10 +38,6 @@ export function completeUnitMove(state, level, unit, action) {
   });
 }
 
-function activeUnit(unit) {
-  return Boolean(unit && !unit.captured && !unit.destroyed && !unit.inReserve);
-}
-
 function releaseFriendlyPrisoners(state, x, y, team) {
   state.units
     .filter(piece => piece.captured && !piece.destroyed && piece.x === x && piece.y === y && piece.team === team)
@@ -48,7 +48,7 @@ function releaseFriendlyPrisoners(state, x, y, team) {
 }
 
 export function applyRookShieldRejection(state, level, attacker, target) {
-  if (!activeUnit(attacker) || !activeUnit(target)) return false;
+  if (!physicallyActive(attacker) || !physicallyActive(target)) return false;
   if (!evolutionCapabilitiesFor(target).rejectsFirstAttack) return false;
   if ((target.evolutionState?.shieldCharges ?? 0) < 1) return false;
 
@@ -60,7 +60,7 @@ export function applyRookShieldRejection(state, level, attacker, target) {
   const size = level.board.size ?? 8;
   const blocked = x < 0 || x >= size || y < 0 || y >= size ||
     level.boardElements?.some(element => element.blocking && element.x === x && element.y === y) ||
-    state.units.some(unit => activeUnit(unit) && unit.x === x && unit.y === y) ||
+    state.units.some(unit => physicallyActive(unit) && unit.x === x && unit.y === y) ||
     state.units.some(unit => unit.captured && !unit.destroyed && unit.x === x && unit.y === y);
 
   if (!blocked) {
@@ -75,7 +75,7 @@ export function applyRookShieldRejection(state, level, attacker, target) {
 }
 
 export function applyRoyalSwap(state, first, second) {
-  if (!activeUnit(first) || !activeUnit(second) || first.team !== second.team) return false;
+  if (!physicallyActive(first) || !physicallyActive(second) || first.team !== second.team) return false;
   if ((state.teamEvolution?.[first.team]?.royalSwapCharges ?? 0) < 1) return false;
   if (!evolutionCapabilitiesFor(first).royalSwap || !evolutionCapabilitiesFor(second).royalSwap) return false;
   if (!['king', 'queen'].includes(first.pieceType) || !['king', 'queen'].includes(second.pieceType) || first.pieceType === second.pieceType) return false;
@@ -113,6 +113,7 @@ export class GameState {
     }));
     this.selectedId = null;
     this.currentTurn = 'player';
+    this.roundsElapsed = 0;
     this.finished = false;
     this.pendingCapture = null;
     this.phase = this.level.deployment ? 'deployment' : 'play';
@@ -133,7 +134,28 @@ export class GameState {
   }
 
   active(unit) {
-    return Boolean(unit && !unit.captured && !unit.destroyed && !unit.inReserve);
+    if (!physicallyActive(unit)) return false;
+    if (this.finished) return true;
+
+    const victory = this.level?.rules?.victory ?? 'elimination';
+    if (victory === 'capture-king') {
+      const kingAlive = this.units.some(piece => physicallyActive(piece) && piece.team === unit.team && piece.pieceType === 'king');
+      if (!kingAlive) return false;
+    }
+
+    if (victory === 'escort-king') {
+      const playerKing = this.units.find(piece => physicallyActive(piece) && piece.team === 'player' && piece.pieceType === 'king');
+      if (!playerKing && unit.team === 'player') return false;
+      const targetRow = Number.isInteger(this.level?.rules?.targetRow) ? this.level.rules.targetRow : 0;
+      if (playerKing?.y === targetRow && unit.team === 'enemy') return false;
+    }
+
+    if (victory === 'survive') {
+      const rounds = Math.max(1, Number(this.level?.rules?.surviveRounds) || 1);
+      if (this.roundsElapsed >= rounds && unit.team === 'enemy') return false;
+    }
+
+    return true;
   }
 
   activeAt(x, y) {
@@ -277,6 +299,7 @@ export class GameState {
     if (!this.isDeploying() || this.selected()?.inReserve || !this.deploymentComplete()) return false;
     this.phase = 'play';
     this.currentTurn = 'player';
+    this.roundsElapsed = 0;
     this.teamEvolution = createTeamEvolutionState(this.units.filter(unit => this.active(unit)));
     this.clearSelection();
     return true;
@@ -302,15 +325,21 @@ export class GameState {
   }
 
   completeMove(unit, action) {
-    return completeUnitMove(this, this.level, unit, action);
+    const changed = completeUnitMove(this, this.level, unit, action);
+    if (unit?.team === 'enemy') this.roundsElapsed += 1;
+    return changed;
   }
 
   rejectAttack(attacker, target) {
-    return applyRookShieldRejection(this, this.level, attacker, target);
+    const rejected = applyRookShieldRejection(this, this.level, attacker, target);
+    if (rejected && attacker?.team === 'enemy') this.roundsElapsed += 1;
+    return rejected;
   }
 
   swapRoyalPair(first, second) {
-    return applyRoyalSwap(this, first, second);
+    const swapped = applyRoyalSwap(this, first, second);
+    if (swapped && first?.team === 'enemy') this.roundsElapsed += 1;
+    return swapped;
   }
 
   changeTurn() {
