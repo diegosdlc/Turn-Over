@@ -267,29 +267,63 @@
 .level-screen > #game-settings,
 .level-screen .legacy-audio-control{display:none!important}
 
+/* Tablet: keep the tabletop composition, but never let either major element
+   depend on off-screen overflow to fit. */
 @media (max-width:900px){
   .board-stage{
-    width:min(96vw,1000px);
-    right:-11vw;
-    top:4vh;
+    width:min(78vw,96dvh,1000px);
+    right:1vw;
+    top:2vh;
   }
   .notebook-ui{
-    width:min(56vw,450px);
-    left:-4vw;
+    width:min(42vw,58dvh,430px);
+    left:-2vw;
+    bottom:-1vh;
   }
-  .game-controls{left:auto;right:18px;bottom:18px}
+  .game-controls{left:auto;right:14px;bottom:14px}
 }
 
-@media (max-width:640px){
+/* Small landscape screens use the same compromise as the home screen: scale
+   the whole composition to the available viewport instead of cropping it. */
+@media (max-width:900px) and (orientation:landscape) and (max-height:560px){
   .board-stage{
-    width:116vw;
-    right:-31vw;
-    top:5.5vh;
+    width:min(72vw,92dvh);
+    right:1.5vw;
+    top:50%;
+    transform:translateY(-50%) rotate(.15deg);
   }
   .notebook-ui{
-    width:min(82vw,125dvh,430px);
-    left:-8vw;
-    bottom:-1.5vh;
+    width:min(34vw,74dvh);
+    left:-1.5vw;
+    bottom:50%;
+    transform:translateY(50%);
+  }
+  .notebook-page h2{font-size:clamp(.72rem,1.8vw,.95rem)}
+  .notebook-page p,
+  .notebook-page li{font-size:clamp(.52rem,1.25vw,.72rem);line-height:1.38}
+  .notebook-pagination{gap:4px}
+  .notebook-page-button{min-width:28px;min-height:24px;padding:2px}
+  .notebook-page-indicator{font-size:.6rem;min-width:34px}
+  .game-controls{right:8px;bottom:8px;gap:6px}
+  .game-control-button{width:36px;height:36px;font-size:.92rem}
+  #pause-toggle{font-size:1.05rem}
+}
+
+/* Phones in portrait are intentionally re-composed rather than overlapped:
+   board above, notebook below. Both stay fully inside the viewport. */
+@media (max-width:640px) and (orientation:portrait){
+  .board-stage{
+    width:min(96vw,58dvh);
+    right:auto;
+    left:50%;
+    top:1.5vh;
+    transform:translateX(-50%) rotate(.15deg);
+  }
+  .notebook-ui{
+    width:min(82vw,43dvh,390px);
+    left:50%;
+    bottom:-.5vh;
+    transform:translateX(-50%);
   }
   .notebook-tabs{
     left:10%;
@@ -303,14 +337,39 @@
     width:74%;
     height:72%;
   }
-  .notebook-page h2{font-size:clamp(.95rem,4.1vw,1.2rem)}
+  .notebook-page h2{font-size:clamp(.78rem,3.2vw,1rem)}
   .notebook-page p,
-  .notebook-page li{font-size:clamp(.64rem,2.65vw,.82rem)}
-  .game-controls{right:10px;bottom:10px;gap:7px}
-  .game-control-button{width:42px;height:42px}
+  .notebook-page li{font-size:clamp(.54rem,2.15vw,.72rem);line-height:1.4}
+  .notebook-pagination{gap:4px}
+  .notebook-page-button{min-width:30px;min-height:26px;padding:2px}
+  .notebook-page-indicator{font-size:.62rem;min-width:36px}
+  .game-controls{right:8px;bottom:8px;gap:6px}
+  .game-control-button{width:38px;height:38px;font-size:.95rem}
+  #pause-toggle{font-size:1.08rem}
+}
+
+/* Short portrait devices need a little more room for the board interaction
+   area, so the notebook yields a few extra viewport-height units. */
+@media (max-width:640px) and (orientation:portrait) and (max-height:740px){
+  .board-stage{width:min(94vw,56dvh)}
+  .notebook-ui{width:min(76vw,39dvh,360px)}
+  .notebook-page h2{font-size:clamp(.7rem,3vw,.9rem)}
+  .notebook-page p,
+  .notebook-page li{font-size:clamp(.5rem,2vw,.66rem)}
+  .game-control-button{width:34px;height:34px}
 }
 
 @media (orientation:portrait) and (min-width:641px){
-  .board-stage{width:106vw;right:-24vw;top:7vh}
-  .notebook-ui{width:min(52vw,480px);left:-4vw}
+  .board-stage{
+    width:min(92vw,66dvh,900px);
+    right:auto;
+    left:50%;
+    top:2vh;
+    transform:translateX(-50%) rotate(.15deg);
+  }
+  .notebook-ui{
+    width:min(48vw,36dvh,460px);
+    left:2vw;
+    bottom:-1vh;
+  }
 }
