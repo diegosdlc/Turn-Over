@@ -1,153 +1,102 @@
-/* Mobile/tablet layout driven by the real visual viewport. Chrome/Android may
-   report CSS viewport units larger than the actually visible area, so sizes
-   use --app-vw/--app-safe-h populated from window.visualViewport. */
-@media (max-width:1280px) and (pointer:coarse){
-  .level-screen{
-    width:var(--app-vw,100vw);
-    height:var(--app-safe-h,100dvh);
-    min-height:0;
-    overflow:hidden;
-  }
+/* Touch layout: board and notebook are fixed design-size objects. Their entire
+   contents scale with the parent transform, so internal typography/cards do
+   not recalculate against viewport units independently. Geometry comes from
+   viewport.js using real pixel measurements. */
 
-  .game-control-button{
-    width:clamp(30px,3.2vw,42px);
-    height:clamp(30px,3.2vw,42px);
-    font-size:clamp(.72rem,1.25vw,1rem);
-  }
-  #pause-toggle{font-size:clamp(.85rem,1.45vw,1.15rem)}
-
-  .notebook-page h2{font-size:clamp(.62rem,1.45vw,.95rem)}
-  .notebook-page p,
-  .notebook-page li{font-size:clamp(.46rem,.95vw,.7rem);line-height:1.35}
-  .notebook-pagination{gap:4px}
-  .notebook-page-button{min-width:24px;min-height:22px;padding:1px}
-  .notebook-page-indicator{font-size:clamp(.48rem,.8vw,.62rem);min-width:30px}
+html.touch-ui .level-screen{
+  width:var(--app-vw,100vw);
+  height:var(--app-safe-h,100dvh);
+  min-height:0;
+  overflow:hidden;
 }
 
-/* Landscape keeps the authored tabletop composition and scales the complete
-   stage to the actually visible viewport. */
-@media (max-width:1280px) and (pointer:coarse) and (orientation:landscape){
-  .level-stage{
-    position:absolute;
-    left:50%;
-    top:50%;
-    width:min(var(--app-vw,100vw),calc(var(--app-safe-h,100dvh) * 1.6));
-    height:auto;
-    aspect-ratio:8 / 5;
-    padding:0;
-    display:block;
-    overflow:hidden;
-    transform:translate(-50%,-50%);
-  }
-
-  .board-stage{
-    position:absolute;
-    z-index:5;
-    width:76%;
-    max-width:none;
-    right:-1%;
-    left:auto;
-    top:2%;
-    bottom:auto;
-    transform:rotate(.15deg);
-  }
-
-  .notebook-ui{
-    position:absolute;
-    z-index:20;
-    width:34%;
-    max-width:none;
-    left:-1%;
-    right:auto;
-    bottom:5%;
-    top:auto;
-    transform:none;
-  }
-
-  .game-controls{
-    position:absolute;
-    z-index:25;
-    left:31%;
-    right:auto;
-    bottom:5%;
-    gap:.6vw;
-  }
+html.touch-ui .level-stage{
+  position:relative;
+  width:100%;
+  height:100%;
+  padding:0;
+  overflow:hidden;
 }
 
-/* Portrait uses a dedicated tall composition instead of letterboxing the 8:5
-   landscape scene. This removes the large dead zone and lets both interactive
-   surfaces grow while remaining completely above Android's toolbar. */
-@media (max-width:1280px) and (pointer:coarse) and (orientation:portrait){
-  .level-stage{
-    position:absolute;
-    left:50%;
-    top:50%;
-    width:min(var(--app-vw,100vw),calc(var(--app-safe-h,100dvh) * .96));
-    height:min(var(--app-safe-h,100dvh),calc(var(--app-vw,100vw) * 1.45));
-    padding:0;
-    display:block;
-    overflow:hidden;
-    transform:translate(-50%,-50%);
-  }
-
-  .board-stage{
-    position:absolute;
-    z-index:5;
-    width:112%;
-    max-width:none;
-    left:50%;
-    right:auto;
-    top:0;
-    bottom:auto;
-    transform:translateX(-50%) rotate(.15deg);
-  }
-
-  .notebook-ui{
-    position:absolute;
-    z-index:20;
-    width:76%;
-    max-width:none;
-    left:50%;
-    right:auto;
-    top:48%;
-    bottom:auto;
-    transform:translateX(-50%);
-  }
-
-  .game-controls{
-    position:absolute;
-    z-index:25;
-    left:auto;
-    right:3%;
-    bottom:5%;
-    gap:6px;
-  }
-
-  .notebook-tabs{
-    left:10%;
-    top:-17%;
-    width:76%;
-    height:23%;
-  }
-
-  .notebook-page{
-    left:14.5%;
-    top:14.5%;
-    width:74%;
-    height:72%;
-  }
-
-  .notebook-page h2{font-size:clamp(.72rem,2.5vw,1rem)}
-  .notebook-page p,
-  .notebook-page li{font-size:clamp(.5rem,1.7vw,.72rem);line-height:1.38}
+html.touch-ui .board-stage{
+  position:absolute;
+  z-index:5;
+  width:1180px;
+  max-width:none;
+  right:auto;
+  bottom:auto;
+  left:var(--touch-board-x,0px);
+  top:var(--touch-board-y,0px);
+  transform:scale(var(--touch-board-scale,1)) rotate(.15deg);
+  transform-origin:top left;
 }
 
-@media (max-width:480px) and (pointer:coarse) and (orientation:portrait){
-  .level-stage{
-    width:min(var(--app-vw,100vw),calc(var(--app-safe-h,100dvh) * .9));
-    height:min(var(--app-safe-h,100dvh),calc(var(--app-vw,100vw) * 1.52));
-  }
-  .board-stage{width:116%}
-  .notebook-ui{width:80%;top:47%}
-  .game-control-button{width:30px;height:30px}
+html.touch-ui .notebook-ui{
+  position:absolute;
+  z-index:20;
+  width:540px;
+  max-width:none;
+  right:auto;
+  bottom:auto;
+  left:var(--touch-notebook-x,0px);
+  top:var(--touch-notebook-y,0px);
+  transform:scale(var(--touch-notebook-scale,1));
+  transform-origin:top left;
+}
+
+/* Restore design-space sizes for notebook content; it scales with .notebook-ui. */
+html.touch-ui .notebook-page h2{font-size:1.08rem}
+html.touch-ui .notebook-page p,
+html.touch-ui .notebook-page li{font-size:.74rem;line-height:1.45}
+html.touch-ui .notebook-page-button{min-width:34px;min-height:30px;padding:0}
+html.touch-ui .notebook-page-indicator{font-size:.72rem;min-width:42px}
+
+html.touch-ui .deployment-kicker{font-size:.66rem}
+html.touch-ui .deployment-panel h2{font-size:1.12rem}
+html.touch-ui .deployment-piece-fallback{font-size:1.7rem}
+html.touch-ui .deployment-piece-cost,
+html.touch-ui .deployment-piece-evolved{font-size:.52rem}
+html.touch-ui .deployment-piece-name{font-size:.62rem}
+html.touch-ui .deployment-piece-remove{font-size:.53rem}
+html.touch-ui .deployment-status{font-size:.72rem}
+html.touch-ui .deployment-start{font-size:1rem}
+
+/* Global controls stay at a real touch size instead of shrinking with artwork. */
+html.touch-ui .game-controls{
+  position:absolute;
+  z-index:30;
+  left:auto;
+  right:12px;
+  bottom:12px;
+  gap:8px;
+}
+
+html.touch-ui .game-control-button{
+  width:42px;
+  height:42px;
+  font-size:1rem;
+}
+html.touch-ui #pause-toggle{font-size:1.15rem}
+
+/* Landscape preserves the authored desktop relationship between both objects. */
+html.touch-landscape .notebook-ui{
+  /* Keep the notebook body slightly below the visible stage edge: the artwork
+     itself has transparent/export margin above and looks better tucked in. */
+  transform:translateY(8px) scale(var(--touch-notebook-scale,1));
+}
+
+/* Portrait is intentionally a vertical composition: board first, notebook
+   immediately after it, with the notebook tucked low enough that its exported
+   outer edge is not visible. */
+html.touch-portrait .notebook-ui{
+  transform:translateY(18px) scale(var(--touch-notebook-scale,1));
+}
+
+html.touch-portrait .game-controls{
+  right:10px;
+  bottom:10px;
+}
+
+@media (max-width:480px){
+  html.touch-ui .game-control-button{width:40px;height:40px}
 }
