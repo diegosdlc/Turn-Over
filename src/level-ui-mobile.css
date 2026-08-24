@@ -1,10 +1,10 @@
 /* Mobile/tablet layout driven by the real visual viewport. Chrome/Android may
    report CSS viewport units larger than the actually visible area, so sizes
-   use --app-vw/--app-vh populated from window.visualViewport. */
-@media (max-width:900px){
+   use --app-vw/--app-safe-h populated from window.visualViewport. */
+@media (max-width:1280px) and (pointer:coarse){
   .level-screen{
     width:var(--app-vw,100vw);
-    height:var(--app-vh,100dvh);
+    height:var(--app-safe-h,100dvh);
     min-height:0;
     overflow:hidden;
   }
@@ -26,12 +26,12 @@
 
 /* Landscape keeps the authored tabletop composition and scales the complete
    stage to the actually visible viewport. */
-@media (max-width:900px) and (orientation:landscape){
+@media (max-width:1280px) and (pointer:coarse) and (orientation:landscape){
   .level-stage{
     position:absolute;
     left:50%;
     top:50%;
-    width:min(var(--app-vw,100vw),calc(var(--app-vh,100dvh) * 1.6));
+    width:min(var(--app-vw,100vw),calc(var(--app-safe-h,100dvh) * 1.6));
     height:auto;
     aspect-ratio:8 / 5;
     padding:0;
@@ -59,7 +59,7 @@
     max-width:none;
     left:-1%;
     right:auto;
-    bottom:3%;
+    bottom:5%;
     top:auto;
     transform:none;
   }
@@ -69,7 +69,7 @@
     z-index:25;
     left:31%;
     right:auto;
-    bottom:3%;
+    bottom:5%;
     gap:.6vw;
   }
 }
@@ -77,13 +77,13 @@
 /* Portrait uses a dedicated tall composition instead of letterboxing the 8:5
    landscape scene. This removes the large dead zone and lets both interactive
    surfaces grow while remaining completely above Android's toolbar. */
-@media (max-width:900px) and (orientation:portrait){
+@media (max-width:1280px) and (pointer:coarse) and (orientation:portrait){
   .level-stage{
     position:absolute;
     left:50%;
     top:50%;
-    width:min(var(--app-vw,100vw),calc(var(--app-vh,100dvh) * .82));
-    height:min(var(--app-vh,100dvh),calc(var(--app-vw,100vw) * 1.22));
+    width:min(var(--app-vw,100vw),calc(var(--app-safe-h,100dvh) * .96));
+    height:min(var(--app-safe-h,100dvh),calc(var(--app-vw,100vw) * 1.45));
     padding:0;
     display:block;
     overflow:hidden;
@@ -93,7 +93,7 @@
   .board-stage{
     position:absolute;
     z-index:5;
-    width:106%;
+    width:112%;
     max-width:none;
     left:50%;
     right:auto;
@@ -105,11 +105,11 @@
   .notebook-ui{
     position:absolute;
     z-index:20;
-    width:70%;
+    width:76%;
     max-width:none;
     left:50%;
     right:auto;
-    top:56%;
+    top:48%;
     bottom:auto;
     transform:translateX(-50%);
   }
@@ -119,7 +119,7 @@
     z-index:25;
     left:auto;
     right:3%;
-    bottom:3%;
+    bottom:5%;
     gap:6px;
   }
 
@@ -142,12 +142,12 @@
   .notebook-page li{font-size:clamp(.5rem,1.7vw,.72rem);line-height:1.38}
 }
 
-@media (max-width:480px) and (orientation:portrait){
+@media (max-width:480px) and (pointer:coarse) and (orientation:portrait){
   .level-stage{
-    width:min(var(--app-vw,100vw),calc(var(--app-vh,100dvh) * .78));
-    height:min(var(--app-vh,100dvh),calc(var(--app-vw,100vw) * 1.28));
+    width:min(var(--app-vw,100vw),calc(var(--app-safe-h,100dvh) * .9));
+    height:min(var(--app-safe-h,100dvh),calc(var(--app-vw,100vw) * 1.52));
   }
-  .board-stage{width:110%}
-  .notebook-ui{width:74%;top:55%}
+  .board-stage{width:116%}
+  .notebook-ui{width:80%;top:47%}
   .game-control-button{width:30px;height:30px}
 }
