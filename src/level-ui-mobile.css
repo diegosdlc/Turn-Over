@@ -1,29 +1,42 @@
-/* Mobile/tablet fallback: preserve the level as one authored 8:5 composition.
-   This intentionally mirrors the home-screen strategy. The complete stage is
-   fitted inside the safe viewport before any child is positioned, so browser
-   chrome cannot crop the board/notebook and the two surfaces cannot drift
-   apart as independent responsive boxes. */
+/* Mobile/tablet layout driven by the real visual viewport. Chrome/Android may
+   report CSS viewport units larger than the actually visible area, so sizes
+   use --app-vw/--app-vh populated from window.visualViewport. */
 @media (max-width:900px){
   .level-screen{
-    width:100vw;
-    height:100svh;
-    min-height:100svh;
+    width:var(--app-vw,100vw);
+    height:var(--app-vh,100dvh);
+    min-height:0;
     overflow:hidden;
   }
 
+  .game-control-button{
+    width:clamp(30px,3.2vw,42px);
+    height:clamp(30px,3.2vw,42px);
+    font-size:clamp(.72rem,1.25vw,1rem);
+  }
+  #pause-toggle{font-size:clamp(.85rem,1.45vw,1.15rem)}
+
+  .notebook-page h2{font-size:clamp(.62rem,1.45vw,.95rem)}
+  .notebook-page p,
+  .notebook-page li{font-size:clamp(.46rem,.95vw,.7rem);line-height:1.35}
+  .notebook-pagination{gap:4px}
+  .notebook-page-button{min-width:24px;min-height:22px;padding:1px}
+  .notebook-page-indicator{font-size:clamp(.48rem,.8vw,.62rem);min-width:30px}
+}
+
+/* Landscape keeps the authored tabletop composition and scales the complete
+   stage to the actually visible viewport. */
+@media (max-width:900px) and (orientation:landscape){
   .level-stage{
     position:absolute;
     left:50%;
     top:50%;
-    width:min(
-      calc(100vw - max(8px,env(safe-area-inset-left)) - max(8px,env(safe-area-inset-right))),
-      calc((100svh - max(8px,env(safe-area-inset-top)) - max(8px,env(safe-area-inset-bottom))) * 1.6)
-    );
+    width:min(var(--app-vw,100vw),calc(var(--app-vh,100dvh) * 1.6));
     height:auto;
     aspect-ratio:8 / 5;
     padding:0;
     display:block;
-    overflow:visible;
+    overflow:hidden;
     transform:translate(-50%,-50%);
   }
 
@@ -37,7 +50,6 @@
     top:2%;
     bottom:auto;
     transform:rotate(.15deg);
-    transform-origin:center;
   }
 
   .notebook-ui{
@@ -47,7 +59,7 @@
     max-width:none;
     left:-1%;
     right:auto;
-    bottom:1%;
+    bottom:3%;
     top:auto;
     transform:none;
   }
@@ -57,32 +69,85 @@
     z-index:25;
     left:31%;
     right:auto;
-    bottom:2%;
+    bottom:3%;
     gap:.6vw;
   }
-
-  .game-control-button{
-    width:clamp(28px,3.2vw,42px);
-    height:clamp(28px,3.2vw,42px);
-    font-size:clamp(.72rem,1.25vw,1rem);
-  }
-
-  #pause-toggle{font-size:clamp(.85rem,1.45vw,1.15rem)}
-
-  .notebook-page h2{font-size:clamp(.62rem,1.45vw,.95rem)}
-  .notebook-page p,
-  .notebook-page li{font-size:clamp(.46rem,.95vw,.7rem);line-height:1.35}
-  .notebook-pagination{gap:4px}
-  .notebook-page-button{min-width:24px;min-height:22px;padding:1px}
-  .notebook-page-indicator{font-size:clamp(.48rem,.8vw,.62rem);min-width:30px}
 }
 
-/* On very narrow portrait phones the full landscape composition is still
-   preserved. Making the stage wider would necessarily crop it, so only the
-   controls receive an additional touch-size compromise. */
-@media (max-width:480px) and (orientation:portrait){
-  .game-control-button{
-    width:28px;
-    height:28px;
+/* Portrait uses a dedicated tall composition instead of letterboxing the 8:5
+   landscape scene. This removes the large dead zone and lets both interactive
+   surfaces grow while remaining completely above Android's toolbar. */
+@media (max-width:900px) and (orientation:portrait){
+  .level-stage{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:min(var(--app-vw,100vw),calc(var(--app-vh,100dvh) * .82));
+    height:min(var(--app-vh,100dvh),calc(var(--app-vw,100vw) * 1.22));
+    padding:0;
+    display:block;
+    overflow:hidden;
+    transform:translate(-50%,-50%);
   }
+
+  .board-stage{
+    position:absolute;
+    z-index:5;
+    width:106%;
+    max-width:none;
+    left:50%;
+    right:auto;
+    top:0;
+    bottom:auto;
+    transform:translateX(-50%) rotate(.15deg);
+  }
+
+  .notebook-ui{
+    position:absolute;
+    z-index:20;
+    width:70%;
+    max-width:none;
+    left:50%;
+    right:auto;
+    top:56%;
+    bottom:auto;
+    transform:translateX(-50%);
+  }
+
+  .game-controls{
+    position:absolute;
+    z-index:25;
+    left:auto;
+    right:3%;
+    bottom:3%;
+    gap:6px;
+  }
+
+  .notebook-tabs{
+    left:10%;
+    top:-17%;
+    width:76%;
+    height:23%;
+  }
+
+  .notebook-page{
+    left:14.5%;
+    top:14.5%;
+    width:74%;
+    height:72%;
+  }
+
+  .notebook-page h2{font-size:clamp(.72rem,2.5vw,1rem)}
+  .notebook-page p,
+  .notebook-page li{font-size:clamp(.5rem,1.7vw,.72rem);line-height:1.38}
+}
+
+@media (max-width:480px) and (orientation:portrait){
+  .level-stage{
+    width:min(var(--app-vw,100vw),calc(var(--app-vh,100dvh) * .78));
+    height:min(var(--app-vh,100dvh),calc(var(--app-vw,100vw) * 1.28));
+  }
+  .board-stage{width:110%}
+  .notebook-ui{width:74%;top:55%}
+  .game-control-button{width:30px;height:30px}
 }
