@@ -12,9 +12,11 @@ html.touch-ui .level-screen{
 
 html.touch-ui .level-stage{
   position:relative;
+  display:block;
   width:100%;
   height:100%;
   padding:0;
+  grid-template:none;
   overflow:hidden;
 }
 
@@ -26,31 +28,38 @@ html.touch-ui .board-stage{
   right:auto;
   bottom:auto;
   left:var(--touch-board-x,0px);
-  top:var(--touch-board-y,0px);
+  top:calc(var(--app-vv-y,0px) + var(--touch-board-y,0px));
+  grid-column:auto;
+  grid-row:auto;
   transform:scale(var(--touch-board-scale,1)) rotate(.15deg);
   transform-origin:top left;
 }
 
 html.touch-ui .notebook-ui{
-  position:absolute;
+  position:fixed;
   z-index:20;
   width:540px;
   max-width:none;
   right:auto;
   bottom:auto;
-  left:var(--touch-notebook-x,0px);
-  top:var(--touch-notebook-y,0px);
+  left:calc(var(--app-vv-x,0px) + var(--touch-notebook-x,-12px));
+  top:calc(var(--app-vv-y,0px) + var(--touch-notebook-y,0px));
   transform:scale(var(--touch-notebook-scale,1));
   transform-origin:top left;
 }
 
-/* Restore design-space sizes for notebook content; it scales with .notebook-ui. */
+/* Keep every notebook child in the 540px design space. Earlier responsive
+   rules are deliberately reset here, so the parent transform is the only
+   scale applied to artwork, tabs, text, cards and controls. */
+html.touch-ui .notebook-tabs{left:8%;top:-18%;width:74%;height:24%}
+html.touch-ui .notebook-page{left:13.5%;top:13.5%;width:76.5%;height:76%}
 html.touch-ui .notebook-page h2{font-size:1.08rem}
 html.touch-ui .notebook-page p,
 html.touch-ui .notebook-page li{font-size:.74rem;line-height:1.45}
 html.touch-ui .notebook-page-button{min-width:34px;min-height:30px;padding:0}
 html.touch-ui .notebook-page-indicator{font-size:.72rem;min-width:42px}
 
+html.touch-ui .deployment-panel{left:14.5%;top:13.5%;width:75%;height:75%}
 html.touch-ui .deployment-kicker{font-size:.66rem}
 html.touch-ui .deployment-panel h2{font-size:1.12rem}
 html.touch-ui .deployment-piece-fallback{font-size:1.7rem}
@@ -61,13 +70,14 @@ html.touch-ui .deployment-piece-remove{font-size:.53rem}
 html.touch-ui .deployment-status{font-size:.72rem}
 html.touch-ui .deployment-start{font-size:1rem}
 
-/* Global controls stay at a real touch size instead of shrinking with artwork. */
-html.touch-ui .game-controls{
-  position:absolute;
-  z-index:30;
+/* Global controls belong to the viewport, not to either scaled artwork block. */
+.level-screen .game-controls{
+  position:fixed;
+  z-index:1000;
   left:auto;
-  right:12px;
-  bottom:12px;
+  right:calc(var(--app-vv-right,0px) + max(12px,env(safe-area-inset-right)));
+  top:calc(var(--app-vv-y,0px) + max(12px,env(safe-area-inset-top)));
+  bottom:auto;
   gap:8px;
 }
 
@@ -77,25 +87,6 @@ html.touch-ui .game-control-button{
   font-size:1rem;
 }
 html.touch-ui #pause-toggle{font-size:1.15rem}
-
-/* Landscape preserves the authored desktop relationship between both objects. */
-html.touch-landscape .notebook-ui{
-  /* Keep the notebook body slightly below the visible stage edge: the artwork
-     itself has transparent/export margin above and looks better tucked in. */
-  transform:translateY(8px) scale(var(--touch-notebook-scale,1));
-}
-
-/* Portrait is intentionally a vertical composition: board first, notebook
-   immediately after it, with the notebook tucked low enough that its exported
-   outer edge is not visible. */
-html.touch-portrait .notebook-ui{
-  transform:translateY(18px) scale(var(--touch-notebook-scale,1));
-}
-
-html.touch-portrait .game-controls{
-  right:10px;
-  bottom:10px;
-}
 
 @media (max-width:480px){
   html.touch-ui .game-control-button{width:40px;height:40px}
