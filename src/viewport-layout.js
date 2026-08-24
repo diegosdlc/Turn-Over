@@ -3,6 +3,8 @@ export const BOARD_HEIGHT = BOARD_WIDTH * 580 / 940;
 export const NOTEBOOK_WIDTH = 540;
 export const NOTEBOOK_HEIGHT = NOTEBOOK_WIDTH * 676 / 883;
 export const NOTEBOOK_EDGE_OVERHANG = 12;
+export const LANDSCAPE_NOTEBOOK_WIDTH_FRACTION = 0.30;
+export const LANDSCAPE_BOARD_WIDTH_FRACTION = 0.69;
 
 export function shouldUseCompactLayout({ width, height, hasTouch }) {
   const shortestSide = Math.min(width, height);
@@ -17,7 +19,7 @@ export function calculateCompactLayout({ width, height, bottomReserve = 0 }) {
 
   const notebookScale = landscape
     ? Math.min(
-      width * 0.34 / NOTEBOOK_WIDTH,
+      width * LANDSCAPE_NOTEBOOK_WIDTH_FRACTION / NOTEBOOK_WIDTH,
       safeHeight * 0.78 / NOTEBOOK_HEIGHT,
     )
     : Math.min(
@@ -27,7 +29,10 @@ export function calculateCompactLayout({ width, height, bottomReserve = 0 }) {
 
   const notebookHeight = NOTEBOOK_HEIGHT * notebookScale;
   const notebookX = -NOTEBOOK_EDGE_OVERHANG;
-  const notebookY = safeHeight - notebookHeight + NOTEBOOK_EDGE_OVERHANG;
+  /* The reserve protects interactive layout from browser/OS chrome, but the
+     artwork itself must continue behind that chrome. Anchoring to the full
+     visual viewport guarantees its exported lower edge is never exposed. */
+  const notebookY = height - notebookHeight + NOTEBOOK_EDGE_OVERHANG;
 
   let boardScale;
   let boardX;
@@ -35,7 +40,7 @@ export function calculateCompactLayout({ width, height, bottomReserve = 0 }) {
 
   if (landscape) {
     boardScale = Math.min(
-      width * 0.76 / BOARD_WIDTH,
+      width * LANDSCAPE_BOARD_WIDTH_FRACTION / BOARD_WIDTH,
       safeHeight * 0.94 / BOARD_HEIGHT,
     );
 
