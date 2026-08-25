@@ -123,16 +123,18 @@
 
 .notebook-page h2{
   margin:0 0 .35rem;
-  font-size:clamp(.92rem,1.22vw,1.25rem);
+  font-size:clamp(1.02rem,1.34vw,1.38rem);
   font-weight:700;
   line-height:1.35;
 }
 
 .notebook-page p,
 .notebook-page li{
-  font-size:clamp(.64rem,.82vw,.82rem);
+  font-size:clamp(.72rem,.94vw,.94rem);
   line-height:1.52;
 }
+
+.notebook-page h3{margin:.65rem 0 .35rem;font-size:1rem;line-height:1.3}
 
 .notebook-page p{margin:.35rem 0}
 .notebook-page ul{margin:.4rem 0;padding-left:1.3rem}
@@ -146,6 +148,21 @@
   scrollbar-width:thin;
   scrollbar-color:rgba(83,98,84,.62) rgba(132,112,77,.12);
 }
+
+.notebook-page.has-fixed-actions .notebook-page-content{height:calc(100% - 82px)}
+
+.notebook-fixed-actions{
+  position:absolute;
+  z-index:5;
+  left:5%;
+  right:5%;
+  bottom:11%;
+  display:flex;
+  justify-content:center;
+}
+
+.notebook-fixed-actions[hidden]{display:none}
+.notebook-fixed-actions .notebook-menu-button{width:72%;margin:0}
 
 .notebook-page-content::-webkit-scrollbar{width:7px}
 .notebook-page-content::-webkit-scrollbar-track{
@@ -179,7 +196,7 @@
 }
 
 .notebook-page-button:disabled{opacity:.25}
-.notebook-page-indicator{font-size:.72rem;min-width:42px;text-align:center}
+.notebook-page-indicator{font-size:.8rem;min-width:42px;text-align:center}
 
 .notebook-settings-row{
   display:grid;
@@ -190,6 +207,27 @@
 }
 
 .notebook-settings-row input{width:100%}
+
+.notebook-lab-list{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:8px;
+  align-items:center;
+}
+
+.notebook-lab-label{font-size:.82rem;font-weight:700}
+
+.notebook-lab-select{
+  min-width:0;
+  width:100%;
+  padding:6px 8px;
+  border:1.5px solid rgba(55,66,59,.72);
+  border-radius:3px 7px 4px 6px;
+  background:rgba(248,241,219,.9);
+  color:#38423b;
+  font:700 .82rem/1.25 'Segoe Print','Comic Sans MS',cursive;
+  box-shadow:2px 3px 0 rgba(50,39,25,.16);
+}
 
 .notebook-menu-button{
   margin-top:10px;

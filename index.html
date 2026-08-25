@@ -8,9 +8,9 @@
     <link rel="stylesheet" href="./src/styles.css?v=20260821-evolution-3" />
     <link rel="stylesheet" href="./src/home-screen.css?v=20260824-deploy-6" />
     <link rel="stylesheet" href="./src/audio-controls.css?v=20260814-1700" />
-    <link rel="stylesheet" href="./src/level-ui.css?v=20260824-anchor-1" />
-    <link rel="stylesheet" href="./src/deployment.css?v=20260821-budget-1" />
-    <link rel="stylesheet" href="./src/level-ui-mobile.css?v=20260824-anchor-1" />
+    <link rel="stylesheet" href="./src/level-ui.css?v=20260825-notebook-ui-1" />
+    <link rel="stylesheet" href="./src/deployment.css?v=20260825-notebook-ui-1" />
+    <link rel="stylesheet" href="./src/level-ui-mobile.css?v=20260825-notebook-ui-1" />
   </head>
   <body>
     <main id="game-shell" class="board-shell level-screen" aria-label="Juego de tablero" hidden>
@@ -49,6 +49,7 @@
 
           <section class="notebook-page" aria-live="polite">
             <div id="notebook-page-content" class="notebook-page-content"></div>
+            <div id="notebook-fixed-actions" class="notebook-fixed-actions" hidden></div>
             <div class="notebook-pagination" aria-label="Paginación del cuaderno">
               <button id="notebook-page-prev" class="notebook-page-button" type="button" aria-label="Página anterior">←</button>
               <span id="notebook-page-indicator" class="notebook-page-indicator">1 / 1</span>
@@ -152,6 +153,6 @@
 
     <script type="module" src="./src/viewport.js?v=20260825-landscape-1"></script>
     <script type="module" src="./src/main.js?v=20260821-budget-1"></script>
-    <script type="module" src="./src/level-ui.js?v=20260821-evolution-3"></script>
+    <script type="module" src="./src/level-ui.js?v=20260825-notebook-ui-1"></script>
   </body>
 </html>

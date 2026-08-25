@@ -1,8 +1,8 @@
 import { listMechanicLabs } from './content/levels/index.js?v=20260821-evolution-3';
 
-function mechanicsLabButtons() {
+function mechanicsLabOptions() {
   return listMechanicLabs()
-    .map(lab => `<button class="notebook-menu-button" type="button" data-mechanics-lab="${lab.id}" title="${lab.description}">${lab.name}</button>`)
+    .map(lab => `<option value="${lab.id}" title="${lab.description}">${lab.name}</option>`)
     .join('');
 }
 
@@ -44,7 +44,7 @@ const NOTEBOOK_SECTIONS = {
   settings: [
     {
       title: 'Ajustes',
-      html: `<div class="notebook-settings-row"><label for="notebook-volume">Música</label><input id="notebook-volume" type="range" min="0" max="100" step="1" value="45" aria-label="Volumen de la música"></div><p>El botón de altavoz junto al cuaderno permite silenciar o recuperar el volumen con una sola pulsación.</p><h3>Laboratorios de mecánicas</h3><div class="notebook-lab-list">${mechanicsLabButtons()}</div><button id="notebook-main-menu" class="notebook-menu-button" type="button">Volver al menú principal</button>`
+      html: `<div class="notebook-settings-row"><label for="notebook-volume">Música</label><input id="notebook-volume" type="range" min="0" max="100" step="1" value="45" aria-label="Volumen de la música"></div><p>El botón de altavoz junto al cuaderno permite silenciar o recuperar el volumen con una sola pulsación.</p><h3>Laboratorios de mecánicas</h3><div class="notebook-lab-list"><label class="notebook-lab-label" for="notebook-mechanics-lab">Escenario</label><select id="notebook-mechanics-lab" class="notebook-lab-select"><option value="">Selecciona un laboratorio…</option>${mechanicsLabOptions()}</select></div>`
     }
   ]
 };
@@ -53,6 +53,8 @@ class NotebookUI {
   constructor(root) {
     this.root = root;
     this.pageContent = root?.querySelector('#notebook-page-content');
+    this.pageElement = root?.querySelector('.notebook-page');
+    this.fixedActions = root?.querySelector('#notebook-fixed-actions');
     this.indicator = root?.querySelector('#notebook-page-indicator');
     this.previous = root?.querySelector('#notebook-page-prev');
     this.next = root?.querySelector('#notebook-page-next');
@@ -96,17 +98,29 @@ class NotebookUI {
     if (this.indicator) this.indicator.textContent = `${this.page + 1} / ${pages.length}`;
     if (this.previous) this.previous.disabled = this.page === 0;
     if (this.next) this.next.disabled = this.page >= pages.length - 1;
+    this.renderFixedActions();
     this.bindSettingsControls();
   }
 
+  renderFixedActions() {
+    if (!this.fixedActions) return;
+    const showMainMenu = this.section === 'settings';
+    this.fixedActions.hidden = !showMainMenu;
+    this.fixedActions.innerHTML = showMainMenu
+      ? '<button id="notebook-main-menu" class="notebook-menu-button" type="button">Volver al menú principal</button>'
+      : '';
+    this.pageElement?.classList.toggle('has-fixed-actions', showMainMenu);
+  }
+
   bindSettingsControls() {
-    this.root.querySelectorAll('[data-mechanics-lab]').forEach(button => {
-      button.addEventListener('click', () => {
+    const mechanicsLab = this.root.querySelector('#notebook-mechanics-lab');
+    mechanicsLab?.addEventListener('change', () => {
+      if (mechanicsLab.value) {
         const url = new URL(window.location.href);
-        url.searchParams.set('level', button.dataset.mechanicsLab);
+        url.searchParams.set('level', mechanicsLab.value);
         url.searchParams.delete('tutorial');
         window.location.href = url.href;
-      });
+      }
     });
 
     const mainMenu = this.root.querySelector('#notebook-main-menu');

@@ -53,22 +53,22 @@ html.touch-ui .notebook-ui{
    scale applied to artwork, tabs, text, cards and controls. */
 html.touch-ui .notebook-tabs{left:8%;top:-18%;width:74%;height:24%}
 html.touch-ui .notebook-page{left:13.5%;top:13.5%;width:76.5%;height:76%}
-html.touch-ui .notebook-page h2{font-size:1.08rem}
+html.touch-ui .notebook-page h2{font-size:1.2rem}
 html.touch-ui .notebook-page p,
-html.touch-ui .notebook-page li{font-size:.74rem;line-height:1.45}
+html.touch-ui .notebook-page li{font-size:.84rem;line-height:1.45}
 html.touch-ui .notebook-page-button{min-width:34px;min-height:30px;padding:0}
-html.touch-ui .notebook-page-indicator{font-size:.72rem;min-width:42px}
+html.touch-ui .notebook-page-indicator{font-size:.8rem;min-width:42px}
 
 html.touch-ui .deployment-panel{left:14.5%;top:13.5%;width:75%;height:75%}
-html.touch-ui .deployment-kicker{font-size:.66rem}
-html.touch-ui .deployment-panel h2{font-size:1.12rem}
-html.touch-ui .deployment-piece-fallback{font-size:1.7rem}
+html.touch-ui .deployment-kicker{font-size:.73rem}
+html.touch-ui .deployment-panel h2{font-size:1.24rem}
+html.touch-ui .deployment-piece-fallback{font-size:1.45rem}
 html.touch-ui .deployment-piece-cost,
-html.touch-ui .deployment-piece-evolved{font-size:.52rem}
-html.touch-ui .deployment-piece-name{font-size:.62rem}
-html.touch-ui .deployment-piece-remove{font-size:.53rem}
-html.touch-ui .deployment-status{font-size:.72rem}
-html.touch-ui .deployment-start{font-size:1rem}
+html.touch-ui .deployment-piece-evolved{font-size:.6rem}
+html.touch-ui .deployment-piece-name{font-size:.7rem}
+html.touch-ui .deployment-piece-remove{font-size:.6rem}
+html.touch-ui .deployment-status{font-size:.82rem}
+html.touch-ui .deployment-start{font-size:1.08rem}
 
 /* Global controls belong to the viewport, not to either scaled artwork block. */
 .level-screen .game-controls{
