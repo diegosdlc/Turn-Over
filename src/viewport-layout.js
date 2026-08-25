@@ -3,8 +3,8 @@ export const BOARD_HEIGHT = BOARD_WIDTH * 580 / 940;
 export const NOTEBOOK_WIDTH = 540;
 export const NOTEBOOK_HEIGHT = NOTEBOOK_WIDTH * 676 / 883;
 export const NOTEBOOK_EDGE_OVERHANG = 12;
-export const LANDSCAPE_NOTEBOOK_WIDTH_FRACTION = 0.30;
-export const LANDSCAPE_BOARD_WIDTH_FRACTION = 0.69;
+export const LANDSCAPE_NOTEBOOK_WIDTH_FRACTION = 0.441;
+export const LANDSCAPE_BOARD_WIDTH_FRACTION = 0.549;
 
 export function shouldUseCompactLayout({ width, height, hasTouch }) {
   const shortestSide = Math.min(width, height);

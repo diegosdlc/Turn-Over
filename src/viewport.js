@@ -1,7 +1,7 @@
 import {
   calculateCompactLayout,
   shouldUseCompactLayout,
-} from './viewport-layout.js?v=20260824-anchor-2';
+} from './viewport-layout.js?v=20260825-landscape-1';
 
 const root = document.documentElement;
 const ua = navigator.userAgent;
