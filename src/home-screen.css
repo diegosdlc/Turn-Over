@@ -12,11 +12,11 @@
 
 .home-screen{
   position:fixed;
-  inset:0;
+  left:0;
+  top:0;
   z-index:40;
-  width:100vw;
-  height:100vh;
-  height:100dvh;
+  width:var(--app-vw,100vw);
+  height:var(--app-safe-h,var(--app-vh,100dvh));
   padding:0;
   display:block;
   overflow:hidden;
@@ -28,20 +28,11 @@
   position:absolute;
   left:50%;
   top:50%;
-  width:100vw;
+  width:min(var(--app-vw,100vw),calc(var(--app-safe-h,var(--app-vh,100dvh)) * 1.6));
   height:auto;
   aspect-ratio:8 / 5;
   transform:translate(-50%,-50%);
   overflow:hidden;
-}
-
-@media (orientation:landscape){
-  .home-stage{
-    width:min(100vw,160vh);
-    width:min(100vw,160dvh);
-    height:auto;
-    aspect-ratio:8 / 5;
-  }
 }
 
 .home-art-layer{
@@ -159,7 +150,7 @@
 
 .hit-new:active + .art-new,
 .hit-continue:active + .art-continue,
-.hit-settings:active + .art-settings{
+.hit-settings:active + .home-button-art{
   transform:scale(.985);
   transition-duration:.07s;
 }

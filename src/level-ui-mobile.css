@@ -1,0 +1,93 @@
+/* Touch layout: board and notebook are fixed design-size objects. Their entire
+   contents scale with the parent transform, so internal typography/cards do
+   not recalculate against viewport units independently. Geometry comes from
+   viewport.js using real pixel measurements. */
+
+html.touch-ui .level-screen{
+  width:var(--app-vw,100vw);
+  height:var(--app-safe-h,100dvh);
+  min-height:0;
+  overflow:hidden;
+}
+
+html.touch-ui .level-stage{
+  position:relative;
+  display:block;
+  width:100%;
+  height:100%;
+  padding:0;
+  grid-template:none;
+  overflow:hidden;
+}
+
+html.touch-ui .board-stage{
+  position:absolute;
+  z-index:5;
+  width:1180px;
+  max-width:none;
+  right:auto;
+  bottom:auto;
+  left:var(--touch-board-x,0px);
+  top:calc(var(--app-vv-y,0px) + var(--touch-board-y,0px));
+  grid-column:auto;
+  grid-row:auto;
+  transform:scale(var(--touch-board-scale,1)) rotate(.15deg);
+  transform-origin:top left;
+}
+
+html.touch-ui .notebook-ui{
+  position:fixed;
+  z-index:20;
+  width:540px;
+  max-width:none;
+  right:auto;
+  bottom:auto;
+  left:calc(var(--app-vv-x,0px) + var(--touch-notebook-x,-12px));
+  top:calc(var(--app-vv-y,0px) + var(--touch-notebook-y,0px));
+  transform:scale(var(--touch-notebook-scale,1));
+  transform-origin:top left;
+}
+
+/* Keep every notebook child in the 540px design space. Earlier responsive
+   rules are deliberately reset here, so the parent transform is the only
+   scale applied to artwork, tabs, text, cards and controls. */
+html.touch-ui .notebook-tabs{left:8%;top:-18%;width:74%;height:24%}
+html.touch-ui .notebook-page{left:13.5%;top:13.5%;width:76.5%;height:76%}
+html.touch-ui .notebook-page h2{font-size:1.2rem}
+html.touch-ui .notebook-page p,
+html.touch-ui .notebook-page li{font-size:.84rem;line-height:1.45}
+html.touch-ui .notebook-page-button{min-width:34px;min-height:30px;padding:0}
+html.touch-ui .notebook-page-indicator{font-size:.8rem;min-width:42px}
+
+html.touch-ui .deployment-panel{left:14.5%;top:13.5%;width:75%;height:75%}
+html.touch-ui .deployment-kicker{font-size:.73rem}
+html.touch-ui .deployment-panel h2{font-size:1.24rem}
+html.touch-ui .deployment-piece-fallback{font-size:1.45rem}
+html.touch-ui .deployment-piece-cost,
+html.touch-ui .deployment-piece-evolved{font-size:.6rem}
+html.touch-ui .deployment-piece-name{font-size:.7rem}
+html.touch-ui .deployment-piece-remove{font-size:.6rem}
+html.touch-ui .deployment-status{font-size:.82rem}
+html.touch-ui .deployment-start{font-size:1.08rem}
+
+/* Global controls belong to the viewport, not to either scaled artwork block. */
+.level-screen .game-controls{
+  position:fixed;
+  z-index:1000;
+  left:auto;
+  right:calc(var(--app-vv-right,0px) + max(12px,env(safe-area-inset-right)));
+  top:calc(var(--app-vv-y,0px) + max(12px,env(safe-area-inset-top)));
+  bottom:auto;
+  gap:8px;
+}
+
+html.touch-ui .game-control-button{
+  width:42px;
+  height:42px;
+  font-size:1rem;
+}
+html.touch-ui #pause-toggle{font-size:1.15rem}
+
+@media (max-width:480px){
+  html.touch-ui .game-control-button{width:40px;height:40px}
+}
