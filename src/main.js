@@ -4,7 +4,7 @@ import { getLevel, getNextLevel } from './content/levels/index.js?v=20260821-bud
 import { GameState } from './core/GameState.js?v=20260821-budget-1';
 import { AssetRegistry } from './systems/AssetRegistry.js';
 import { AudioManager } from './systems/AudioManager.js?v=20260814-1700';
-import { GameSessionStore } from './systems/GameSessionStore.js?v=20260821-evolution-3';
+import { GameSessionStore, restoreSessionState } from './systems/GameSessionStore.js?v=20261024-session-rounds-1';
 import { ProgressionStore } from './systems/ProgressionStore.js?v=20260821-evolution-3';
 import { TutorialSystem } from './systems/TutorialSystem.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20260821-evolution-3';
@@ -141,14 +141,7 @@ class GameApp {
   }
 
   restoreSavedState(savedState) {
-    if (!Array.isArray(savedState.units)) return;
-    this.state.units = savedState.units;
-    this.state.currentTurn = savedState.currentTurn === 'enemy' ? 'enemy' : 'player';
-    this.state.finished = Boolean(savedState.finished);
-    this.state.phase = savedState.phase === 'deployment' ? 'deployment' : 'play';
-    if (savedState.teamEvolution) this.state.teamEvolution = savedState.teamEvolution;
-    this.state.selectedId = null;
-    this.state.pendingCapture = null;
+    restoreSessionState(this.state, savedState);
   }
 
   saveSession() {
