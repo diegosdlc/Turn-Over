@@ -82,6 +82,7 @@ Detailed contracts:
 23. **Budgeted deployment chooses the encounter lineup from the carried roster.** Placed pieces consume points; reserve pieces are inactive and consume zero. The lineup may not exceed the level limit.
 24. Base/evolved piece costs and per-level point limits are balance data, not hard-coded rule constants. `docs/BALANCE.md` is the editable runtime source of truth.
 25. The intended level limit is equivalent to the enemy band's point value; the balance layer warns when an explicit level limit diverges from the calculated enemy value.
+26. Session snapshots persist objective progress such as survival `roundsElapsed`. Existing schema-6 saves without this field load with zero rounds.
 
 ## No-legal-moves rule
 
