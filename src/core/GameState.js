@@ -232,7 +232,6 @@ export class GameState {
   deploymentRoundQuota(team) {
     if (!this.isAlternatingDeployment()) return Infinity;
     const roster = this.deploymentRoster(team);
-    const initial = team === 'enemy' ? roster.filter(unit => this.isDeploymentCommitted(unit) && this.deploymentRound === 1).length : 0;
     // The initial enemy garrison is not part of the three deployment waves.
     const predeployed = team === 'enemy'
       ? roster.filter(unit => (this.level.deployment.initialEnemyPieceTypes ?? ['king']).includes(unit.pieceType)).length
@@ -252,6 +251,11 @@ export class GameState {
     this.deploymentTurn = 'enemy';
     this.clearSelection();
     return true;
+  }
+
+  canFinishDeploymentRound() {
+    if (!this.isAlternatingDeployment() || this.deploymentTurn !== 'player') return false;
+    return this.deploymentRound < 3 || this.deploymentComplete();
   }
 
   finishEnemyDeploymentRound() {
