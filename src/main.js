@@ -180,6 +180,8 @@ class GameApp {
   }
 
   render() {
+    window.turnOverNotebookState = { units: this.state.units };
+    window.dispatchEvent(new Event('game:rosters-updated'));
     this.renderer.render();
     this.renderDeployment();
     if (!this.state.isDeploying()) {
