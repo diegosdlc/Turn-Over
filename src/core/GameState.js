@@ -236,7 +236,9 @@ export class GameState {
     const predeployed = team === 'enemy'
       ? roster.filter(unit => (this.level.deployment.initialEnemyPieceTypes ?? ['king']).includes(unit.pieceType)).length
       : 0;
-    return Math.max(1, Math.ceil((roster.length - predeployed) / 3));
+    const total = Math.max(0, roster.length - predeployed);
+    // Spread committed slots across exactly three waves: e.g. 4 -> 2/1/1.
+    return Math.floor(total / 3) + (this.deploymentRound <= total % 3 ? 1 : 0);
   }
 
   deploymentRoundPlaced(team) {
