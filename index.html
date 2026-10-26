@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="./src/home-screen.css?v=20260824-deploy-6" />
     <link rel="stylesheet" href="./src/audio-controls.css?v=20260814-1700" />
     <link rel="stylesheet" href="./src/level-ui.css?v=20260825-notebook-ui-1" />
-    <link rel="stylesheet" href="./src/deployment.css?v=20260825-notebook-ui-1" />
+    <link rel="stylesheet" href="./src/deployment.css?v=20261026-rounds-1" />
     <link rel="stylesheet" href="./src/level-ui-mobile.css?v=20260825-notebook-ui-1" />
   </head>
   <body>
@@ -27,7 +27,11 @@
           <section id="deployment-panel" class="deployment-panel" aria-labelledby="deployment-title" hidden>
             <p class="deployment-kicker">Fase de despliegue</p>
             <h2 id="deployment-title">Prepara tu banda</h2>
+            <p id="deployment-round-label" class="deployment-round-label">Ronda 1 de 3</p>
+            <h3 class="deployment-subtitle">Tu banda</h3>
             <div id="deployment-pieces" class="deployment-pieces" aria-label="Piezas disponibles"></div>
+            <h3 class="deployment-subtitle">Banda rival</h3>
+            <div id="enemy-deployment-pieces" class="enemy-deployment-pieces" aria-label="Composición de la banda rival"></div>
             <p id="deployment-status" class="deployment-status">Selecciona una pieza y colócala en una de tus dos primeras filas.</p>
             <button id="deployment-start" class="deployment-start" type="button" hidden>Iniciar partida</button>
           </section>
@@ -152,7 +156,7 @@
     </dialog>
 
     <script type="module" src="./src/viewport.js?v=20260825-landscape-1"></script>
-    <script type="module" src="./src/main.js?v=20260821-budget-1"></script>
+    <script type="module" src="./src/main.js?v=20261026-rounds-1"></script>
     <script type="module" src="./src/level-ui.js?v=20260825-notebook-ui-1"></script>
   </body>
 </html>
