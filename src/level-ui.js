@@ -10,7 +10,7 @@ const NOTEBOOK_SECTIONS = {
   band: [
     {
       title: 'Banda',
-      html: '<p>Tu banda inicial incluye rey, reina y peón.</p><p>La cuarta pieza depende de tu facción: alfil para Verde, torre para Roja y caballo para Amarilla.</p>'
+      html: '<p>Tu banda y la banda rival se muestran a continuación. Durante el despliegue puedes consultar todas las piezas enemigas, incluso las que aún están en reserva.</p><div id="notebook-dynamic-rosters"></div>'
     },
     {
       title: 'Banda · facciones',
@@ -100,6 +100,38 @@ class NotebookUI {
     if (this.next) this.next.disabled = this.page >= pages.length - 1;
     this.renderFixedActions();
     this.bindSettingsControls();
+    this.renderRosters();
+  }
+
+  renderRosters() {
+    const destination = this.root.querySelector('#notebook-dynamic-rosters');
+    if (!destination) return;
+    destination.replaceChildren();
+    const state = window.turnOverNotebookState;
+    if (!state?.units) return;
+    for (const [team, title] of [['player', 'Tu banda'], ['enemy', 'Banda rival']]) {
+      const section = document.createElement('section');
+      section.className = 'notebook-roster-section';
+      const heading = document.createElement('h3');
+      heading.textContent = title;
+      section.append(heading);
+      const list = document.createElement('div');
+      list.className = 'notebook-roster-grid';
+      for (const unit of state.units.filter(piece => piece.team === team && !piece.destroyed)) {
+        const item = document.createElement('div');
+        item.className = 'notebook-roster-card';
+        const glyph = document.createElement('span');
+        glyph.textContent = unit.fallbackGlyph;
+        const label = document.createElement('span');
+        label.textContent = unit.name + (unit.evolutionStage === 'evolved' ? '+' : '');
+        const sub = document.createElement('small');
+        sub.textContent = unit.captured ? 'Capturada' : unit.inReserve ? 'Reserva' : 'Activa';
+        item.append(glyph, label, sub);
+        list.append(item);
+      }
+      section.append(list);
+      destination.append(section);
+    }
   }
 
   renderFixedActions() {
@@ -195,5 +227,7 @@ class LevelControls {
   }
 }
 
-new NotebookUI(document.querySelector('#notebook-ui')).start();
+const notebook = new NotebookUI(document.querySelector('#notebook-ui'));
+notebook.start();
+window.addEventListener('game:rosters-updated', () => notebook.renderRosters());
 new LevelControls().start();
