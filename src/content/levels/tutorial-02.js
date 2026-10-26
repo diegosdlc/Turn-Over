@@ -1,6 +1,6 @@
 import { createInitialBand, FACINGS } from '../bands.js?v=20260821-evolution-3';
 import { evolveSurvivingBand } from '../../core/evolution.js?v=20260821-evolution-3';
-import { createTutorialEncounter } from './tutorial-01.js?v=20260821-budget-1';
+import { createTutorialEncounter } from './tutorial-01.js?v=20261026-rounds-1';
 
 const PLAYER_POSITIONS = Object.freeze({
   king: { x: 2, y: 7 },
