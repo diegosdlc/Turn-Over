@@ -1,6 +1,6 @@
 import { getMechanicLabFactory, listMechanicLabs } from './labs/index.js?v=20260821-budget-lab-1';
-import { createTutorial01, tutorial01 } from './tutorial-01.js?v=20260821-budget-1';
-import { createTutorial02, tutorial02 } from './tutorial-02.js?v=20260821-budget-1';
+import { createTutorial01, tutorial01 } from './tutorial-01.js?v=20261026-rounds-1';
+import { createTutorial02, tutorial02 } from './tutorial-02.js?v=20261026-rounds-1';
 import {
   createCaptureKingScenario,
   createEscortKingScenario,
