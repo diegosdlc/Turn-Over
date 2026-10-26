@@ -255,7 +255,9 @@ export class GameState {
 
   canFinishDeploymentRound() {
     if (!this.isAlternatingDeployment() || this.deploymentTurn !== 'player') return false;
-    return this.deploymentRound < 3 || this.deploymentComplete();
+    if (this.selected()?.inReserve) return false;
+    if (this.deploymentRound < 3) return true;
+    return this.deploymentComplete();
   }
 
   finishEnemyDeploymentRound() {
