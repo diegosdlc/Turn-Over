@@ -117,10 +117,13 @@ export class GameState {
     this.finished = false;
     this.pendingCapture = null;
     this.phase = this.level.deployment ? 'deployment' : 'play';
+    this.deploymentRound = 1;
+    this.deploymentTurn = this.isAlternatingDeployment() ? 'enemy' : 'player';
+    this.deploymentCommittedIds = [];
 
     if (this.isDeploying()) {
       const team = this.deploymentTeam();
-      const usesBudget = this.deploymentPointLimit() != null;
+      const usesBudget = this.deploymentPointLimit() != null || this.isAlternatingDeployment();
       this.units
         .filter(unit => unit.team === team)
         .forEach(unit => {
@@ -128,6 +131,22 @@ export class GameState {
           unit.y = null;
           unit.inReserve = usesBudget;
         });
+      if (this.isAlternatingDeployment()) {
+        const enemies = this.units.filter(unit => unit.team === 'enemy');
+        const types = this.level.deployment.initialEnemyPieceTypes ?? ['king'];
+        const fixed = enemies.filter(unit => types.includes(unit.pieceType));
+        const initial = fixed.length ? fixed : enemies.slice(0, 1);
+        const fixedIds = new Set(initial.map(unit => unit.id));
+        for (const enemy of enemies) {
+          if (fixedIds.has(enemy.id)) {
+            this.deploymentCommittedIds.push(enemy.id);
+          } else {
+            enemy.inReserve = true;
+            enemy.x = null;
+            enemy.y = null;
+          }
+        }
+      }
     }
 
     this.teamEvolution = createTeamEvolutionState(this.units.filter(unit => !unit.inReserve));
@@ -135,7 +154,7 @@ export class GameState {
 
   active(unit) {
     if (!physicallyActive(unit)) return false;
-    if (this.finished) return true;
+    if (this.isDeploying() || this.finished) return true;
 
     const victory = this.level?.rules?.victory ?? 'elimination';
     if (victory === 'capture-king') {
@@ -202,13 +221,61 @@ export class GameState {
     return this.level.deployment?.team ?? 'player';
   }
 
+  isAlternatingDeployment() {
+    return this.isDeploying() && this.level.deployment?.mode === 'alternating';
+  }
+
+  isDeploymentCommitted(unit) {
+    return this.deploymentCommittedIds.includes(unit?.id);
+  }
+
+  deploymentRoundQuota(team) {
+    if (!this.isAlternatingDeployment()) return Infinity;
+    const roster = this.deploymentRoster(team);
+    // The initial enemy garrison is not part of the three deployment waves.
+    const predeployed = team === 'enemy'
+      ? roster.filter(unit => (this.level.deployment.initialEnemyPieceTypes ?? ['king']).includes(unit.pieceType)).length
+      : 0;
+    const total = Math.max(0, roster.length - predeployed);
+    // Spread committed slots across exactly three waves: e.g. 4 -> 2/1/1.
+    return Math.floor(total / 3) + (this.deploymentRound <= total % 3 ? 1 : 0);
+  }
+
+  deploymentRoundPlaced(team) {
+    return this.deploymentUnits(team).filter(unit => !this.isDeploymentCommitted(unit)).length;
+  }
+
+  advanceDeploymentRound() {
+    if (!this.isAlternatingDeployment() || this.deploymentTurn !== 'player' || this.deploymentRound >= 3) return false;
+    this.deploymentCommittedIds.push(...this.deploymentUnits('player')
+      .filter(unit => !this.isDeploymentCommitted(unit)).map(unit => unit.id));
+    this.deploymentRound += 1;
+    this.deploymentTurn = 'enemy';
+    this.clearSelection();
+    return true;
+  }
+
+  canFinishDeploymentRound() {
+    if (!this.isAlternatingDeployment() || this.deploymentTurn !== 'player') return false;
+    if (this.selected()?.inReserve) return false;
+    if (this.deploymentRound < 3) return true;
+    return this.deploymentComplete();
+  }
+
+  finishEnemyDeploymentRound() {
+    if (!this.isAlternatingDeployment() || this.deploymentTurn !== 'enemy') return false;
+    this.deploymentCommittedIds.push(...this.deploymentUnits('enemy')
+      .filter(unit => !this.isDeploymentCommitted(unit)).map(unit => unit.id));
+    this.deploymentTurn = 'player';
+    return true;
+  }
+
   deploymentPointLimit() {
     const limit = this.level.deployment?.pointLimit;
     return Number.isFinite(limit) && limit > 0 ? limit : null;
   }
 
-  deploymentRoster() {
-    const team = this.deploymentTeam();
+  deploymentRoster(team = this.deploymentTeam()) {
     return this.units.filter(unit => unit.team === team && !unit.captured && !unit.destroyed);
   }
 
@@ -233,18 +300,20 @@ export class GameState {
   }
 
   deploymentRows(unit = null) {
-    const rows = Array.isArray(this.level.deployment?.rows) ? [...this.level.deployment.rows] : [];
+    const size = this.level.board.size ?? 8;
+    const playerRows = Array.isArray(this.level.deployment?.rows) ? this.level.deployment.rows : [];
+    const rows = unit?.team === 'enemy' && this.isAlternatingDeployment()
+      ? (this.level.deployment.enemyRows ?? playerRows.map(y => size - 1 - y)).slice()
+      : [...playerRows];
     const depth = evolutionCapabilitiesFor(unit).deploymentDepth;
     if (!Number.isInteger(depth) || depth < 1) return rows;
-    const size = this.level.board.size ?? 8;
     const advancedRows = unit.team === 'enemy'
       ? Array.from({ length: depth }, (_, index) => index)
       : Array.from({ length: depth }, (_, index) => size - 1 - index);
     return [...new Set([...rows, ...advancedRows])];
   }
 
-  deploymentUnits() {
-    const team = this.deploymentTeam();
+  deploymentUnits(team = this.deploymentTeam()) {
     return this.units.filter(unit => this.active(unit) && unit.team === team);
   }
 
@@ -262,8 +331,12 @@ export class GameState {
   }
 
   canDeployAt(unit, x, y) {
-    if (!this.isDeploying() || !unit || unit.team !== this.deploymentTeam()) return false;
-    if (unit.inReserve && !this.canAffordDeploymentUnit(unit)) return false;
+    if (!this.isDeploying() || !unit) return false;
+    if (this.isAlternatingDeployment()) {
+      if (unit.team !== this.deploymentTurn || this.isDeploymentCommitted(unit)) return false;
+      if (unit.inReserve && this.deploymentRoundPlaced(unit.team) >= this.deploymentRoundQuota(unit.team)) return false;
+    } else if (unit.team !== this.deploymentTeam()) return false;
+    if (unit.team === 'player' && unit.inReserve && !this.canAffordDeploymentUnit(unit)) return false;
     if (!this.isDeploymentCell(x, y, unit)) return false;
     return !this.deploymentCellBlocked(x, y, unit.id);
   }
@@ -278,6 +351,7 @@ export class GameState {
 
   reserveDeploymentUnit(unit) {
     if (!this.isDeploying() || !unit || unit.team !== this.deploymentTeam()) return false;
+    if (this.isAlternatingDeployment() && (this.deploymentTurn !== 'player' || this.isDeploymentCommitted(unit))) return false;
     unit.inReserve = true;
     unit.x = null;
     unit.y = null;
@@ -290,6 +364,12 @@ export class GameState {
     if (!units.length) return false;
     const limit = this.deploymentPointLimit();
     if (limit != null && this.deploymentPointsSpent() > limit) return false;
+    if (this.isAlternatingDeployment()) {
+      if (this.deploymentRound !== 3 || this.deploymentTurn !== 'player') return false;
+      if (this.deploymentRoster('enemy').some(unit => unit.inReserve)) return false;
+      const enemies = this.deploymentUnits('enemy');
+      if (!enemies.every(unit => this.isDeploymentCell(unit.x, unit.y, unit) && !this.deploymentCellBlocked(unit.x, unit.y, unit.id))) return false;
+    }
     if (!units.every(unit => this.isDeploymentCell(unit.x, unit.y, unit) && !this.deploymentCellBlocked(unit.x, unit.y, unit.id))) return false;
     const occupiedCells = new Set(units.map(unit => `${unit.x},${unit.y}`));
     return occupiedCells.size === units.length;

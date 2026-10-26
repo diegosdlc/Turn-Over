@@ -30,6 +30,10 @@ export class GameSessionStore {
           currentTurn: state.currentTurn,
           finished: state.finished,
           phase: state.phase,
+          deploymentRound: state.deploymentRound,
+          deploymentTurn: state.deploymentTurn,
+          deploymentCommittedIds: state.deploymentCommittedIds,
+          roundsElapsed: state.roundsElapsed,
           teamEvolution: state.teamEvolution
         }
       }));
