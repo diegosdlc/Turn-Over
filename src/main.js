@@ -1,10 +1,10 @@
 import { GAME_CONFIG } from './config/gameConfig.js';
 import { FACTIONS, PLAYER_FACTION_IDS } from './content/factions.js';
-import { getLevel, getNextLevel } from './content/levels/index.js?v=20260821-budget-1';
-import { GameState } from './core/GameState.js?v=20260821-budget-1';
+import { getLevel, getNextLevel } from './content/levels/index.js?v=20261026-rounds-1';
+import { GameState } from './core/GameState.js?v=20261026-rounds-1';
 import { AssetRegistry } from './systems/AssetRegistry.js';
 import { AudioManager } from './systems/AudioManager.js?v=20260814-1700';
-import { GameSessionStore } from './systems/GameSessionStore.js?v=20260821-evolution-3';
+import { GameSessionStore } from './systems/GameSessionStore.js?v=20261026-rounds-1';
 import { ProgressionStore } from './systems/ProgressionStore.js?v=20260821-evolution-3';
 import { TutorialSystem } from './systems/TutorialSystem.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20260821-evolution-3';
