@@ -78,6 +78,7 @@ class GameApp {
     document.querySelector('#close-settings').addEventListener('click', () => this.settingsDialog.close());
     document.querySelector('#settings-language')?.addEventListener('change', event => setLanguage(event.target.value));
     document.querySelector('#settings-gender')?.addEventListener('change', event => setGender(event.target.value));
+    document.querySelector('#faction-gender')?.addEventListener('change', event => setGender(event.target.value));
     document.querySelector('#close-faction-selection').addEventListener('click', () => this.factionDialog.close());
     this.deploymentStart?.addEventListener('click', () => this.startDeployedGame());
     document.querySelectorAll('[data-player-faction]').forEach(button => {
