@@ -261,7 +261,7 @@ class GameApp {
         (unit.inReserve && this.state.deploymentRoundPlaced('player') >= this.state.deploymentRoundQuota('player')));
       button.disabled = Boolean(locked || (unit.inReserve && !affordable));
       button.setAttribute('aria-pressed', String(!unit.inReserve));
-      button.setAttribute('aria-label', `${unit.inReserve ? 'Elegir' : 'Recolocar'} ${unit.name}, ${cost} puntos${unit.evolutionStage === 'evolved' ? ', evolucionada' : ''}`);
+      button.setAttribute('aria-label', `${unit.inReserve ? 'Elegir' : 'Recolocar'} ${unit.name}, ${cost} puntos, ${unit.inReserve ? 'pendiente' : 'en tablero'}${unit.evolutionStage === 'evolved' ? ', evolucionada' : ''}`);
       this.applyDeploymentPalette(button, unit);
 
       const fallback = document.createElement('span');
@@ -305,21 +305,27 @@ class GameApp {
         else this.state.setSelected(unit.id);
         this.render();
       });
-      card.append(button);
+      const status = document.createElement('div');
+      status.className = 'deployment-piece-meta';
+      const statusLabel = document.createElement('span');
+      statusLabel.textContent = unit.inReserve ? 'Pendiente' : 'En tablero';
+      status.append(statusLabel);
 
       if (budgeted && !unit.inReserve && (!alternating || (playerTurn && !this.state.isDeploymentCommitted(unit)))) {
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'deployment-piece-remove';
-        remove.textContent = 'Retirar';
+        remove.textContent = '×';
+        remove.title = `Retirar ${unit.name}`;
         remove.setAttribute('aria-label', `Retirar ${unit.name} de la alineación`);
         remove.addEventListener('click', () => {
           if (!this.state.reserveDeploymentUnit(unit)) return;
           this.saveSession();
           this.render();
         });
-        card.append(remove);
+        status.append(remove);
       }
+      card.append(button, status);
 
       this.deploymentPieces.append(card);
     }
