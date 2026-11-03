@@ -1,3 +1,4 @@
+import { initI18n, t, pieceName, factionName, onLocaleChange, setLanguage, setGender, getLanguage, getGender, refreshStaticTranslations } from './i18n/index.js';
 import { GAME_CONFIG } from './config/gameConfig.js';
 import { FACTIONS, PLAYER_FACTION_IDS } from './content/factions.js';
 import { getLevel, getNextLevel } from './content/levels/index.js?v=20260821-budget-1';
@@ -41,14 +42,17 @@ class GameApp {
     this.ai = null;
     this.aiTimer = null;
     this.nextPlayerBand = null;
+    this.lastDialog = null;
   }
 
-  start() {
+  async start() {
     const params = new URLSearchParams(location.search);
     const requestedLevelId = params.get(GAME_CONFIG.levelQueryParam);
     const requestedFactionId = params.get(GAME_CONFIG.factionQueryParam);
     const forceTutorial = params.get(GAME_CONFIG.tutorialQueryParam) === '1';
+    try { await initI18n(); } catch (error) { console.error('Localizations could not be loaded', error); }
     this.bindMenu();
+    onLocaleChange(() => this.refreshLanguage());
     window.addEventListener('game:return-home', () => this.showHome());
     if (requestedLevelId) {
       const requestedOptions = {
@@ -72,11 +76,24 @@ class GameApp {
     document.querySelector('#home-settings').addEventListener('click', () => this.openSettings());
     document.querySelector('#game-settings').addEventListener('click', () => this.openSettings());
     document.querySelector('#close-settings').addEventListener('click', () => this.settingsDialog.close());
+    document.querySelector('#settings-language')?.addEventListener('change', event => setLanguage(event.target.value));
+    document.querySelector('#settings-gender')?.addEventListener('change', event => setGender(event.target.value));
     document.querySelector('#close-faction-selection').addEventListener('click', () => this.factionDialog.close());
     this.deploymentStart?.addEventListener('click', () => this.startDeployedGame());
     document.querySelectorAll('[data-player-faction]').forEach(button => {
       button.addEventListener('click', () => this.startNewGame(button.dataset.playerFaction));
     });
+  }
+
+  refreshLanguage() {
+    refreshStaticTranslations();
+    if (this.renderer && this.state) this.render();
+    if (this.resultDialog?.open && this.lastDialog) {
+      const dialog = this.lastDialog;
+      if (dialog.type === 'skip') this.showTurnPassed(dialog.team);
+      if (dialog.type === 'draw') this.showDrawDialog();
+      if (dialog.type === 'result') this.showResult(dialog.winner, dialog.playerRecruits, dialog.enemyRecruits);
+    }
   }
 
   openFactionSelection() {
@@ -118,7 +135,7 @@ class GameApp {
     if (!this.settingsDialog.open) this.settingsDialog.showModal();
   }
   loadLevel(level, { forceTutorial = false, savedState = null } = {}) {
-    if (!level) throw new Error('No hay ningún nivel disponible.');
+    if (!level) throw new Error(t('ui.game.no_level'));
     this.cancelAiTurn();
     this.nextPlayerBand = null;
     this.level = level;
@@ -202,7 +219,7 @@ class GameApp {
       const affordable = this.state.canAffordDeploymentUnit(unit);
       button.disabled = Boolean(unit.inReserve && !affordable);
       button.setAttribute('aria-pressed', String(!unit.inReserve));
-      button.setAttribute('aria-label', `${unit.inReserve ? 'Elegir' : 'Recolocar'} ${unit.name}, ${cost} puntos${unit.evolutionStage === 'evolved' ? ', evolucionada' : ''}`);
+      button.setAttribute('aria-label', t('ui.deployment.unit_aria', { action: t(unit.inReserve ? 'ui.deployment.select' : 'ui.deployment.reposition'), name: pieceName(unit), points: cost, evolved: unit.evolutionStage === 'evolved' ? t('ui.board.evolved') : '' }));
       this.applyDeploymentPalette(button, unit);
 
       const fallback = document.createElement('span');
@@ -224,7 +241,7 @@ class GameApp {
 
       const costBadge = document.createElement('span');
       costBadge.className = 'deployment-piece-cost';
-      costBadge.textContent = `${cost} pt${cost === 1 ? '' : 's'}`;
+      costBadge.textContent = t('ui.deployment.points', { count: cost });
       button.append(costBadge);
 
       if (unit.evolutionStage === 'evolved') {
@@ -237,7 +254,7 @@ class GameApp {
 
       const name = document.createElement('span');
       name.className = 'deployment-piece-name';
-      name.textContent = unit.name;
+      name.textContent = pieceName(unit);
       button.append(name);
 
       button.addEventListener('click', () => {
@@ -251,8 +268,8 @@ class GameApp {
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'deployment-piece-remove';
-        remove.textContent = 'Retirar';
-        remove.setAttribute('aria-label', `Retirar ${unit.name} de la alineación`);
+        remove.textContent = t('ui.deployment.remove');
+        remove.setAttribute('aria-label', t('ui.deployment.remove_aria', { name: pieceName(unit) }));
         remove.addEventListener('click', () => {
           if (!this.state.reserveDeploymentUnit(unit)) return;
           this.saveSession();
@@ -273,16 +290,16 @@ class GameApp {
     if (this.deploymentStatus) {
       if (selected?.inReserve) {
         const cost = this.state.deploymentUnitCost(selected);
-        const afterPlacement = budgeted ? ` · quedarán ${pointLimit - spent - cost} pts` : '';
-        this.deploymentStatus.textContent = `Coloca ${selected.name} (${cost} pts) en una casilla resaltada${afterPlacement}. Banda: ${budgetText}.`;
+        const afterPlacement = budgeted ? t('ui.deployment.place_remaining', { points: pointLimit - spent - cost }) : '';
+        this.deploymentStatus.textContent = t('ui.deployment.place', { name: pieceName(selected), cost, remaining: afterPlacement, budget: budgetText });
       } else if (complete) {
-        this.deploymentStatus.textContent = `Banda lista: ${units.length} pieza${units.length === 1 ? '' : 's'} · ${budgetText}. Ya puedes iniciar la partida.`;
+        this.deploymentStatus.textContent = t('ui.deployment.ready', { count: units.length, budget: budgetText });
       } else if (selected) {
-        this.deploymentStatus.textContent = `Recoloca ${selected.name} en una casilla resaltada. Banda: ${budgetText}.`;
+        this.deploymentStatus.textContent = t('ui.deployment.move', { name: pieceName(selected), budget: budgetText });
       } else if (budgeted) {
-        this.deploymentStatus.textContent = `Elige qué piezas participan y colócalas. Banda: ${budgetText} · quedan ${pointLimit - spent} pts.`;
+        this.deploymentStatus.textContent = t('ui.deployment.pick', { budget: budgetText, points: pointLimit - spent });
       } else {
-        this.deploymentStatus.textContent = `Selecciona una pieza y colócala en una casilla resaltada. ${placed}/${units.length}`;
+        this.deploymentStatus.textContent = t('ui.deployment.choose', { placed, total: units.length });
       }
     }
     if (this.deploymentStart) this.deploymentStart.hidden = !complete;
@@ -441,20 +458,21 @@ class GameApp {
   }
 
   showTurnPassed(team) {
+    this.lastDialog = { type: 'skip', team };
     this.resultContent.innerHTML = '';
     const card = document.createElement('section');
     card.className = 'modal-card end-card';
     const title = document.createElement('h2');
-    title.textContent = 'Turno perdido';
+    title.textContent = t('ui.result.skip_title');
     const explanation = document.createElement('p');
-    explanation.textContent = `${this.factionName(team)} no tiene movimientos legales y pierde el turno.`;
+    explanation.textContent = t('ui.result.skip_body', { faction: this.factionName(team) });
 
     const actions = document.createElement('div');
     actions.className = 'result-actions';
     const continueTurn = document.createElement('button');
     continueTurn.type = 'button';
     continueTurn.className = 'primary-button';
-    continueTurn.textContent = 'Continuar';
+    continueTurn.textContent = t('ui.result.continue');
     continueTurn.addEventListener('click', () => {
       if (this.resultDialog.open) this.resultDialog.close();
       this.render();
@@ -567,20 +585,25 @@ class GameApp {
     this.cancelAiTurn();
     this.render();
 
+    this.showDrawDialog();
+  }
+
+  showDrawDialog() {
+    this.lastDialog = { type: 'draw' };
     this.resultContent.innerHTML = '';
     const card = document.createElement('section');
     card.className = 'modal-card end-card';
     const title = document.createElement('h2');
-    title.textContent = 'Tablas';
+    title.textContent = t('ui.result.draw_title');
     const explanation = document.createElement('p');
-    explanation.textContent = 'Ninguna banda tiene movimientos legales.';
+    explanation.textContent = t('ui.result.draw_body');
 
     const actions = document.createElement('div');
     actions.className = 'result-actions';
     const restart = document.createElement('button');
     restart.type = 'button';
     restart.className = 'primary-button';
-    restart.textContent = 'Reiniciar encuentro';
+    restart.textContent = t('ui.result.restart');
     restart.addEventListener('click', () => this.resetLevel());
     actions.append(restart);
 
@@ -590,21 +613,22 @@ class GameApp {
   }
 
   showResult(winner, playerRecruits, enemyRecruits) {
+    this.lastDialog = { type: 'result', winner, playerRecruits, enemyRecruits };
     this.resultContent.innerHTML = '';
     const card = document.createElement('section');
     card.className = 'modal-card end-card';
 
     const title = document.createElement('h2');
-    title.textContent = `Gana ${this.factionName(winner)}`;
+    title.textContent = t('ui.result.winner', { faction: this.factionName(winner) });
 
     const explanation = document.createElement('p');
-    explanation.textContent = 'Las piezas congeladas que siguen en el tablero pasan a la banda que las capturó.';
+    explanation.textContent = t('ui.result.recruits_explain');
 
     const grid = document.createElement('div');
     grid.className = 'results-grid';
     grid.append(
-      this.recruitColumn(`${this.factionName('player')} incorpora`, playerRecruits),
-      this.recruitColumn(`${this.factionName('enemy')} incorpora`, enemyRecruits)
+      this.recruitColumn(t('ui.result.recruits', { faction: this.factionName('player') }), playerRecruits),
+      this.recruitColumn(t('ui.result.recruits', { faction: this.factionName('enemy') }), enemyRecruits)
     );
 
     const actions = document.createElement('div');
@@ -613,7 +637,7 @@ class GameApp {
     const replay = document.createElement('button');
     replay.type = 'button';
     replay.className = 'primary-button';
-    replay.textContent = 'Jugar otra vez';
+    replay.textContent = t('ui.result.replay');
     replay.addEventListener('click', () => this.resetLevel());
     actions.append(replay);
 
@@ -621,7 +645,7 @@ class GameApp {
       const next = document.createElement('button');
       next.type = 'button';
       next.className = 'primary-button';
-      next.textContent = 'Siguiente nivel';
+      next.textContent = t('ui.result.next_level');
       next.addEventListener('click', () => {
         const nextLevel = getNextLevel(this.level, { playerBand: this.nextPlayerBand });
         if (!nextLevel) return;
@@ -644,7 +668,7 @@ class GameApp {
 
     if (!pieces.length) {
       const empty = document.createElement('p');
-      empty.textContent = 'Ninguna.';
+      empty.textContent = t('ui.result.none');
       column.append(empty);
       return column;
     }
@@ -652,7 +676,7 @@ class GameApp {
     const list = document.createElement('ul');
     for (const piece of pieces) {
       const item = document.createElement('li');
-      item.textContent = `${piece.fallbackGlyph} ${piece.name}`;
+      item.textContent = `${piece.fallbackGlyph} ${pieceName(piece)}`;
       list.append(item);
     }
     column.append(list);
@@ -662,9 +686,9 @@ class GameApp {
   factionName(team) {
     const factionId = this.level.teams[team];
     if (factionId === 'green' && this.level.teams.player === this.level.teams.enemy) {
-      return team === 'player' ? 'Verde clara' : 'Verde oscura';
+      return t(team === 'player' ? 'ui.faction.green.light' : 'ui.faction.green.dark');
     }
-    return FACTIONS[factionId]?.name ?? team;
+    return factionId ? factionName(factionId) : team;
   }
 }
 
