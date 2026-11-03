@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 export class TutorialSystem {
   constructor({ storagePrefix }) {
     this.storagePrefix = storagePrefix;
@@ -40,12 +41,12 @@ export class TutorialSystem {
     tooltip.setAttribute('role', 'status');
 
     const text = document.createElement('p');
-    text.textContent = step.text;
+    text.textContent = step.textKey ? t(step.textKey) : step.text;
 
     const dismiss = document.createElement('button');
     dismiss.type = 'button';
     dismiss.className = 'tutorial-dismiss';
-    dismiss.textContent = 'Omitir tutorial';
+    dismiss.textContent = t('ui.tutorial.skip');
     dismiss.addEventListener('click', event => {
       event.stopPropagation();
       this.complete();
