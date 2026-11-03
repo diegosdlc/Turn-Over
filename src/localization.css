@@ -1,0 +1,20 @@
+/* Los ajustes conservan la estética del cuaderno; son accesibles también en móvil. */
+.settings-preference{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.settings-preference label{font-weight:700}
+.settings-preference select,.notebook-settings-row select{
+  color:var(--ink,#29312b);background:var(--paper-light,#fffaf0);font:inherit;
+  border:1px solid #8c806b;border-radius:5px;padding:6px 8px;max-width:100%;
+}
+.settings-preference-help{margin:0 0 8px;font-size:.85rem;line-height:1.4}
+.menu-translated-label{display:none}
+html[lang="en"] .home-button-art.art-new,
+html[lang="en"] .home-button-art.art-continue,
+html[lang="en"] .home-button-art.art-settings{opacity:0!important}
+html[lang="en"] .menu-translated-label{
+  display:grid;place-items:center;width:100%;height:100%;
+  background:#f2dbaf;border:2px solid #63503c;border-radius:8px 5px 9px 4px;
+  color:#443326;box-shadow:3px 4px 0 rgba(50,40,30,.24);
+  font-size:clamp(.65rem,1.5vw,1.3rem);font-weight:800;text-align:center;
+}
+html[lang="en"] .menu-hitbox{background:transparent}
+html[lang="en"] .menu-hitbox:disabled .menu-translated-label{opacity:.4}
