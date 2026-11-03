@@ -169,7 +169,7 @@ class GameApp {
   }
 
   render() {
-    window.turnOverNotebookState = { units: this.state.units };
+    window.turnOverNotebookState = { units: this.state.units, assets: this.assets };
     window.dispatchEvent(new Event('game:rosters-updated'));
     this.renderer.render();
     this.renderDeployment();
@@ -192,24 +192,60 @@ class GameApp {
       ? `Ronda ${this.state.deploymentRound} de 3 · ${playerTurn ? 'Tu despliegue' : 'Despliega el rival'}`
       : 'Prepara tu banda';
     if (this.enemyDeploymentPieces) {
+      const enemies = this.state.deploymentRoster('enemy');
+      this.fitRosterGrid(this.enemyDeploymentPieces, enemies.length);
       this.enemyDeploymentPieces.replaceChildren();
-      for (const enemy of this.state.deploymentRoster('enemy')) {
+      for (const enemy of enemies) {
         const card = document.createElement('div');
-        card.className = 'enemy-roster-piece';
-        this.applyDeploymentPalette(card, enemy);
-        const icon = document.createElement('span');
-        icon.className = 'enemy-roster-glyph';
-        icon.textContent = enemy.fallbackGlyph;
+        card.className = 'deployment-piece-card';
+        const tile = document.createElement('div');
+        tile.className = `deployment-piece readonly ${enemy.inReserve ? 'in-reserve' : 'in-lineup'}`;
+        tile.setAttribute('role', 'img');
+        tile.setAttribute('aria-label', `${enemy.name}: ${enemy.inReserve ? 'pendiente' : 'en tablero'}`);
+        tile.title = enemy.name;
+        this.applyDeploymentPalette(tile, enemy);
+        const fallback = document.createElement('span');
+        fallback.className = 'deployment-piece-fallback';
+        fallback.textContent = enemy.fallbackGlyph;
+        tile.append(fallback);
+        const asset = this.assets.pieceAsset(enemy);
+        if (asset) {
+          const image = document.createElement('img');
+          image.className = 'deployment-piece-image';
+          image.src = this.assets.resolve(asset);
+          image.alt = '';
+          image.draggable = false;
+          image.addEventListener('error', () => {
+            image.remove();
+            tile.classList.remove('has-image');
+          }, { once: true });
+          tile.append(image);
+          tile.classList.add('has-image');
+        }
+        const cost = document.createElement('span');
+        cost.className = 'deployment-piece-cost';
+        cost.textContent = `${this.state.deploymentUnitCost(enemy)} pts`;
+        tile.append(cost);
+        if (enemy.evolutionStage === 'evolved') {
+          const evolved = document.createElement('span');
+          evolved.className = 'deployment-piece-evolved';
+          evolved.textContent = '+';
+          tile.append(evolved);
+        }
         const name = document.createElement('span');
-        name.textContent = enemy.name + (enemy.evolutionStage === 'evolved' ? '+' : '');
-        const state = document.createElement('small');
-        state.textContent = enemy.inReserve ? 'Pendiente' : 'En tablero';
-        card.append(icon, name, state);
+        name.className = 'deployment-piece-name';
+        name.textContent = enemy.name;
+        tile.append(name);
+        const status = document.createElement('span');
+        status.className = 'deployment-piece-meta';
+        status.textContent = enemy.inReserve ? 'Pendiente' : 'En tablero';
+        card.append(tile, status);
         this.enemyDeploymentPieces.append(card);
       }
     }
     const pointLimit = this.state.deploymentPointLimit();
     const budgeted = pointLimit != null;
+    this.fitRosterGrid(this.deploymentPieces, roster.length);
     this.deploymentPieces.replaceChildren();
 
     for (const unit of roster) {
@@ -319,6 +355,12 @@ class GameApp {
       this.deploymentStart.hidden = !available;
       this.deploymentStart.textContent = alternating && this.state.deploymentRound < 3 ? 'Confirmar ronda' : 'Iniciar partida';
     }
+  }
+
+  fitRosterGrid(grid, count) {
+    const cols = Math.min(4, Math.max(1, count));
+    grid.style.setProperty('--roster-cols', String(cols));
+    grid.style.setProperty('--roster-rows', String(Math.max(1, Math.ceil(count / cols))));
   }
 
   applyDeploymentPalette(element, unit) {
