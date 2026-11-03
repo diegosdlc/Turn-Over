@@ -6,14 +6,16 @@ export function deployEnemyWave(state, level) {
   const quota = state.deploymentRoundQuota('enemy');
   // Prioritize pieces that can hold an approach while protecting the royal pieces.
   available.sort((a, b) => priority(b, level) - priority(a, level));
-  for (const unit of available.slice(0, quota)) {
+  let placed = 0;
+  for (const unit of available) {
+    if (placed >= quota) break;
     const size = level.board.size ?? 8;
     const cells = [];
     for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
       if (state.canDeployAt(unit, x, y)) cells.push({ x, y, score: scoreCell(state, level, unit, x, y, size) });
     }
     cells.sort((a, b) => b.score - a.score || a.y - b.y || a.x - b.x);
-    if (cells.length) state.placeDeploymentUnit(unit, cells[0].x, cells[0].y);
+    if (cells.length && state.placeDeploymentUnit(unit, cells[0].x, cells[0].y)) placed += 1;
   }
 }
 function priority(unit, level) {
