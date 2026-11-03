@@ -99,7 +99,10 @@ export function playerText(baseKey, params = {}) {
 }
 
 export function pieceName(unit) {
-  if (unit?.i18nNameKey) return t(unit.i18nNameKey, unit.i18nNameParams ?? {});
+  if (unit?.i18nNameKey) {
+    const name = t(unit.i18nNameKey, unit.i18nNameParams ?? {});
+    return unit.id?.startsWith('lab-') && unit.faction ? name + ' ' + factionName(unit.faction) : name;
+  }
   const type = unit?.pieceType;
   const base = catalog.has('ui.unit.' + type) ? t('ui.unit.' + type) : unit?.name ?? '';
   return base + (unit?.name?.endsWith('+') ? '+' : '');
@@ -115,6 +118,7 @@ export function refreshStaticTranslations(root = document) {
   root.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); });
   root.querySelectorAll('[data-i18n-aria]').forEach(node => { node.setAttribute('aria-label', t(node.dataset.i18nAria)); });
   root.querySelectorAll('[data-i18n-title]').forEach(node => { node.title = t(node.dataset.i18nTitle); });
+  root.querySelectorAll('[data-i18n-player]').forEach(node => { node.textContent = playerText(node.dataset.i18nPlayer); });
   root.querySelectorAll('[data-i18n-html]').forEach(node => { node.innerHTML = t(node.dataset.i18nHtml); });
   root.querySelectorAll('[data-i18n-language]').forEach(node => { node.value = language; });
   root.querySelectorAll('[data-i18n-gender]').forEach(node => { node.value = gender; });
