@@ -300,28 +300,32 @@
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  container-type:size;
+  container-type:normal;
 }
 .deployment-panel .deployment-piece{
   flex:none;
-  width:min(100%,calc((100cqh - 18px) / 1.18));
-  max-height:calc(100% - 18px);
+  box-sizing:border-box;
+  height:min(70px,calc(100% - 18px));
+  width:auto;
+  max-width:100%;
+  min-height:0;
   aspect-ratio:1 / 1.18;
   padding:0 2% 18%;
-  container-type:inline-size;
+  container-type:normal;
 }
-.deployment-panel .deployment-piece-fallback{font-size:clamp(.6rem,45cqi,2rem)}
+.deployment-panel .deployment-piece-fallback{font-size:clamp(.95rem,2.4vw,1.5rem)}
 .deployment-panel .deployment-piece-name{
-  font-size:clamp(.42rem,13cqi,.72rem);
+  font-size:clamp(.46rem,.76vw,.66rem);
   overflow:hidden;
   white-space:nowrap;
   text-overflow:ellipsis;
 }
 .deployment-panel .deployment-piece-cost,
-.deployment-panel .deployment-piece-evolved{font-size:clamp(.37rem,11cqi,.6rem)}
+.deployment-panel .deployment-piece-evolved{font-size:clamp(.45rem,.7vw,.56rem);white-space:nowrap}
 .deployment-piece.readonly{cursor:default}
 .deployment-piece.readonly:hover{transform:none}
-.deployment-panel .deployment-piece:disabled{opacity:.62}
+.deployment-panel .deployment-piece:disabled{opacity:.72;filter:saturate(.75)}
+.deployment-panel .deployment-piece-cost{top:0;right:-3px;white-space:nowrap}
 .deployment-panel .deployment-piece-meta{
   flex:none;
   min-height:15px;
@@ -370,19 +374,22 @@
   min-width:0;
 }
 .notebook-roster-card .notebook-roster-piece{
-  width:100%;
+  box-sizing:border-box;
+  width:min(100%,60px);
+  height:auto;
+  max-height:none;
   aspect-ratio:1 / 1.18;
   padding:0 2% 18%;
-  container-type:inline-size;
+  container-type:normal;
 }
-.notebook-roster-card .deployment-piece-fallback{font-size:clamp(.9rem,38cqi,1.9rem)}
+.notebook-roster-card .deployment-piece-fallback{font-size:clamp(.95rem,2.4vw,1.5rem)}
 .notebook-roster-card .deployment-piece-name{
-  font-size:clamp(.44rem,12cqi,.72rem);
+  font-size:clamp(.46rem,.76vw,.66rem);
   overflow:hidden;
   white-space:nowrap;
   text-overflow:ellipsis;
 }
-.notebook-roster-card .deployment-piece-evolved{font-size:clamp(.4rem,11cqi,.62rem)}
+.notebook-roster-card .deployment-piece-evolved{font-size:clamp(.45rem,.7vw,.56rem)}
 .notebook-roster-card .deployment-piece-meta{
   font-family:Arial,sans-serif;
   font-size:clamp(.47rem,.68vw,.65rem);
