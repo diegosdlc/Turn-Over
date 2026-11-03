@@ -117,6 +117,7 @@ export class GameState {
     this.finished = false;
     this.pendingCapture = null;
     this.phase = this.level.deployment ? 'deployment' : 'play';
+    this.deploymentMode = this.level.deployment?.mode ?? 'classic';
     this.deploymentRound = 1;
     this.deploymentTurn = this.isAlternatingDeployment() ? 'enemy' : 'player';
     this.deploymentCommittedIds = [];
@@ -222,7 +223,7 @@ export class GameState {
   }
 
   isAlternatingDeployment() {
-    return this.isDeploying() && this.level.deployment?.mode === 'alternating';
+    return this.isDeploying() && this.deploymentMode === 'alternating';
   }
 
   isDeploymentCommitted(unit) {
@@ -234,7 +235,7 @@ export class GameState {
     const roster = this.deploymentRoster(team);
     // The initial enemy garrison is not part of the three deployment waves.
     const predeployed = team === 'enemy'
-      ? roster.filter(unit => (this.level.deployment.initialEnemyPieceTypes ?? ['king']).includes(unit.pieceType)).length
+      ? (roster.filter(unit => (this.level.deployment.initialEnemyPieceTypes ?? ['king']).includes(unit.pieceType)).length || Math.min(1, roster.length))
       : 0;
     const total = Math.max(0, roster.length - predeployed);
     // Spread committed slots across exactly three waves: e.g. 4 -> 2/1/1.
