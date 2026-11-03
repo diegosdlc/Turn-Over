@@ -4,7 +4,7 @@ import { getLevel, getNextLevel } from './content/levels/index.js?v=20261026-rou
 import { GameState } from './core/GameState.js?v=20261026-rounds-1';
 import { AssetRegistry } from './systems/AssetRegistry.js';
 import { AudioManager } from './systems/AudioManager.js?v=20260814-1700';
-import { GameSessionStore } from './systems/GameSessionStore.js?v=20261026-rounds-1';
+import { GameSessionStore, restoreSessionState } from './systems/GameSessionStore.js?v=20261103-merge-1';
 import { ProgressionStore } from './systems/ProgressionStore.js?v=20260821-evolution-3';
 import { TutorialSystem } from './systems/TutorialSystem.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20260821-evolution-3';
@@ -144,18 +144,7 @@ class GameApp {
   }
 
   restoreSavedState(savedState) {
-    if (!Array.isArray(savedState.units)) return;
-    this.state.units = savedState.units;
-    this.state.currentTurn = savedState.currentTurn === 'enemy' ? 'enemy' : 'player';
-    this.state.finished = Boolean(savedState.finished);
-    this.state.phase = savedState.phase === 'deployment' ? 'deployment' : 'play';
-    this.state.deploymentRound = Math.min(3, Math.max(1, Number(savedState.deploymentRound) || 1));
-    this.state.deploymentTurn = savedState.deploymentTurn === 'enemy' ? 'enemy' : 'player';
-    this.state.deploymentCommittedIds = Array.isArray(savedState.deploymentCommittedIds) ? savedState.deploymentCommittedIds : [];
-    this.state.roundsElapsed = Math.max(0, Number(savedState.roundsElapsed) || 0);
-    if (savedState.teamEvolution) this.state.teamEvolution = savedState.teamEvolution;
-    this.state.selectedId = null;
-    this.state.pendingCapture = null;
+    restoreSessionState(this.state, savedState);
   }
 
   saveSession() {
