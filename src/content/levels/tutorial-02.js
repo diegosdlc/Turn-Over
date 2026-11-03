@@ -23,7 +23,7 @@ function defaultEvolvedBand(playerFactionId) {
 export function createTutorial02({ playerFactionId = 'green', playerBand = null } = {}) {
   return createTutorialEncounter({
     id: 'tutorial-02',
-    name: 'Nivel 2 · Evoluciones',
+    name: 'Nivel 2 · Evoluciones', nameKey: 'level.tutorial_02',
     nextLevelId: null,
     playerFactionId,
     playerBand: playerBand?.length ? playerBand : defaultEvolvedBand(playerFactionId)
