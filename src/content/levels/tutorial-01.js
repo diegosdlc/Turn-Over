@@ -24,7 +24,7 @@ const TUTORIAL_OBSTACLES = Object.freeze([
   {
     id: 'tutorial-blocker-c4',
     type: 'blocker',
-    name: 'Obstáculo',
+    name: 'Obstáculo', i18nNameKey: 'ui.unit.obstacle',
     x: 2,
     y: 3,
     blocking: true,
@@ -36,7 +36,7 @@ const TUTORIAL_OBSTACLES = Object.freeze([
   {
     id: 'tutorial-blocker-d4',
     type: 'blocker',
-    name: 'Obstáculo',
+    name: 'Obstáculo', i18nNameKey: 'ui.unit.obstacle',
     x: 3,
     y: 3,
     blocking: true,
@@ -48,7 +48,7 @@ const TUTORIAL_OBSTACLES = Object.freeze([
   {
     id: 'tutorial-blocker-f6',
     type: 'blocker',
-    name: 'Obstáculo',
+    name: 'Obstáculo', i18nNameKey: 'ui.unit.obstacle',
     x: 5,
     y: 5,
     blocking: true,
@@ -148,19 +148,19 @@ export function createTutorialEncounter({
 const TUTORIAL_STEPS = Object.freeze([
   {
     id: 'select-piece',
-    text: 'Toca una de tus piezas para ver sus movimientos posibles.',
+    text: 'Toca una de tus piezas para ver sus movimientos posibles.', textKey: 'tutorial.select_piece',
     anchor: { type: 'unit', id: 'player-king' },
     advanceOn: 'unit-selected'
   },
   {
     id: 'move-piece',
-    text: 'Las casillas verdes son movimientos disponibles. Toca una para mover.',
+    text: 'Las casillas verdes son movimientos disponibles. Toca una para mover.', textKey: 'tutorial.move_piece',
     anchor: { type: 'cell', x: 2, y: 6 },
     advanceOn: 'move-completed'
   },
   {
     id: 'capture-choice',
-    text: 'Al atacar una pieza puedes capturarla o destruirla desde los botones que emergen de ella.',
+    text: 'Al atacar una pieza puedes capturarla o destruirla desde los botones que emergen de ella.', textKey: 'tutorial.capture_choice',
     anchor: { type: 'board' },
     advanceOn: 'capture-resolved'
   }
@@ -169,7 +169,7 @@ const TUTORIAL_STEPS = Object.freeze([
 export function createTutorial01({ playerFactionId = 'green' } = {}) {
   return createTutorialEncounter({
     id: 'tutorial-01',
-    name: 'Nivel 1',
+    name: 'Nivel 1', nameKey: 'level.tutorial_01',
     nextLevelId: 'tutorial-02',
     playerFactionId,
     tutorialSteps: TUTORIAL_STEPS
