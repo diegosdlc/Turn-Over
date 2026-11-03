@@ -11,38 +11,39 @@
     <link rel="stylesheet" href="./src/level-ui.css?v=20260825-notebook-ui-1" />
     <link rel="stylesheet" href="./src/deployment.css?v=20260825-notebook-ui-1" />
     <link rel="stylesheet" href="./src/level-ui-mobile.css?v=20260825-notebook-ui-1" />
+    <link rel="stylesheet" href="./src/localization.css" />
   </head>
   <body>
-    <main id="game-shell" class="board-shell level-screen" aria-label="Juego de tablero" hidden>
-      <section class="level-stage" aria-label="Escenario de partida">
+    <main id="game-shell" class="board-shell level-screen" aria-label="Juego de tablero" data-i18n-aria="ui.game.aria" hidden>
+      <section class="level-stage" aria-label="Escenario de partida" data-i18n-aria="ui.stage.aria">
         <div class="board-stage">
-          <div id="board" class="board" role="grid" aria-label="Tablero de ocho por ocho"></div>
+          <div id="board" class="board" role="grid" aria-label="Tablero de ocho por ocho" data-i18n-aria="ui.board.aria"></div>
         </div>
 
-        <aside id="notebook-ui" class="notebook-ui" aria-label="Cuaderno de partida">
+        <aside id="notebook-ui" class="notebook-ui" aria-label="Cuaderno de partida" data-i18n-aria="ui.notebook.aria">
           <div class="notebook-art" aria-hidden="true">
             <img class="notebook-base" src="./assets/notebook%20menu/notebook.webp" alt="" draggable="false" />
           </div>
 
           <section id="deployment-panel" class="deployment-panel" aria-labelledby="deployment-title" hidden>
-            <p class="deployment-kicker">Fase de despliegue</p>
-            <h2 id="deployment-title">Prepara tu banda</h2>
-            <div id="deployment-pieces" class="deployment-pieces" aria-label="Piezas disponibles"></div>
-            <p id="deployment-status" class="deployment-status">Selecciona una pieza y colócala en una de tus dos primeras filas.</p>
-            <button id="deployment-start" class="deployment-start" type="button" hidden>Iniciar partida</button>
+            <p class="deployment-kicker" data-i18n="ui.deployment.phase">Fase de despliegue</p>
+            <h2 id="deployment-title" data-i18n="ui.deployment.title">Prepara tu banda</h2>
+            <div id="deployment-pieces" class="deployment-pieces" aria-label="Piezas disponibles" data-i18n-aria="ui.deployment.pieces"></div>
+            <p id="deployment-status" class="deployment-status" data-i18n="ui.deployment.initial">Selecciona una pieza y colócala en una de tus dos primeras filas.</p>
+            <button id="deployment-start" class="deployment-start" type="button" hidden data-i18n="ui.deployment.start">Iniciar partida</button>
           </section>
 
-          <nav class="notebook-tabs" role="tablist" aria-label="Secciones del cuaderno">
-            <button class="notebook-tab" type="button" role="tab" data-section="band" aria-selected="true" aria-label="Banda">
+          <nav class="notebook-tabs" role="tablist" aria-label="Secciones del cuaderno" data-i18n-aria="ui.notebook.sections">
+            <button class="notebook-tab" type="button" role="tab" data-section="band" aria-selected="true" aria-label="Banda" data-i18n-aria="ui.notebook.band">
               <img src="./assets/notebook%20menu/btn-band.webp" alt="" aria-hidden="true" draggable="false" />
             </button>
-            <button class="notebook-tab" type="button" role="tab" data-section="mission" aria-selected="false" aria-label="Misión">
+            <button class="notebook-tab" type="button" role="tab" data-section="mission" aria-selected="false" aria-label="Misión" data-i18n-aria="ui.notebook.mission">
               <img src="./assets/notebook%20menu/btn-mission.webp" alt="" aria-hidden="true" draggable="false" />
             </button>
-            <button class="notebook-tab" type="button" role="tab" data-section="rules" aria-selected="false" aria-label="Reglas">
+            <button class="notebook-tab" type="button" role="tab" data-section="rules" aria-selected="false" aria-label="Reglas" data-i18n-aria="ui.notebook.rules">
               <img src="./assets/notebook%20menu/btn-rules.webp" alt="" aria-hidden="true" draggable="false" />
             </button>
-            <button class="notebook-tab" type="button" role="tab" data-section="settings" aria-selected="false" aria-label="Ajustes">
+            <button class="notebook-tab" type="button" role="tab" data-section="settings" aria-selected="false" aria-label="Ajustes" data-i18n-aria="ui.notebook.settings">
               <img src="./assets/notebook%20menu/btn-settings.webp" alt="" aria-hidden="true" draggable="false" />
             </button>
           </nav>
@@ -50,63 +51,63 @@
           <section class="notebook-page" aria-live="polite">
             <div id="notebook-page-content" class="notebook-page-content"></div>
             <div id="notebook-fixed-actions" class="notebook-fixed-actions" hidden></div>
-            <div class="notebook-pagination" aria-label="Paginación del cuaderno">
-              <button id="notebook-page-prev" class="notebook-page-button" type="button" aria-label="Página anterior">←</button>
+            <div class="notebook-pagination" aria-label="Paginación del cuaderno" data-i18n-aria="ui.notebook.pagination">
+              <button id="notebook-page-prev" class="notebook-page-button" type="button" aria-label="Página anterior" data-i18n-aria="ui.notebook.previous">←</button>
               <span id="notebook-page-indicator" class="notebook-page-indicator">1 / 1</span>
-              <button id="notebook-page-next" class="notebook-page-button" type="button" aria-label="Página siguiente">→</button>
+              <button id="notebook-page-next" class="notebook-page-button" type="button" aria-label="Página siguiente" data-i18n-aria="ui.notebook.next">→</button>
             </div>
           </section>
         </aside>
 
-        <div class="game-controls" aria-label="Controles de partida">
-          <button id="mute-toggle" class="game-control-button" type="button" aria-label="Silenciar música" aria-pressed="false">🔊</button>
-          <button id="pause-toggle" class="game-control-button" type="button" aria-label="Pausar partida">⏸</button>
+        <div class="game-controls" aria-label="Controles de partida" data-i18n-aria="ui.controls">
+          <button id="mute-toggle" class="game-control-button" type="button" aria-label="Silenciar música" data-i18n-aria="ui.sound.mute" aria-pressed="false">🔊</button>
+          <button id="pause-toggle" class="game-control-button" type="button" aria-label="Pausar partida" data-i18n-aria="ui.pause.open">⏸</button>
         </div>
 
-        <button id="game-settings" type="button" hidden aria-hidden="true">Ajustes</button>
+        <button id="game-settings" type="button" hidden aria-hidden="true" data-i18n="ui.home.settings">Ajustes</button>
       </section>
     </main>
 
     <main id="home-screen" class="home-screen" aria-labelledby="home-title">
       <h1 id="home-title" class="visually-hidden">Turn Over</h1>
-      <section class="home-stage" aria-label="Menú principal">
+      <section class="home-stage" aria-label="Menú principal" data-i18n-aria="ui.home.menu">
         <img class="home-art-layer home-background" src="./assets/background.webp" alt="" aria-hidden="true" />
         <img class="home-art-layer home-notebook" src="./assets/menu/notebook.webp" alt="" aria-hidden="true" />
         <img class="home-art-layer home-pencil" src="./assets/menu/pencil.webp" alt="" aria-hidden="true" />
         <img class="home-art-layer home-eraser" src="./assets/menu/eraser.webp" alt="" aria-hidden="true" />
         <img class="home-art-layer home-logo" src="./assets/menu/title-turn-over%20(20260817071053).webp" alt="" aria-hidden="true" />
 
-        <button id="new-game" class="menu-hitbox hit-new" type="button" aria-label="Nueva partida">
-          <span class="visually-hidden">Nueva partida</span>
+        <button id="new-game" class="menu-hitbox hit-new" type="button" aria-label="Nueva partida" data-i18n-aria="ui.home.new">
+          <span class="visually-hidden" data-i18n="ui.home.new">Nueva partida</span><span class="menu-translated-label" data-i18n="ui.home.new"></span>
         </button>
         <img class="home-art-layer home-button-art art-new" src="./assets/menu/btn-new-game%20(20260817071132).webp" alt="" aria-hidden="true" />
 
-        <button id="continue-game" class="menu-hitbox hit-continue" type="button" aria-label="Continuar partida">
-          <span class="visually-hidden">Continuar partida</span>
+        <button id="continue-game" class="menu-hitbox hit-continue" type="button" aria-label="Continuar partida" data-i18n-aria="ui.home.continue">
+          <span class="visually-hidden" data-i18n="ui.home.continue">Continuar partida</span><span class="menu-translated-label" data-i18n="ui.home.continue"></span>
         </button>
         <img class="home-art-layer home-button-art art-continue" src="./assets/menu/btn-continue%20(20260817071201).webp" alt="" aria-hidden="true" />
 
-        <button id="home-settings" class="menu-hitbox hit-settings" type="button" aria-label="Ajustes">
-          <span class="visually-hidden">Ajustes</span>
+        <button id="home-settings" class="menu-hitbox hit-settings" type="button" aria-label="Ajustes" data-i18n-aria="ui.notebook.settings">
+          <span class="visually-hidden" data-i18n="ui.home.settings">Ajustes</span><span class="menu-translated-label" data-i18n="ui.home.settings"></span>
         </button>
         <img class="home-art-layer home-button-art art-settings" src="./assets/menu/btn-settings%20(20260817071231).webp" alt="" aria-hidden="true" />
       </section>
     </main>
 
     <div class="audio-control legacy-audio-control" aria-hidden="true" hidden>
-      <button id="audio-menu-toggle" class="audio-menu-toggle" type="button" aria-label="Abrir control de volumen" aria-expanded="false" aria-controls="audio-menu">♪</button>
+      <button id="audio-menu-toggle" class="audio-menu-toggle" type="button" aria-label="Abrir control de volumen" data-i18n-aria="ui.sound.open" aria-expanded="false" aria-controls="audio-menu">♪</button>
       <div id="audio-menu" class="audio-menu" hidden>
-        <label for="music-volume">Música</label>
-        <input id="music-volume" type="range" min="0" max="100" step="1" value="45" aria-label="Volumen de la música" />
+        <label for="music-volume" data-i18n="ui.music">Música</label>
+        <input id="music-volume" type="range" min="0" max="100" step="1" value="45" aria-label="Volumen de la música" data-i18n-aria="ui.music.volume" />
         <output id="music-volume-value" for="music-volume">45%</output>
       </div>
     </div>
 
     <dialog id="pause-dialog" class="pause-dialog" aria-labelledby="pause-title">
       <section class="modal-card pause-card">
-        <h2 id="pause-title">Pausa</h2>
+        <h2 id="pause-title" data-i18n="ui.pause.title">Pausa</h2>
         <div class="result-actions">
-          <button id="resume-game" class="primary-button" type="button">Reanudar</button>
+          <button id="resume-game" class="primary-button" type="button" data-i18n="ui.pause.resume">Reanudar</button>
         </div>
       </section>
     </dialog>
@@ -117,22 +118,22 @@
 
     <dialog id="faction-dialog" class="faction-dialog" aria-labelledby="faction-title">
       <section class="modal-card faction-selection-card">
-        <button id="close-faction-selection" class="dialog-close" type="button" aria-label="Cerrar selección">×</button>
-        <p class="eyebrow">Nueva partida</p>
-        <h2 id="faction-title">Elige una facción</h2>
-        <p class="faction-intro">Tu banda comenzará con rey, reina, peón y la pieza especial de la facción.</p>
+        <button id="close-faction-selection" class="dialog-close" type="button" aria-label="Cerrar selección" data-i18n-aria="ui.dialog.close_faction">×</button>
+        <p class="eyebrow" data-i18n="ui.home.new">Nueva partida</p>
+        <h2 id="faction-title" data-i18n="ui.faction.select">Elige una facción</h2>
+        <p class="faction-intro" data-i18n="ui.faction.intro">Tu banda comenzará con rey, reina, peón y la pieza especial de la facción.</p>
         <div class="faction-options">
           <button class="faction-option faction-green" type="button" data-player-faction="green">
             <span class="faction-piece" aria-hidden="true">♝</span>
-            <span><strong>Verde</strong><small>Pieza especial: alfil</small></span>
+            <span><strong data-i18n="ui.faction.green">Verde</strong><small data-i18n="ui.faction.green.special">Pieza especial: alfil</small></span>
           </button>
           <button class="faction-option faction-red" type="button" data-player-faction="red">
             <span class="faction-piece" aria-hidden="true">♜</span>
-            <span><strong>Roja</strong><small>Pieza especial: torre</small></span>
+            <span><strong data-i18n="ui.faction.red">Roja</strong><small data-i18n="ui.faction.red.special">Pieza especial: torre</small></span>
           </button>
           <button class="faction-option faction-yellow" type="button" data-player-faction="yellow">
             <span class="faction-piece" aria-hidden="true">♞</span>
-            <span><strong>Amarilla</strong><small>Pieza especial: caballo</small></span>
+            <span><strong data-i18n="ui.faction.yellow">Amarilla</strong><small data-i18n="ui.faction.yellow.special">Pieza especial: caballo</small></span>
           </button>
         </div>
       </section>
@@ -140,13 +141,16 @@
 
     <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title">
       <section class="modal-card settings-card">
-        <button id="close-settings" class="dialog-close" type="button" aria-label="Cerrar ajustes">×</button>
-        <p class="eyebrow">Opciones</p>
-        <h2 id="settings-title">Ajustes</h2>
+        <button id="close-settings" class="dialog-close" type="button" aria-label="Cerrar ajustes" data-i18n-aria="ui.dialog.close_settings">×</button>
+        <p class="eyebrow" data-i18n="ui.settings.options">Opciones</p>
+        <h2 id="settings-title" data-i18n="ui.home.settings">Ajustes</h2>
         <div class="settings-list">
-          <div><span>Música</span><strong>Próximamente</strong></div>
-          <div><span>Dificultad</span><strong>Próximamente</strong></div>
-          <div><span>Controles</span><strong>Próximamente</strong></div>
+          <div class="settings-preference"><label for="settings-language" data-i18n="ui.settings.language">Idioma</label><select id="settings-language" data-i18n-language><option value="es" data-i18n="ui.language.es">Español</option><option value="en" data-i18n="ui.language.en">Inglés</option></select></div>
+          <div class="settings-preference"><label for="settings-gender" data-i18n="ui.settings.gender">Género del jugador</label><select id="settings-gender" data-i18n-gender><option value="masculine" data-i18n="ui.gender.masculine">Masculino</option><option value="feminine" data-i18n="ui.gender.feminine">Femenino</option><option value="neutral" data-i18n="ui.gender.neutral">Neutro</option></select></div>
+          <p class="settings-preference-help" data-i18n="ui.gender.help">Se usa para adaptar los textos dirigidos a ti.</p>
+          <div><span data-i18n="ui.music">Música</span><strong data-i18n="ui.settings.soon">Próximamente</strong></div>
+          <div><span data-i18n="ui.settings.difficulty">Dificultad</span><strong data-i18n="ui.settings.soon">Próximamente</strong></div>
+          <div><span data-i18n="ui.settings.controls">Controles</span><strong data-i18n="ui.settings.soon">Próximamente</strong></div>
         </div>
       </section>
     </dialog>
