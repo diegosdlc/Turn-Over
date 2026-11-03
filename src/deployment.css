@@ -572,3 +572,48 @@ html.touch-ui .notebook-roster-card .deployment-piece-name{
   height:92%;
   padding:1% 2.5% 4%;
 }
+
+/* Matching deployed/reserve states in both deployment rosters. */
+.deployment-panel .deployment-piece.in-reserve,
+.deployment-panel .deployment-piece.in-reserve:disabled{
+  opacity:.46;
+  filter:grayscale(.58) saturate(.55);
+}
+.deployment-panel .deployment-piece.in-lineup,
+.deployment-panel .deployment-piece.in-lineup:disabled{
+  opacity:1;
+  filter:none;
+}
+.deployment-panel .deployment-piece-meta{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  min-height:13px;
+  max-height:14px;
+  overflow:visible;
+  white-space:nowrap;
+}
+.notebook-ui.is-deploying .deployment-piece-meta{
+  min-height:13px;
+  max-height:14px;
+}
+.deployment-panel .deployment-piece-remove{
+  display:inline-grid;
+  place-items:center;
+  min-width:15px;
+  height:14px;
+  padding:0;
+  border:0;
+  border-radius:3px;
+  background:rgba(135,76,65,.14);
+  color:#7b4b42;
+  font:700 13px/1 Arial,sans-serif;
+  text-decoration:none;
+  cursor:pointer;
+}
+.deployment-panel .deployment-piece-remove:hover,
+.deployment-panel .deployment-piece-remove:focus-visible{
+  background:rgba(135,76,65,.3);
+  outline:1px solid #7b4b42;
+}
