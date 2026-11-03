@@ -359,8 +359,12 @@ class GameApp {
 
   fitRosterGrid(grid, count) {
     const cols = Math.min(4, Math.max(1, count));
+    const rows = Math.max(1, Math.ceil(count / cols));
     grid.style.setProperty('--roster-cols', String(cols));
-    grid.style.setProperty('--roster-rows', String(Math.max(1, Math.ceil(count / cols))));
+    grid.style.setProperty('--roster-rows', String(rows));
+    // Fixed design-space pixels: never depend on row percentages or container queries.
+    // Both bands and the combat notebook use the same piece-width calculation.
+    grid.style.setProperty('--roster-tile-width', `${Math.max(20, Math.min(48, Math.floor(60 / rows)))}px`);
   }
 
   applyDeploymentPalette(element, unit) {
