@@ -43,8 +43,8 @@ function baseVictoryLab({ id, name, description, rules, units, ai = null }) {
 export function createCaptureKingVictoryLab() {
   return baseVictoryLab({
     id: 'victory-capture-king-lab',
-    name: 'Victoria · Capturar rey',
-    description: 'Una captura inmediata permite comprobar que eliminar al rey rival termina el encuentro.',
+    name: 'Victoria · Capturar rey', nameKey: 'level.lab_victory_capture',
+    description: 'Una captura inmediata permite comprobar que eliminar al rey rival termina el encuentro.', descriptionKey: 'lab.victory_capture.description',
     rules: { victory: 'capture-king' },
     units: [
       unit('player-queen', 'player', 'green', 'queen', 3, 4, FACINGS.NORTH),
@@ -57,8 +57,8 @@ export function createCaptureKingVictoryLab() {
 export function createEscortKingVictoryLab() {
   return baseVictoryLab({
     id: 'victory-escort-king-lab',
-    name: 'Victoria · Cruzar con rey',
-    description: 'El rey empieza a una casilla de la fila objetivo para comprobar la victoria al cruzar.',
+    name: 'Victoria · Cruzar con rey', nameKey: 'level.lab_victory_escort',
+    description: 'El rey empieza a una casilla de la fila objetivo para comprobar la victoria al cruzar.', descriptionKey: 'lab.victory_escort.description',
     rules: {
       victory: 'escort-king',
       targetRow: 0
@@ -73,8 +73,8 @@ export function createEscortKingVictoryLab() {
 export function createSurvivalVictoryLab() {
   return baseVictoryLab({
     id: 'victory-survive-lab',
-    name: 'Victoria · Sobrevivir',
-    description: 'Sólo hay que completar una ronda para comprobar que el contador de supervivencia concede la victoria.',
+    name: 'Victoria · Sobrevivir', nameKey: 'level.lab_victory_survive',
+    description: 'Sólo hay que completar una ronda para comprobar que el contador de supervivencia concede la victoria.', descriptionKey: 'lab.victory_survive.description',
     rules: {
       victory: 'survive',
       surviveRounds: 1
