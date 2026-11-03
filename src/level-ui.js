@@ -10,7 +10,7 @@ const NOTEBOOK_SECTIONS = {
   band: [
     {
       title: 'Banda',
-      html: '<p>Tu banda y la banda rival se muestran a continuación. Durante el despliegue puedes consultar todas las piezas enemigas, incluso las que aún están en reserva.</p><div id="notebook-dynamic-rosters"></div>'
+      html: '<div id="notebook-dynamic-rosters"></div>'
     },
     {
       title: 'Banda · facciones',
@@ -115,21 +115,57 @@ class NotebookUI {
       const heading = document.createElement('h3');
       heading.textContent = title;
       section.append(heading);
-      const list = document.createElement('div');
-      list.className = 'notebook-roster-grid';
-      for (const unit of state.units.filter(piece => piece.team === team && !piece.destroyed)) {
-        const item = document.createElement('div');
-        item.className = 'notebook-roster-card';
-        const glyph = document.createElement('span');
-        glyph.textContent = unit.fallbackGlyph;
-        const label = document.createElement('span');
-        label.textContent = unit.name + (unit.evolutionStage === 'evolved' ? '+' : '');
-        const sub = document.createElement('small');
-        sub.textContent = unit.captured ? 'Capturada' : unit.inReserve ? 'Reserva' : 'Activa';
-        item.append(glyph, label, sub);
-        list.append(item);
+      const units = state.units.filter(unit => unit.team === team);
+      const grid = document.createElement('div');
+      grid.className = 'notebook-roster-grid';
+      grid.style.setProperty('--roster-cols', String(Math.min(4, Math.max(1, units.length))));
+      for (const unit of units) {
+        const card = document.createElement('div');
+        card.className = 'notebook-roster-card';
+        const tile = document.createElement('div');
+        tile.className = `deployment-piece readonly notebook-roster-piece ${unit.inReserve ? 'in-reserve' : 'in-lineup'}${unit.destroyed ? ' is-destroyed' : ''}`;
+        const palette = state.assets?.piecePalette(unit);
+        if (palette) {
+          tile.style.setProperty('--unit-primary', palette.primary);
+          tile.style.setProperty('--unit-secondary', palette.secondary);
+          tile.style.setProperty('--unit-text', palette.text);
+        }
+        const fallback = document.createElement('span');
+        fallback.className = 'deployment-piece-fallback';
+        fallback.textContent = unit.fallbackGlyph;
+        tile.append(fallback);
+        const asset = state.assets?.pieceAsset(unit);
+        if (asset) {
+          const image = document.createElement('img');
+          image.className = 'deployment-piece-image';
+          image.src = state.assets.resolve(asset);
+          image.alt = '';
+          image.draggable = false;
+          image.addEventListener('error', () => {
+            image.remove();
+            tile.classList.remove('has-image');
+          }, { once: true });
+          tile.append(image);
+          tile.classList.add('has-image');
+        }
+        if (unit.evolutionStage === 'evolved') {
+          const badge = document.createElement('span');
+          badge.className = 'deployment-piece-evolved';
+          badge.textContent = '+';
+          tile.append(badge);
+        }
+        const name = document.createElement('span');
+        name.className = 'deployment-piece-name';
+        name.textContent = unit.name;
+        tile.append(name);
+        const meta = document.createElement('small');
+        meta.className = 'deployment-piece-meta';
+        meta.textContent = unit.destroyed ? 'Destruida' : unit.captured ? 'Capturada' :
+          unit.inReserve ? 'Reserva' : 'En tablero';
+        card.append(tile, meta);
+        grid.append(card);
       }
-      section.append(list);
+      section.append(grid);
       destination.append(section);
     }
   }
