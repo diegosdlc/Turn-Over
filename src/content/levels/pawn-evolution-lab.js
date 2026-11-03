@@ -2,7 +2,7 @@ import { PIECES } from '../bands.js?v=20260821-evolution-3';
 import { createLabBehavior } from './labs/behavior.js';
 import { STANDARD_BOARD } from './shared.js';
 
-function pawn({ id, team = 'player', faction = 'green', name, evolutionStage = 'base', x, y }) {
+function pawn({ id, team = 'player', faction = 'green', name, i18nNameKey = null, evolutionStage = 'base', x, y }) {
   const piece = PIECES.pawn;
   return {
     id,
