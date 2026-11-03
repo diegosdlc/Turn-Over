@@ -1,3 +1,4 @@
+import { t, pieceName } from '../i18n/index.js';
 import { cellBox, insetBox, place } from '../core/geometry.js';
 import { optionsFor } from '../core/rules.js?v=20260821-evolution-3';
 import { evolutionCapabilitiesFor, isEvolved } from '../core/evolution.js?v=20260821-evolution-3';
@@ -51,7 +52,7 @@ export class BoardRenderer {
     const cell = document.createElement('button');
     cell.type = 'button';
     cell.className = 'iso-cell';
-    cell.setAttribute('aria-label', `Casilla ${x + 1},${y + 1}`);
+    cell.setAttribute('aria-label', t('ui.board.cell', { x: x + 1, y: y + 1 }));
     place(cell, box, this.projection);
 
     if (this.state.isDeploying?.()) {
@@ -98,7 +99,7 @@ export class BoardRenderer {
     piece.classList.toggle('evolved', isEvolved(unit));
     const shieldReady = evolutionCapabilitiesFor(unit).rejectsFirstAttack && (unit.evolutionState?.shieldCharges ?? 0) > 0;
     piece.classList.toggle('shield-ready', shieldReady);
-    piece.setAttribute('aria-label', `${unit.name}${isEvolved(unit) ? ', evolucionada' : ''}${shieldReady ? ', escudo disponible' : ''}`);
+    piece.setAttribute('aria-label', `${pieceName(unit)}${isEvolved(unit) ? t('ui.board.evolved') : ''}${shieldReady ? t('ui.board.shield') : ''}`);
     this.applyFactionPalette(piece, unit);
 
     const fallback = document.createElement('span');
@@ -135,11 +136,11 @@ export class BoardRenderer {
     const actions = document.createElement('div');
     actions.className = 'piece-capture-actions';
     actions.setAttribute('role', 'group');
-    actions.setAttribute('aria-label', `Acción sobre ${unit.name}`);
+    actions.setAttribute('aria-label', t('ui.board.action_on', { name: pieceName(unit) }));
     place(actions, pieceBox, this.projection);
 
-    const captureButton = this.captureButton('Capturar', 'capture-piece-action', 'capture');
-    const destroyButton = this.captureButton('Destruir', 'destroy-piece-action', 'destroy');
+    const captureButton = this.captureButton(t('ui.board.capture'), 'capture-piece-action', 'capture');
+    const destroyButton = this.captureButton(t('ui.board.destroy'), 'destroy-piece-action', 'destroy');
     actions.append(captureButton, destroyButton);
     this.board.append(actions);
   }
@@ -161,7 +162,7 @@ export class BoardRenderer {
       const box = cellBox(this.projection, tile.x, tile.y);
       const marker = document.createElement('div');
       marker.className = `special-tile ${tile.className ?? ''}`;
-      marker.setAttribute('aria-label', tile.name ?? 'Casilla especial');
+      marker.setAttribute('aria-label', tile.i18nNameKey ? t(tile.i18nNameKey) : (tile.name ?? t('ui.board.special')));
       place(marker, box, this.projection);
 
       if (tile.asset) {
@@ -184,7 +185,7 @@ export class BoardRenderer {
 
       const node = document.createElement('div');
       node.className = `board-element ${element.blocking ? 'blocking' : ''} ${element.className ?? ''}`;
-      node.setAttribute('aria-label', element.name ?? 'Elemento del tablero');
+      node.setAttribute('aria-label', element.i18nNameKey ? t(element.i18nNameKey) : (element.name ?? t('ui.board.element')));
       place(node, box, this.projection);
 
       if (element.asset) {
