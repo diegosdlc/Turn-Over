@@ -118,7 +118,10 @@ class NotebookUI {
       const units = state.units.filter(unit => unit.team === team);
       const grid = document.createElement('div');
       grid.className = 'notebook-roster-grid';
-      grid.style.setProperty('--roster-cols', String(Math.min(4, Math.max(1, units.length))));
+      const cols = Math.min(4, Math.max(1, units.length));
+      const rows = Math.max(1, Math.ceil(units.length / cols));
+      grid.style.setProperty('--roster-cols', String(cols));
+      grid.style.setProperty('--roster-tile-width', `${Math.max(20, Math.min(48, Math.floor(60 / rows)))}px`);
       for (const unit of units) {
         const card = document.createElement('div');
         card.className = 'notebook-roster-card';
