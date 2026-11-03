@@ -403,3 +403,102 @@
   .deployment-panel .deployment-piece-meta{font-size:clamp(.42rem,1.8vw,.57rem)}
   .notebook-roster-grid{gap:3px}
 }
+
+/* Consistent fixed-size roster pieces: all stages use design-space pixels. */
+/* Width is determined by the roster's piece count, not by rendering timing.
+   The notebook is scaled as a single 540px design surface on touch devices. */
+.deployment-panel .deployment-pieces,
+.deployment-panel .enemy-deployment-pieces{
+  justify-items:center;
+  align-items:center;
+  align-content:stretch;
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+.deployment-panel .deployment-piece-card{
+  container-type:normal;
+  justify-content:center;
+  min-height:0;
+  overflow:visible;
+}
+.deployment-panel .deployment-piece,
+.notebook-roster-card .notebook-roster-piece{
+  box-sizing:border-box;
+  flex:none;
+  display:grid;
+  place-items:center;
+  width:var(--roster-tile-width,48px);
+  min-width:0;
+  max-width:100%;
+  height:auto;
+  max-height:none;
+  min-height:0;
+  aspect-ratio:1 / 1.18;
+  padding:0 2% 18%;
+  container-type:normal;
+  transform:none;
+}
+.deployment-panel .deployment-piece:hover:not(:disabled),
+.deployment-panel .deployment-piece:focus-visible,
+.deployment-panel .deployment-piece.selected{
+  transform:none;
+}
+.deployment-panel .deployment-piece-cost{
+  top:-3px;
+  right:-7px;
+  font-size:9px;
+  line-height:1.15;
+  padding:2px 3px;
+  white-space:nowrap;
+}
+.deployment-panel .deployment-piece-evolved{
+  font-size:9px;
+}
+.deployment-panel .deployment-piece-name,
+.notebook-roster-card .deployment-piece-name{
+  font-size:10px;
+  line-height:1;
+}
+.deployment-panel .deployment-piece-fallback,
+.notebook-roster-card .deployment-piece-fallback{
+  font-size:23px;
+}
+.deployment-panel .deployment-piece-meta,
+.notebook-roster-card .deployment-piece-meta{
+  font-size:10px;
+  line-height:1.2;
+}
+.notebook-roster-grid{
+  justify-items:center;
+  align-items:start;
+}
+.notebook-roster-card{
+  width:100%;
+  min-width:0;
+}
+.notebook-roster-card .notebook-roster-piece{
+  box-shadow:0 5px 8px rgba(49,42,30,.22);
+}
+.notebook-roster-card .notebook-roster-piece.in-lineup{
+  box-shadow:0 5px 8px rgba(49,42,30,.22),0 0 0 2px rgba(90,122,78,.44);
+}
+.notebook-roster-card .notebook-roster-piece.in-reserve{
+  opacity:.76;
+}
+.notebook-roster-card .notebook-roster-piece.is-destroyed{
+  opacity:.35;
+  filter:grayscale(1);
+}
+/* Maintain the same sizing within the fixed-design touch layout. */
+html.touch-ui .deployment-panel .deployment-piece-fallback,
+html.touch-ui .notebook-roster-card .deployment-piece-fallback{
+  font-size:23px;
+}
+html.touch-ui .deployment-panel .deployment-piece-cost,
+html.touch-ui .deployment-panel .deployment-piece-evolved{
+  font-size:9px;
+}
+html.touch-ui .deployment-panel .deployment-piece-name,
+html.touch-ui .notebook-roster-card .deployment-piece-name{
+  font-size:10px;
+}
