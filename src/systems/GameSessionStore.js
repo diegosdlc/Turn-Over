@@ -9,6 +9,22 @@ export function restoreSessionState(state, savedState) {
   state.roundsElapsed = Number.isSafeInteger(savedState.roundsElapsed) && savedState.roundsElapsed >= 0
     ? savedState.roundsElapsed
     : 0;
+  const configuredMode = state.level?.deployment?.mode ?? 'classic';
+  // Older deployment saves keep the original mode so in-progress games remain playable.
+  const legacyDeployment = state.phase === 'deployment' && configuredMode === 'alternating'
+    && !Number.isInteger(savedState.deploymentRound);
+  state.deploymentMode = legacyDeployment || savedState.deploymentMode === 'classic'
+    ? 'classic' : configuredMode;
+  state.deploymentRound = Number.isInteger(savedState.deploymentRound)
+    && savedState.deploymentRound >= 1 && savedState.deploymentRound <= 3
+    ? savedState.deploymentRound : 1;
+  state.deploymentTurn = state.isAlternatingDeployment() && savedState.deploymentTurn === 'enemy'
+    ? 'enemy' : 'player';
+  const knownIds = new Set(state.units.map(unit => unit.id));
+  state.deploymentCommittedIds = Array.isArray(savedState.deploymentCommittedIds)
+    ? [...new Set(savedState.deploymentCommittedIds.filter(id => typeof id === 'string' && knownIds.has(id)))]
+    : [];
+
   state.selectedId = null;
   state.pendingCapture = null;
 }
@@ -23,7 +39,9 @@ export class GameSessionStore {
   load() {
     try {
       const saved = JSON.parse(localStorage.getItem(this.storageKey));
-      return saved?.schemaVersion === this.schemaVersion &&
+      const supportedSchema = saved?.schemaVersion === this.schemaVersion ||
+        (this.schemaVersion === 7 && saved?.schemaVersion === 6);
+      return supportedSchema &&
         saved?.levelId &&
         this.validFactionIds.includes(saved?.playerFactionId) &&
         saved?.state
@@ -45,6 +63,10 @@ export class GameSessionStore {
           currentTurn: state.currentTurn,
           finished: state.finished,
           phase: state.phase,
+          deploymentMode: state.deploymentMode,
+          deploymentRound: state.deploymentRound,
+          deploymentTurn: state.deploymentTurn,
+          deploymentCommittedIds: state.deploymentCommittedIds,
           teamEvolution: state.teamEvolution,
           roundsElapsed: state.roundsElapsed
         }

@@ -115,7 +115,11 @@ export function createTutorialEncounter({
     },
     deployment: {
       team: 'player',
+      mode: 'alternating',
+      rounds: 3,
+      initialEnemyPieceTypes: ['king'],
       rows: [6, 7],
+      enemyRows: [0, 1],
       pointLimit: levelPointLimit(id, enemyUnits)
     },
     music: {

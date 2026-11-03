@@ -1,16 +1,17 @@
 import { GAME_CONFIG } from './config/gameConfig.js';
 import { FACTIONS, PLAYER_FACTION_IDS } from './content/factions.js';
-import { getLevel, getNextLevel } from './content/levels/index.js?v=20260821-budget-1';
-import { GameState } from './core/GameState.js?v=20260821-budget-1';
+import { getLevel, getNextLevel } from './content/levels/index.js?v=20261026-rounds-1';
+import { GameState } from './core/GameState.js?v=20261026-rounds-1';
 import { AssetRegistry } from './systems/AssetRegistry.js';
 import { AudioManager } from './systems/AudioManager.js?v=20260814-1700';
-import { GameSessionStore, restoreSessionState } from './systems/GameSessionStore.js?v=20261024-session-rounds-1';
+import { GameSessionStore, restoreSessionState } from './systems/GameSessionStore.js?v=20261103-merge-1';
 import { ProgressionStore } from './systems/ProgressionStore.js?v=20260821-evolution-3';
 import { TutorialSystem } from './systems/TutorialSystem.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20260821-evolution-3';
 import { AIController } from './ai/AIController.js?v=20260821-budget-1';
 import { legalActionsFor } from './core/rules.js?v=20260821-evolution-3';
 import { buildNextPlayerBand } from './core/campaign.js?v=20260821-budget-1';
+import { deployEnemyWave } from './ai/DeploymentAI.js';
 
 class GameApp {
   constructor() {
@@ -25,6 +26,8 @@ class GameApp {
     this.deploymentPanel = document.querySelector('#deployment-panel');
     this.deploymentPieces = document.querySelector('#deployment-pieces');
     this.deploymentStatus = document.querySelector('#deployment-status');
+    this.enemyDeploymentPieces = document.querySelector('#enemy-deployment-pieces');
+    this.deploymentRoundLabel = document.querySelector('#deployment-round-label');
     this.deploymentStart = document.querySelector('#deployment-start');
     this.assets = new AssetRegistry(FACTIONS);
     this.audio = new AudioManager();
@@ -158,6 +161,7 @@ class GameApp {
 
   resolvePhase() {
     if (this.state.isDeploying()) {
+      if (this.state.isAlternatingDeployment() && this.state.deploymentTurn === 'enemy') this.deployEnemy();
       this.render();
       return;
     }
@@ -165,6 +169,8 @@ class GameApp {
   }
 
   render() {
+    window.turnOverNotebookState = { units: this.state.units };
+    window.dispatchEvent(new Event('game:rosters-updated'));
     this.renderer.render();
     this.renderDeployment();
     if (!this.state.isDeploying()) {
@@ -178,8 +184,30 @@ class GameApp {
     this.notebook?.classList.toggle('is-deploying', deploying);
     if (!deploying || !this.deploymentPieces) return;
 
+    const alternating = this.state.isAlternatingDeployment();
     const roster = this.state.deploymentRoster();
     const units = this.state.deploymentUnits();
+    const playerTurn = !alternating || this.state.deploymentTurn === 'player';
+    if (this.deploymentRoundLabel) this.deploymentRoundLabel.textContent = alternating
+      ? `Ronda ${this.state.deploymentRound} de 3 · ${playerTurn ? 'Tu despliegue' : 'Despliega el rival'}`
+      : 'Prepara tu banda';
+    if (this.enemyDeploymentPieces) {
+      this.enemyDeploymentPieces.replaceChildren();
+      for (const enemy of this.state.deploymentRoster('enemy')) {
+        const card = document.createElement('div');
+        card.className = 'enemy-roster-piece';
+        this.applyDeploymentPalette(card, enemy);
+        const icon = document.createElement('span');
+        icon.className = 'enemy-roster-glyph';
+        icon.textContent = enemy.fallbackGlyph;
+        const name = document.createElement('span');
+        name.textContent = enemy.name + (enemy.evolutionStage === 'evolved' ? '+' : '');
+        const state = document.createElement('small');
+        state.textContent = enemy.inReserve ? 'Pendiente' : 'En tablero';
+        card.append(icon, name, state);
+        this.enemyDeploymentPieces.append(card);
+      }
+    }
     const pointLimit = this.state.deploymentPointLimit();
     const budgeted = pointLimit != null;
     this.deploymentPieces.replaceChildren();
@@ -193,7 +221,9 @@ class GameApp {
       button.className = `deployment-piece ${unit.id === this.state.selectedId ? 'selected' : ''} ${unit.inReserve ? 'in-reserve' : 'in-lineup'}`;
       const cost = this.state.deploymentUnitCost(unit);
       const affordable = this.state.canAffordDeploymentUnit(unit);
-      button.disabled = Boolean(unit.inReserve && !affordable);
+      const locked = alternating && (this.state.isDeploymentCommitted(unit) || !playerTurn ||
+        (unit.inReserve && this.state.deploymentRoundPlaced('player') >= this.state.deploymentRoundQuota('player')));
+      button.disabled = Boolean(locked || (unit.inReserve && !affordable));
       button.setAttribute('aria-pressed', String(!unit.inReserve));
       button.setAttribute('aria-label', `${unit.inReserve ? 'Elegir' : 'Recolocar'} ${unit.name}, ${cost} puntos${unit.evolutionStage === 'evolved' ? ', evolucionada' : ''}`);
       this.applyDeploymentPalette(button, unit);
@@ -234,13 +264,14 @@ class GameApp {
       button.append(name);
 
       button.addEventListener('click', () => {
+        if (!playerTurn || (alternating && this.state.isDeploymentCommitted(unit))) return;
         if (this.state.selectedId === unit.id) this.state.clearSelection();
         else this.state.setSelected(unit.id);
         this.render();
       });
       card.append(button);
 
-      if (budgeted && !unit.inReserve) {
+      if (budgeted && !unit.inReserve && (!alternating || (playerTurn && !this.state.isDeploymentCommitted(unit)))) {
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'deployment-piece-remove';
@@ -278,7 +309,16 @@ class GameApp {
         this.deploymentStatus.textContent = `Selecciona una pieza y colócala en una casilla resaltada. ${placed}/${units.length}`;
       }
     }
-    if (this.deploymentStart) this.deploymentStart.hidden = !complete;
+    if (alternating && this.deploymentStatus) {
+      const used = this.state.deploymentRoundPlaced('player');
+      const quota = this.state.deploymentRoundQuota('player');
+      this.deploymentStatus.textContent = `Ronda ${this.state.deploymentRound}/3 · ${used}/${quota} piezas nuevas · ${budgetText}. Las piezas confirmadas no se pueden mover.`;
+    }
+    if (this.deploymentStart) {
+      const available = alternating ? this.state.canFinishDeploymentRound() && !selected?.inReserve : complete;
+      this.deploymentStart.hidden = !available;
+      this.deploymentStart.textContent = alternating && this.state.deploymentRound < 3 ? 'Confirmar ronda' : 'Iniciar partida';
+    }
   }
 
   applyDeploymentPalette(element, unit) {
@@ -311,8 +351,10 @@ class GameApp {
   }
 
   deploymentCellClick(unit, x, y) {
+    if (this.state.isAlternatingDeployment() && this.state.deploymentTurn !== 'player') return;
     const deploymentTeam = this.state.deploymentTeam();
     if (unit?.team === deploymentTeam) {
+      if (this.state.isAlternatingDeployment() && this.state.isDeploymentCommitted(unit)) return;
       this.state.setSelected(unit.id);
       this.render();
       return;
@@ -325,7 +367,21 @@ class GameApp {
     this.render();
   }
 
+  deployEnemy() {
+    if (!this.state?.isAlternatingDeployment() || this.state.deploymentTurn !== 'enemy') return;
+    deployEnemyWave(this.state, this.level);
+    this.state.finishEnemyDeploymentRound();
+    this.saveSession();
+  }
+
   startDeployedGame() {
+    if (this.state?.isAlternatingDeployment() && this.state.deploymentRound < 3) {
+      if (!this.state.canFinishDeploymentRound() || !this.state.advanceDeploymentRound()) return;
+      this.deployEnemy();
+      this.saveSession();
+      this.render();
+      return;
+    }
     if (!this.state?.beginPlay()) return;
     this.saveSession();
     this.resolveTurn();

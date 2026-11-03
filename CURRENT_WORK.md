@@ -1,6 +1,6 @@
 # Turn Over — Current Work
 
-Last updated: 2026-10-24
+Last updated: 2026-11-03
 
 ## Project naming
 
@@ -30,7 +30,7 @@ The deployment system supports lineup selection by point budget.
 - Placed pieces can be repositioned or **Retirar** to refund their cost.
 - `GameState` validates affordability, board bounds, normal/evolution-expanded deployment rows, occupied cells and blocking `boardElements`.
 - **Iniciar partida** appears when at least one participating piece is validly placed and the lineup is within budget. Spending the full budget is optional.
-- Session schema `6` persists reserve/lineup state, coordinates, facing, evolution state and lifecycle phase.
+- Session schema `7` persists alternating deployment rounds and commitments; schema-6 saves remain loadable.
 - Reset returns the deployment roster to reserve and spent points to zero.
 - `docs/BALANCE.md` is the runtime-editable source of truth for base/evolved costs and per-level limits.
 - The current tutorial enemy band is worth 18 points, so `tutorial-01` and `tutorial-02` currently use an 18-point limit.
@@ -81,7 +81,7 @@ See `assets/board-elements/README.md`.
 
 ## Session and turn lifecycle
 
-A session snapshot is saved during deployment, after play starts and after each completed move. Schema `6` stores the selected faction, serialized units (including facing, evolution and reserve participation), active turn, finished state, team evolution uses, lifecycle phase and completed survival rounds (`roundsElapsed`). Existing schema-6 snapshots without the counter still load, with a zero-round fallback. Completed encounters clear the in-progress session; campaign progression remains separate in `ProgressionStore`.
+A session snapshot is saved during deployment, after play starts and after each completed move. Schema `7` stores the selected faction, serialized units (including facing, evolution and reserve participation), active turn, finished state, team evolution uses, lifecycle phase and completed survival rounds (`roundsElapsed`). Schema-6 snapshots still load (missing round counters default to zero), and in-progress legacy deployment continues in classic mode. Completed encounters clear the in-progress session; campaign progression remains separate in `ProgressionStore`.
 
 The no-legal-moves lifecycle is implemented: a side with no legal move loses its turn; if neither side can move, the encounter ends with **Tablas** and offers **Reiniciar encuentro**.
 

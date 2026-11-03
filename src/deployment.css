@@ -252,3 +252,19 @@
     font-size:clamp(.58rem,2.45vw,.75rem);
   }
 }
+
+/* Alternating deployment: both complete rosters remain visible in the notebook. */
+.deployment-round-label{margin:0 0 3px;font-size:clamp(.65rem,.82vw,.85rem);font-weight:700;color:#7b5942}
+.deployment-subtitle{font-size:clamp(.72rem,.95vw,.92rem)!important;margin:3px 0!important}
+.deployment-pieces{flex:1 1 45%;gap:2% 2%}
+.enemy-deployment-pieces{flex:0 1 25%;min-height:55px;overflow:auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.enemy-roster-piece{min-width:0;border:1px solid rgba(80,70,53,.3);border-radius:5px;padding:2px;display:flex;flex-direction:column;align-items:center;font-family:Arial,sans-serif;text-align:center;font-size:clamp(.49rem,.6vw,.62rem);line-height:1.1}
+.enemy-roster-glyph{font-size:clamp(1.1rem,2vw,1.7rem);color:var(--unit-primary,#554)}
+.enemy-roster-piece small{font-size:.85em;color:#806f5f}
+
+.notebook-roster-section{margin:.55em 0}
+.notebook-roster-section h3{font-size:.9em;margin:.4em 0}
+.notebook-roster-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.notebook-roster-card{border:1px solid rgba(65,58,43,.3);border-radius:5px;padding:4px;display:flex;flex-direction:column;align-items:center;font-size:.72em;text-align:center}
+.notebook-roster-card>span:first-child{font-family:'Segoe UI Symbol',sans-serif;font-size:1.7em}
+.notebook-roster-card small{font-size:.85em;opacity:.72}
