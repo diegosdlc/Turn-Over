@@ -1,3 +1,18 @@
+export function restoreSessionState(state, savedState) {
+  if (!Array.isArray(savedState?.units)) return;
+
+  state.units = savedState.units;
+  state.currentTurn = savedState.currentTurn === 'enemy' ? 'enemy' : 'player';
+  state.finished = Boolean(savedState.finished);
+  state.phase = savedState.phase === 'deployment' ? 'deployment' : 'play';
+  if (savedState.teamEvolution) state.teamEvolution = savedState.teamEvolution;
+  state.roundsElapsed = Number.isSafeInteger(savedState.roundsElapsed) && savedState.roundsElapsed >= 0
+    ? savedState.roundsElapsed
+    : 0;
+  state.selectedId = null;
+  state.pendingCapture = null;
+}
+
 export class GameSessionStore {
   constructor(storageKey, schemaVersion, validFactionIds) {
     this.storageKey = storageKey;
@@ -30,7 +45,8 @@ export class GameSessionStore {
           currentTurn: state.currentTurn,
           finished: state.finished,
           phase: state.phase,
-          teamEvolution: state.teamEvolution
+          teamEvolution: state.teamEvolution,
+          roundsElapsed: state.roundsElapsed
         }
       }));
     } catch {

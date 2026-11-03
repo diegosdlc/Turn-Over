@@ -55,4 +55,4 @@ Las tres nuevas condiciones son:
 - `escort-king`
 - `survive`
 
-El contador `roundsElapsed` forma parte del estado en memoria. Por ahora los escenarios están planteados principalmente como niveles de validación; antes de incorporarlos a campaña conviene añadir explícitamente ese contador al snapshot de sesión para que una partida de supervivencia reanudada conserve exactamente el número de rondas.
+El contador `roundsElapsed` forma parte del estado en memoria y se guarda y restaura con el snapshot de sesión (esquema `6`). Una partida de supervivencia reanudada conserva así el número de rondas completadas. Los snapshots anteriores sin contador siguen siendo válidos y se restauran con `0` rondas: las rondas pasadas no pueden reconstruirse a partir del tablero.

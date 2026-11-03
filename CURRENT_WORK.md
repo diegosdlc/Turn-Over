@@ -1,6 +1,6 @@
 # Turn Over — Current Work
 
-Last updated: 2026-08-21
+Last updated: 2026-10-24
 
 ## Project naming
 
@@ -81,7 +81,7 @@ See `assets/board-elements/README.md`.
 
 ## Session and turn lifecycle
 
-A session snapshot is saved during deployment, after play starts and after each completed move. Schema `6` stores the selected faction, serialized units (including facing, evolution and reserve participation), active turn, finished state, team evolution uses and lifecycle phase. Completed encounters clear the in-progress session; campaign progression remains separate in `ProgressionStore`.
+A session snapshot is saved during deployment, after play starts and after each completed move. Schema `6` stores the selected faction, serialized units (including facing, evolution and reserve participation), active turn, finished state, team evolution uses, lifecycle phase and completed survival rounds (`roundsElapsed`). Existing schema-6 snapshots without the counter still load, with a zero-round fallback. Completed encounters clear the in-progress session; campaign progression remains separate in `ProgressionStore`.
 
 The no-legal-moves lifecycle is implemented: a side with no legal move loses its turn; if neither side can move, the encounter ends with **Tablas** and offers **Reiniciar encuentro**.
 
