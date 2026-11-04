@@ -1,6 +1,8 @@
 # Localización de Turn Over
 
-La fuente de verdad de los textos es `locales/texts.csv`. Las columnas son `key,es,en,context` (UTF-8, comillas CSV estándar). El juego carga directamente este CSV una sola vez al iniciar, sin generar archivos JSON.
+La fuente de verdad de los textos es `locales/texts.csv`. Las columnas son `key,description,es,en,context` (UTF-8, comillas CSV estándar). El juego carga directamente este CSV una sola vez al iniciar, sin generar archivos JSON.
+
+La columna `description`, situada inmediatamente después de `key`, explica en una frase dónde aparece cada texto dentro del juego. Se utiliza para contextualizar la traducción y no aparece en la interfaz. La columna `context` conserva la categoría general.
 
 ## Edición y nuevos idiomas
 
