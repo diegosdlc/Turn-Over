@@ -48,11 +48,11 @@ export async function initI18n() {
   const response = await fetch(new URL('../../locales/texts.csv', import.meta.url));
   if (!response.ok) throw new Error('Unable to load translations: ' + response.status);
   const [header, ...rows] = parseCSV(await response.text());
-  if (!header || header.join(',') !== 'key,es,en,context') throw new Error('Invalid localization CSV header');
+  if (!header || header.join(',') !== 'key,description,es,en,context') throw new Error('Invalid localization CSV header');
   for (const row of rows) {
     if (row.length !== header.length || !row[0]) throw new Error('Invalid translation row: ' + row[0]);
     if (catalog.has(row[0])) throw new Error('Duplicate translation key: ' + row[0]);
-    catalog.set(row[0], { es: row[1], en: row[2] });
+    catalog.set(row[0], { es: row[2], en: row[3] });
   }
   refreshStaticTranslations();
   emitChange();
