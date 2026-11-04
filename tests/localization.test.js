@@ -8,11 +8,11 @@ const [header, ...rows] = parseCSV(source);
 const keys = new Set(rows.map(row => row[0]));
 
 test('translations CSV has unique keys and complete Spanish and English texts', () => {
-  assert.deepEqual(header, ['key', 'es', 'en', 'context']);
+  assert.deepEqual(header, ['key', 'description', 'es', 'en', 'context']);
   assert.ok(rows.length >= 150);
   assert.equal(keys.size, rows.length, 'Duplicate translation keys');
-  for (const [key, es, en] of rows) {
-    assert.ok(key && es && en, 'Incomplete translation: ' + key);
+  for (const [key, description, es, en] of rows) {
+    assert.ok(key && description && es && en, 'Incomplete translation: ' + key);
   }
 });
 
@@ -31,6 +31,6 @@ test('gender variants are available in both languages', () => {
 });
 
 test('quoted CSV text and punctuation are parsed correctly', () => {
-  assert.deepEqual(parseCSV('key,es,en,context\n"example","Una ""cita"", aquí","A ""quote"", here","test"\n')[1],
-    ['example', 'Una "cita", aquí', 'A "quote", here', 'test']);
+  assert.deepEqual(parseCSV('key,description,es,en,context\n"example","Example location.","Una ""cita"", aquí","A ""quote"", here","test"\n')[1],
+    ['example', 'Example location.', 'Una "cita", aquí', 'A "quote", here', 'test']);
 });
