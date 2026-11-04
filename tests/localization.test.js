@@ -13,12 +13,13 @@ test('translations CSV has unique keys and complete Spanish and English texts', 
   assert.equal(keys.size, rows.length, 'Duplicate translation keys');
   for (const [key, description, es, en] of rows) {
     assert.ok(key && description && es && en, 'Incomplete translation: ' + key);
+    assert.match(description, /\.$/, 'Description should be one sentence: ' + key);
   }
 });
 
 test('placeholders match across translations', () => {
   const params = text => [...text.matchAll(/\{(\w+)\}/g)].map(match => match[1]).sort();
-  for (const [key, es, en] of rows) {
+  for (const [key, description, es, en] of rows) {
     assert.deepEqual(params(es), params(en), 'Mismatched placeholders: ' + key);
   }
 });
