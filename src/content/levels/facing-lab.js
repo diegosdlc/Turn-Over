@@ -23,7 +23,7 @@ function unit({ id, faction, pieceType, facing, x, y }) {
     id,
     team: 'player',
     faction,
-    name: `${piece.name} ${faction}`,
+    name: `${piece.name} ${faction}`, i18nNameKey: 'ui.unit.' + pieceType, i18nNameParams: {},
     pieceType,
     fallbackGlyph: piece.fallbackGlyph,
     moveProfile: piece.moveProfile,
@@ -40,7 +40,7 @@ function enemyAnchor() {
     id: 'facing-lab-enemy-king',
     team: 'enemy',
     faction: 'green',
-    name: 'Rey rival',
+    name: 'Rey rival', i18nNameKey: 'lab.enemy.king',
     pieceType: 'king',
     fallbackGlyph: piece.fallbackGlyph,
     moveProfile: piece.moveProfile,
@@ -53,7 +53,7 @@ function enemyAnchor() {
 export function createFacingLab() {
   return Object.freeze({
     id: 'facing-lab',
-    name: 'Laboratorio de orientación',
+    name: 'Laboratorio de orientación', nameKey: 'level.lab_facing',
     nextLevelId: null,
     board: STANDARD_BOARD,
     teams: Object.freeze({
@@ -69,7 +69,7 @@ export function createFacingLab() {
     lab: Object.freeze({
       enabled: true,
       category: 'pieces',
-      description: 'Prueba frontal/espalda y cambios de encaramiento.'
+      description: 'Prueba frontal/espalda y cambios de encaramiento.', descriptionKey: 'lab.facing.description'
     }),
     behavior: createLabBehavior({
       flipFacingOnMove: true,

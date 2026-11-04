@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index.js';
 import { getMechanicLabFactory, listMechanicLabs } from './labs/index.js?v=20260821-budget-lab-1';
 import { createTutorial01, tutorial01 } from './tutorial-01.js?v=20261026-rounds-1';
 import { createTutorial02, tutorial02 } from './tutorial-02.js?v=20261026-rounds-1';
@@ -39,7 +40,7 @@ export function listLevels() {
 export { listMechanicLabs };
 
 export function listScenarioLevels() {
-  return SCENARIOS.map(level => ({ id: level.id, name: level.name }));
+  return SCENARIOS.map(level => ({ id: level.id, name: level.nameKey ? t(level.nameKey) : level.name }));
 }
 
 export function getNextLevel(level, options = {}) {

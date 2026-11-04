@@ -42,7 +42,7 @@ function enemyAnchor() {
     team: 'enemy',
     faction: 'red',
     facing: FACINGS.SOUTH,
-    name: 'Ancla rival',
+    name: 'Ancla rival', i18nNameKey: 'lab.enemy.anchor',
     pieceType: 'king',
     fallbackGlyph: piece.fallbackGlyph,
     moveProfile: piece.moveProfile,
@@ -60,7 +60,7 @@ function enemyRookTestPawn() {
     team: 'enemy',
     faction: 'red',
     facing: FACINGS.SOUTH,
-    name: 'Peón de prueba para Torre+',
+    name: 'Peón de prueba para Torre+', i18nNameKey: 'lab.enemy.rook_pawn',
     pieceType: 'pawn',
     fallbackGlyph: piece.fallbackGlyph,
     moveProfile: piece.moveProfile,
@@ -79,7 +79,7 @@ export function createDeploymentBudgetLab() {
 
   return Object.freeze({
     id: LAB_ID,
-    name: 'Laboratorio de presupuesto de despliegue',
+    name: 'Laboratorio de presupuesto de despliegue', nameKey: 'level.lab_deployment',
     nextLevelId: null,
     board: STANDARD_BOARD,
     teams: Object.freeze({
@@ -100,7 +100,7 @@ export function createDeploymentBudgetLab() {
     lab: Object.freeze({
       enabled: true,
       category: 'deployment',
-      description: 'Compara costes y capacidades de despliegue de todas las piezas base y evolucionadas con 50 puntos, incluido el escudo de Torre+.'
+      description: 'Compara costes y capacidades de despliegue de todas las piezas base y evolucionadas con 50 puntos, incluido el escudo de Torre+.', descriptionKey: 'lab.deployment.description_full'
     }),
     behavior: createLabBehavior(),
     units: [

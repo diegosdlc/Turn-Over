@@ -53,7 +53,7 @@ function baseScenario({ id, name, rules, units, ai = {} }) {
 export function createCaptureKingScenario() {
   return baseScenario({
     id: 'scenario-capture-king',
-    name: 'Escenario: Capturar al rey',
+    name: 'Escenario: Capturar al rey', nameKey: 'level.scenario_capture',
     rules: { victory: 'capture-king' },
     units: [
       unit('player-king', 'player', 'green', 'king', 3, 7, FACINGS.NORTH),
@@ -71,7 +71,7 @@ export function createCaptureKingScenario() {
 export function createEscortKingScenario() {
   return baseScenario({
     id: 'scenario-escort-king',
-    name: 'Escenario: Cruzar con el rey',
+    name: 'Escenario: Cruzar con el rey', nameKey: 'level.scenario_escort',
     rules: {
       victory: 'escort-king',
       targetRow: 0
@@ -97,7 +97,7 @@ export function createEscortKingScenario() {
 export function createSurvivalScenario() {
   return baseScenario({
     id: 'scenario-survive',
-    name: 'Escenario: Sobrevivir',
+    name: 'Escenario: Sobrevivir', nameKey: 'level.scenario_survive',
     rules: {
       victory: 'survive',
       surviveRounds: 8

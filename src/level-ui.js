@@ -1,3 +1,4 @@
+import { t, getLanguage, getGender, setLanguage, setGender, onLocaleChange, playerText, pieceName } from './i18n/index.js';
 import { listMechanicLabs } from './content/levels/index.js?v=20260821-evolution-3';
 
 function mechanicsLabOptions() {
@@ -6,48 +7,32 @@ function mechanicsLabOptions() {
     .join('');
 }
 
-const NOTEBOOK_SECTIONS = {
-  band: [
-    {
-      title: 'Banda',
-      html: '<div id="notebook-dynamic-rosters"></div>'
-    },
-    {
-      title: 'Banda · facciones',
-      html: '<p>La facción se elige antes de comenzar una nueva partida.</p><p>En el tutorial, la banda rival siempre es Verde y su pieza especial es el alfil.</p>'
-    }
-  ],
-  mission: [
-    {
-      title: 'Misión',
-      html: '<p>Objetivo del encuentro.</p><p>El contenido de cada nivel podrá definir aquí una o varias páginas de misión, condiciones especiales y objetivos secundarios.</p>'
-    },
-    {
-      title: 'Misión · notas',
-      html: '<p>Página adicional preparada para instrucciones o condiciones especiales del escenario.</p>'
-    }
-  ],
-  rules: [
-    {
-      title: 'Reglas',
-      html: '<ul><li>Selecciona una pieza de tu banda.</li><li>Las casillas legales se resaltan sobre el tablero.</li><li>Una captura puede congelar o destruir la pieza rival.</li></ul>'
-    },
-    {
-      title: 'Reglas · turno',
-      html: '<p>Si una banda no dispone de movimientos legales, pierde el turno. Si ninguna puede moverse, el encuentro termina en tablas.</p>'
-    },
-    {
-      title: 'Reglas · evoluciones',
-      html: '<p>El peón evoluciona al alcanzar el borde opuesto. Tras una victoria, evolucionan las piezas supervivientes que ya pertenecían a tu banda; los nuevos reclutas se incorporan sin evolucionar.</p><ul><li>Peón+: mueve en ambos sentidos y captura en cuatro diagonales.</li><li>Caballo+: despliega hasta la cuarta fila.</li><li>Alfil+: puede rebotar una vez en el borde.</li><li>Torre+: rechaza el primer ataque recibido.</li><li>Rey y Reina+: intercambian posiciones una vez.</li></ul>'
-    }
-  ],
-  settings: [
-    {
-      title: 'Ajustes',
-      html: `<div class="notebook-settings-row"><label for="notebook-volume">Música</label><input id="notebook-volume" type="range" min="0" max="100" step="1" value="45" aria-label="Volumen de la música"></div><p>El botón de altavoz junto al cuaderno permite silenciar o recuperar el volumen con una sola pulsación.</p><h3>Laboratorios de mecánicas</h3><div class="notebook-lab-list"><label class="notebook-lab-label" for="notebook-mechanics-lab">Escenario</label><select id="notebook-mechanics-lab" class="notebook-lab-select"><option value="">Selecciona un laboratorio…</option>${mechanicsLabOptions()}</select></div>`
-    }
-  ]
-};
+function notebookSections() {
+  return {
+    band: [
+      { title: t('notebook.band.title'), html: '<div id="notebook-dynamic-rosters"></div>' },
+      { title: t('notebook.factions.title'), html: t('notebook.factions.body') }
+    ],
+    mission: [
+      { title: t('notebook.mission.title'), html: t('notebook.mission.body') },
+      { title: t('notebook.mission_notes.title'), html: t('notebook.mission_notes.body') }
+    ],
+    rules: [
+      { title: t('notebook.rules.title'), html: t('notebook.rules.body') },
+      { title: t('notebook.turn.title'), html: t('notebook.turn.body') },
+      { title: t('notebook.evolution.title'), html: t('notebook.evolution.body') }
+    ],
+    settings: [
+      { title: t('notebook.settings.title'), html: `
+        <div class="notebook-settings-row"><label for="notebook-volume">${t('ui.music')}</label><input id="notebook-volume" type="range" min="0" max="100" step="1" value="45" aria-label="${t('ui.music.volume')}"></div>
+        <div class="notebook-settings-row"><label for="notebook-language">${t('ui.settings.language')}</label><select id="notebook-language"><option value="es">${t('ui.language.es')}</option><option value="en">${t('ui.language.en')}</option></select></div>
+        <div class="notebook-settings-row"><label for="notebook-gender">${t('ui.settings.gender')}</label><select id="notebook-gender"><option value="masculine">${t('ui.gender.masculine')}</option><option value="feminine">${t('ui.gender.feminine')}</option><option value="neutral">${t('ui.gender.neutral')}</option></select></div>
+        <p>${playerText('player.greeting')}</p><p>${t('notebook.settings.audio_help')}</p><h3>${t('notebook.settings.labs')}</h3>
+        <div class="notebook-lab-list"><label class="notebook-lab-label" for="notebook-mechanics-lab">${t('notebook.settings.scenario')}</label>
+        <select id="notebook-mechanics-lab" class="notebook-lab-select"><option value="">${t('notebook.settings.select_lab')}</option>${mechanicsLabOptions()}</select></div>` }
+    ]
+  };
+}
 
 class NotebookUI {
   constructor(root) {
@@ -68,18 +53,19 @@ class NotebookUI {
     this.tabs.forEach(tab => tab.addEventListener('click', () => this.open(tab.dataset.section)));
     this.previous?.addEventListener('click', () => this.turn(-1));
     this.next?.addEventListener('click', () => this.turn(1));
+    onLocaleChange(() => this.render());
     this.render();
   }
 
   open(section) {
-    if (!NOTEBOOK_SECTIONS[section]) return;
+    if (!notebookSections()[section]) return;
     this.section = section;
     this.page = 0;
     this.render();
   }
 
   turn(offset) {
-    const pages = NOTEBOOK_SECTIONS[this.section] ?? [];
+    const pages = notebookSections()[this.section] ?? [];
     const nextPage = this.page + offset;
     if (nextPage < 0 || nextPage >= pages.length) return;
     this.page = nextPage;
@@ -87,7 +73,7 @@ class NotebookUI {
   }
 
   render() {
-    const pages = NOTEBOOK_SECTIONS[this.section] ?? [];
+    const pages = notebookSections()[this.section] ?? [];
     const current = pages[this.page] ?? pages[0];
     if (!current) return;
 
@@ -109,11 +95,11 @@ class NotebookUI {
     destination.replaceChildren();
     const state = window.turnOverNotebookState;
     if (!state?.units) return;
-    for (const [team, title] of [['player', 'Tu banda'], ['enemy', 'Banda rival']]) {
+    for (const [team, title] of [['player', 'ui.deployment.your_band'], ['enemy', 'ui.deployment.enemy_band']]) {
       const section = document.createElement('section');
       section.className = 'notebook-roster-section';
       const heading = document.createElement('h3');
-      heading.textContent = title;
+      heading.textContent = t(title);
       section.append(heading);
       const units = state.units.filter(unit => unit.team === team);
       const grid = document.createElement('div');
@@ -159,12 +145,12 @@ class NotebookUI {
         }
         const name = document.createElement('span');
         name.className = 'deployment-piece-name';
-        name.textContent = unit.name;
+        name.textContent = pieceName(unit);
         tile.append(name);
         const meta = document.createElement('small');
         meta.className = 'deployment-piece-meta';
-        meta.textContent = unit.destroyed ? 'Destruida' : unit.captured ? 'Capturada' :
-          unit.inReserve ? 'Reserva' : 'En tablero';
+        meta.textContent = t(unit.destroyed ? 'ui.roster.destroyed' : unit.captured ? 'ui.roster.captured' :
+          unit.inReserve ? 'ui.roster.reserve' : 'ui.deployment.status_board');
         card.append(tile, meta);
         grid.append(card);
       }
@@ -178,12 +164,16 @@ class NotebookUI {
     const showMainMenu = this.section === 'settings';
     this.fixedActions.hidden = !showMainMenu;
     this.fixedActions.innerHTML = showMainMenu
-      ? '<button id="notebook-main-menu" class="notebook-menu-button" type="button">Volver al menú principal</button>'
+      ? `<button id="notebook-main-menu" class="notebook-menu-button" type="button">${t('ui.notebook.home')}</button>`
       : '';
     this.pageElement?.classList.toggle('has-fixed-actions', showMainMenu);
   }
 
   bindSettingsControls() {
+    const language = this.root.querySelector('#notebook-language');
+    const gender = this.root.querySelector('#notebook-gender');
+    if (language) { language.value = getLanguage(); language.addEventListener('change', () => setLanguage(language.value)); }
+    if (gender) { gender.value = getGender(); gender.addEventListener('change', () => setGender(gender.value)); }
     const mechanicsLab = this.root.querySelector('#notebook-mechanics-lab');
     mechanicsLab?.addEventListener('change', () => {
       if (mechanicsLab.value) {
@@ -228,6 +218,7 @@ class LevelControls {
       this.closePause();
     });
     this.legacyVolume?.addEventListener('input', () => this.syncMute());
+    onLocaleChange(() => this.syncMute());
     this.syncMute();
   }
 
@@ -248,7 +239,7 @@ class LevelControls {
     if (!this.mute || !this.legacyVolume) return;
     const muted = Number(this.legacyVolume.value) === 0;
     this.mute.textContent = muted ? '🔇' : '🔊';
-    this.mute.setAttribute('aria-label', muted ? 'Activar sonido' : 'Silenciar música');
+    this.mute.setAttribute('aria-label', t(muted ? 'ui.sound.unmute' : 'ui.sound.mute'));
     this.mute.setAttribute('aria-pressed', String(muted));
     const notebookVolume = document.querySelector('#notebook-volume');
     if (notebookVolume) notebookVolume.value = this.legacyVolume.value;
