@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="./src/home-screen.css?v=20260824-deploy-6" />
     <link rel="stylesheet" href="./src/audio-controls.css?v=20260814-1700" />
     <link rel="stylesheet" href="./src/level-ui.css?v=20260825-notebook-ui-1" />
-    <link rel="stylesheet" href="./src/deployment.css?v=20260825-notebook-ui-1" />
+    <link rel="stylesheet" href="./src/deployment.css?v=20261103-player-status-5" />
     <link rel="stylesheet" href="./src/level-ui-mobile.css?v=20260825-notebook-ui-1" />
     <link rel="stylesheet" href="./src/localization.css" />
   </head>
@@ -28,7 +28,15 @@
           <section id="deployment-panel" class="deployment-panel" aria-labelledby="deployment-title" hidden>
             <p class="deployment-kicker" data-i18n="ui.deployment.phase">Fase de despliegue</p>
             <h2 id="deployment-title" data-i18n="ui.deployment.title">Prepara tu banda</h2>
-            <div id="deployment-pieces" class="deployment-pieces" aria-label="Piezas disponibles" data-i18n-aria="ui.deployment.pieces"></div>
+            <p id="deployment-round-label" class="deployment-round-label" data-i18n="ui.deployment.round_initial">Ronda 1 de 3</p>
+            <section class="deployment-roster-section" aria-label="Tu banda" data-i18n-aria="ui.deployment.your_band">
+              <h3 class="deployment-subtitle" data-i18n="ui.deployment.your_band">Tu banda</h3>
+              <div id="deployment-pieces" class="deployment-pieces" aria-label="Piezas disponibles" data-i18n-aria="ui.deployment.pieces"></div>
+            </section>
+            <section class="deployment-roster-section" aria-label="Banda rival" data-i18n-aria="ui.deployment.enemy_band">
+              <h3 class="deployment-subtitle" data-i18n="ui.deployment.enemy_band">Banda rival</h3>
+              <div id="enemy-deployment-pieces" class="enemy-deployment-pieces" aria-label="Composición de la banda rival" data-i18n-aria="ui.deployment.enemy_composition"></div>
+            </section>
             <p id="deployment-status" class="deployment-status" data-i18n="ui.deployment.initial">Selecciona una pieza y colócala en una de tus dos primeras filas.</p>
             <button id="deployment-start" class="deployment-start" type="button" hidden data-i18n="ui.deployment.start">Iniciar partida</button>
           </section>
@@ -159,7 +167,7 @@
     </dialog>
 
     <script type="module" src="./src/viewport.js?v=20260825-landscape-1"></script>
-    <script type="module" src="./src/main.js?v=20260821-budget-1"></script>
-    <script type="module" src="./src/level-ui.js?v=20260825-notebook-ui-1"></script>
+    <script type="module" src="./src/main.js?v=20261104-i18n-merge-1"></script>
+    <script type="module" src="./src/level-ui.js?v=20261104-i18n-merge-1"></script>
   </body>
 </html>

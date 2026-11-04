@@ -252,3 +252,368 @@
     font-size:clamp(.58rem,2.45vw,.75rem);
   }
 }
+
+/* Both bands use the same scalable piece tiles and equal presentation areas. */
+.deployment-panel{
+  gap:0;
+  overflow:hidden;
+}
+.deployment-roster-section{
+  flex:1 1 0;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  width:100%;
+}
+.deployment-panel .deployment-subtitle{
+  flex:none;
+  font-size:clamp(.72rem,.95vw,.92rem);
+  margin:2px 0;
+  line-height:1.1;
+}
+.deployment-round-label{
+  flex:none;
+  margin:0 0 3px;
+  font-size:clamp(.65rem,.82vw,.85rem);
+  font-weight:700;
+  color:#7b5942;
+}
+.deployment-panel .deployment-pieces,
+.deployment-panel .enemy-deployment-pieces{
+  flex:1 1 auto;
+  min-height:0;
+  width:100%;
+  display:grid;
+  grid-template-columns:repeat(var(--roster-cols,4),minmax(0,1fr));
+  grid-template-rows:repeat(var(--roster-rows,1),minmax(0,1fr));
+  align-items:stretch;
+  align-content:stretch;
+  gap:3px;
+  padding:2px 0;
+  overflow:hidden;
+}
+.deployment-panel .deployment-piece-card{
+  min-width:0;
+  min-height:0;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  container-type:normal;
+}
+.deployment-panel .deployment-piece{
+  flex:none;
+  box-sizing:border-box;
+  height:min(70px,calc(100% - 18px));
+  width:auto;
+  max-width:100%;
+  min-height:0;
+  aspect-ratio:1 / 1.18;
+  padding:0 2% 18%;
+  container-type:normal;
+}
+.deployment-panel .deployment-piece-fallback{font-size:clamp(.95rem,2.4vw,1.5rem)}
+.deployment-panel .deployment-piece-name{
+  font-size:clamp(.46rem,.76vw,.66rem);
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.deployment-panel .deployment-piece-cost,
+.deployment-panel .deployment-piece-evolved{font-size:clamp(.45rem,.7vw,.56rem);white-space:nowrap}
+.deployment-piece.readonly{cursor:default}
+.deployment-piece.readonly:hover{transform:none}
+.deployment-panel .deployment-piece:disabled{opacity:.72;filter:saturate(.75)}
+.deployment-panel .deployment-piece-cost{top:0;right:-3px;white-space:nowrap}
+.deployment-panel .deployment-piece-meta{
+  flex:none;
+  min-height:15px;
+  max-height:18px;
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-family:Arial,sans-serif;
+  font-size:clamp(.46rem,.75vw,.65rem);
+  color:#6d665b;
+  white-space:nowrap;
+}
+.deployment-panel .deployment-piece-remove{
+  font-size:inherit;
+  padding:0 3px;
+}
+.deployment-status{
+  flex:none;
+  min-height:0;
+  max-height:2.7em;
+  margin:3px 0;
+  overflow:hidden;
+}
+.deployment-start{
+  flex:none;
+  padding:6px 10px;
+}
+/* The Band notebook page shares the same piece artwork and label styling. */
+.notebook-roster-section{margin:.2rem 0 .5rem}
+.notebook-roster-section h3{
+  margin:.3rem 0 .25rem;
+  font-size:clamp(.72rem,.95vw,.9rem);
+}
+.notebook-roster-grid{
+  display:grid;
+  grid-template-columns:repeat(var(--roster-cols,4),minmax(0,1fr));
+  gap:5px;
+  width:100%;
+}
+.notebook-roster-card{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-width:0;
+}
+.notebook-roster-card .notebook-roster-piece{
+  box-sizing:border-box;
+  width:min(100%,60px);
+  height:auto;
+  max-height:none;
+  aspect-ratio:1 / 1.18;
+  padding:0 2% 18%;
+  container-type:normal;
+}
+.notebook-roster-card .deployment-piece-fallback{font-size:clamp(.95rem,2.4vw,1.5rem)}
+.notebook-roster-card .deployment-piece-name{
+  font-size:clamp(.46rem,.76vw,.66rem);
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.notebook-roster-card .deployment-piece-evolved{font-size:clamp(.45rem,.7vw,.56rem)}
+.notebook-roster-card .deployment-piece-meta{
+  font-family:Arial,sans-serif;
+  font-size:clamp(.47rem,.68vw,.65rem);
+  line-height:1.2;
+  text-align:center;
+  color:#746859;
+  margin-top:2px;
+}
+.notebook-roster-card .is-destroyed{opacity:.35;filter:grayscale(1)}
+@media(max-width:640px){
+  .deployment-panel .deployment-piece-meta{font-size:clamp(.42rem,1.8vw,.57rem)}
+  .notebook-roster-grid{gap:3px}
+}
+
+/* Consistent fixed-size roster pieces: all stages use design-space pixels. */
+/* Width is determined by the roster's piece count, not by rendering timing.
+   The notebook is scaled as a single 540px design surface on touch devices. */
+.deployment-panel .deployment-pieces,
+.deployment-panel .enemy-deployment-pieces{
+  justify-items:center;
+  align-items:center;
+  align-content:stretch;
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+.deployment-panel .deployment-piece-card{
+  container-type:normal;
+  justify-content:center;
+  min-height:0;
+  overflow:visible;
+}
+.deployment-panel .deployment-piece,
+.notebook-roster-card .notebook-roster-piece{
+  box-sizing:border-box;
+  flex:none;
+  display:grid;
+  place-items:center;
+  width:var(--roster-tile-width,48px);
+  min-width:0;
+  max-width:100%;
+  height:auto;
+  max-height:none;
+  min-height:0;
+  aspect-ratio:1 / 1.18;
+  padding:0 2% 18%;
+  container-type:normal;
+  transform:none;
+}
+.deployment-panel .deployment-piece:hover:not(:disabled),
+.deployment-panel .deployment-piece:focus-visible,
+.deployment-panel .deployment-piece.selected{
+  transform:none;
+}
+.deployment-panel .deployment-piece-cost{
+  top:-3px;
+  right:-7px;
+  font-size:9px;
+  line-height:1.15;
+  padding:2px 3px;
+  white-space:nowrap;
+}
+.deployment-panel .deployment-piece-evolved{
+  font-size:9px;
+}
+.deployment-panel .deployment-piece-name,
+.notebook-roster-card .deployment-piece-name{
+  font-size:10px;
+  line-height:1;
+}
+.deployment-panel .deployment-piece-fallback,
+.notebook-roster-card .deployment-piece-fallback{
+  font-size:23px;
+}
+.deployment-panel .deployment-piece-meta,
+.notebook-roster-card .deployment-piece-meta{
+  font-size:10px;
+  line-height:1.2;
+}
+.notebook-roster-grid{
+  justify-items:center;
+  align-items:start;
+}
+.notebook-roster-card{
+  width:100%;
+  min-width:0;
+}
+.notebook-roster-card .notebook-roster-piece{
+  box-shadow:0 5px 8px rgba(49,42,30,.22);
+}
+.notebook-roster-card .notebook-roster-piece.in-lineup{
+  box-shadow:0 5px 8px rgba(49,42,30,.22),0 0 0 2px rgba(90,122,78,.44);
+}
+.notebook-roster-card .notebook-roster-piece.in-reserve{
+  opacity:.76;
+}
+.notebook-roster-card .notebook-roster-piece.is-destroyed{
+  opacity:.35;
+  filter:grayscale(1);
+}
+/* Maintain the same sizing within the fixed-design touch layout. */
+html.touch-ui .deployment-panel .deployment-piece-fallback,
+html.touch-ui .notebook-roster-card .deployment-piece-fallback{
+  font-size:23px;
+}
+html.touch-ui .deployment-panel .deployment-piece-cost,
+html.touch-ui .deployment-panel .deployment-piece-evolved{
+  font-size:9px;
+}
+html.touch-ui .deployment-panel .deployment-piece-name,
+html.touch-ui .notebook-roster-card .deployment-piece-name{
+  font-size:10px;
+}
+
+/* Two full roster rows per band, without changing the stable piece artwork. */
+/* Make fuller use of the notebook sheet, not just its middle 75%. */
+.notebook-ui.is-deploying .deployment-panel{
+  top:5%;
+  height:94%;
+  padding:1% 2.5% 1.5%;
+}
+.notebook-ui.is-deploying .deployment-kicker{
+  font-size:clamp(.6rem,.75vw,.7rem);
+  line-height:1.1;
+}
+.notebook-ui.is-deploying .deployment-panel h2{
+  font-size:clamp(.9rem,1.1vw,1.12rem);
+  line-height:1.15;
+  margin:1px 0;
+}
+.notebook-ui.is-deploying .deployment-round-label{
+  font-size:clamp(.58rem,.75vw,.72rem);
+  line-height:1.2;
+  margin:0;
+}
+.notebook-ui.is-deploying .deployment-subtitle{
+  font-size:clamp(.66rem,.8vw,.8rem);
+  line-height:1.15;
+  margin:1px 0;
+}
+.notebook-ui.is-deploying .deployment-roster-section{
+  flex:1 1 0;
+  min-height:0;
+}
+.notebook-ui.is-deploying .deployment-pieces,
+.notebook-ui.is-deploying .enemy-deployment-pieces{
+  grid-template-rows:repeat(var(--roster-rows,1),minmax(59px,1fr));
+  grid-auto-rows:minmax(59px,1fr);
+  gap:2px;
+  padding:1px 0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  scrollbar-width:thin;
+}
+.notebook-ui.is-deploying .deployment-piece-card{
+  gap:1px;
+  align-items:center;
+  justify-content:center;
+}
+.notebook-ui.is-deploying .deployment-piece-meta{
+  flex:none;
+  min-height:12px;
+  max-height:13px;
+  font-size:9px;
+  line-height:1.2;
+}
+.notebook-ui.is-deploying .deployment-status{
+  font-size:clamp(.62rem,.72vw,.74rem);
+  line-height:1.2;
+  max-height:2.5em;
+  margin:1px 0;
+}
+.notebook-ui.is-deploying .deployment-start{
+  min-height:0;
+  padding:4px 10px;
+  line-height:1.15;
+}
+/* The Band page in combat also gets more of the page for multiple rows. */
+.notebook-ui[data-notebook-section='band']:not(.is-deploying) .notebook-page{
+  top:6%;
+  height:92%;
+  padding:1% 2.5% 4%;
+}
+
+/* Matching deployed/reserve states in both deployment rosters. */
+.deployment-panel .deployment-piece.in-reserve,
+.deployment-panel .deployment-piece.in-reserve:disabled{
+  opacity:.46;
+  filter:grayscale(.58) saturate(.55);
+}
+.deployment-panel .deployment-piece.in-lineup,
+.deployment-panel .deployment-piece.in-lineup:disabled{
+  opacity:1;
+  filter:none;
+}
+.deployment-panel .deployment-piece-meta{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  min-height:13px;
+  max-height:14px;
+  overflow:visible;
+  white-space:nowrap;
+}
+.notebook-ui.is-deploying .deployment-piece-meta{
+  min-height:13px;
+  max-height:14px;
+}
+.deployment-panel .deployment-piece-remove{
+  display:inline-grid;
+  place-items:center;
+  min-width:15px;
+  height:14px;
+  padding:0;
+  border:0;
+  border-radius:3px;
+  background:rgba(135,76,65,.14);
+  color:#7b4b42;
+  font:700 13px/1 Arial,sans-serif;
+  text-decoration:none;
+  cursor:pointer;
+}
+.deployment-panel .deployment-piece-remove:hover,
+.deployment-panel .deployment-piece-remove:focus-visible{
+  background:rgba(135,76,65,.3);
+  outline:1px solid #7b4b42;
+}

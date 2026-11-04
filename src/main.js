@@ -1,17 +1,18 @@
 import { initI18n, t, pieceName, factionName, onLocaleChange, setLanguage, setGender, getLanguage, getGender, refreshStaticTranslations } from './i18n/index.js';
 import { GAME_CONFIG } from './config/gameConfig.js';
 import { FACTIONS, PLAYER_FACTION_IDS } from './content/factions.js';
-import { getLevel, getNextLevel } from './content/levels/index.js?v=20260821-budget-1';
-import { GameState } from './core/GameState.js?v=20260821-budget-1';
+import { getLevel, getNextLevel } from './content/levels/index.js?v=20261026-rounds-1';
+import { GameState } from './core/GameState.js?v=20261026-rounds-1';
 import { AssetRegistry } from './systems/AssetRegistry.js';
 import { AudioManager } from './systems/AudioManager.js?v=20260814-1700';
-import { GameSessionStore } from './systems/GameSessionStore.js?v=20260821-evolution-3';
+import { GameSessionStore, restoreSessionState } from './systems/GameSessionStore.js?v=20261103-merge-1';
 import { ProgressionStore } from './systems/ProgressionStore.js?v=20260821-evolution-3';
 import { TutorialSystem } from './systems/TutorialSystem.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20260821-evolution-3';
 import { AIController } from './ai/AIController.js?v=20260821-budget-1';
 import { legalActionsFor } from './core/rules.js?v=20260821-evolution-3';
 import { buildNextPlayerBand } from './core/campaign.js?v=20260821-budget-1';
+import { deployEnemyWave } from './ai/DeploymentAI.js';
 
 class GameApp {
   constructor() {
@@ -26,6 +27,8 @@ class GameApp {
     this.deploymentPanel = document.querySelector('#deployment-panel');
     this.deploymentPieces = document.querySelector('#deployment-pieces');
     this.deploymentStatus = document.querySelector('#deployment-status');
+    this.enemyDeploymentPieces = document.querySelector('#enemy-deployment-pieces');
+    this.deploymentRoundLabel = document.querySelector('#deployment-round-label');
     this.deploymentStart = document.querySelector('#deployment-start');
     this.assets = new AssetRegistry(FACTIONS);
     this.audio = new AudioManager();
@@ -159,14 +162,7 @@ class GameApp {
   }
 
   restoreSavedState(savedState) {
-    if (!Array.isArray(savedState.units)) return;
-    this.state.units = savedState.units;
-    this.state.currentTurn = savedState.currentTurn === 'enemy' ? 'enemy' : 'player';
-    this.state.finished = Boolean(savedState.finished);
-    this.state.phase = savedState.phase === 'deployment' ? 'deployment' : 'play';
-    if (savedState.teamEvolution) this.state.teamEvolution = savedState.teamEvolution;
-    this.state.selectedId = null;
-    this.state.pendingCapture = null;
+    restoreSessionState(this.state, savedState);
   }
 
   saveSession() {
@@ -183,6 +179,7 @@ class GameApp {
 
   resolvePhase() {
     if (this.state.isDeploying()) {
+      if (this.state.isAlternatingDeployment() && this.state.deploymentTurn === 'enemy') this.deployEnemy();
       this.render();
       return;
     }
@@ -190,6 +187,8 @@ class GameApp {
   }
 
   render() {
+    window.turnOverNotebookState = { units: this.state.units, assets: this.assets };
+    window.dispatchEvent(new Event('game:rosters-updated'));
     this.renderer.render();
     this.renderDeployment();
     if (!this.state.isDeploying()) {
@@ -203,10 +202,68 @@ class GameApp {
     this.notebook?.classList.toggle('is-deploying', deploying);
     if (!deploying || !this.deploymentPieces) return;
 
+    const alternating = this.state.isAlternatingDeployment();
     const roster = this.state.deploymentRoster();
     const units = this.state.deploymentUnits();
+    const playerTurn = !alternating || this.state.deploymentTurn === 'player';
+    if (this.deploymentRoundLabel) this.deploymentRoundLabel.textContent = alternating
+      ? t('ui.deployment.round_label', { round: this.state.deploymentRound, action: t(playerTurn ? 'ui.deployment.your_turn' : 'ui.deployment.enemy_turn') })
+      : t('ui.deployment.title');
+    if (this.enemyDeploymentPieces) {
+      const enemies = this.state.deploymentRoster('enemy');
+      this.fitRosterGrid(this.enemyDeploymentPieces, enemies.length);
+      this.enemyDeploymentPieces.replaceChildren();
+      for (const enemy of enemies) {
+        const card = document.createElement('div');
+        card.className = 'deployment-piece-card';
+        const tile = document.createElement('div');
+        tile.className = `deployment-piece readonly ${enemy.inReserve ? 'in-reserve' : 'in-lineup'}`;
+        tile.setAttribute('role', 'img');
+        tile.setAttribute('aria-label', t('ui.deployment.enemy_piece_aria', { name: pieceName(enemy), status: t(enemy.inReserve ? 'ui.deployment.status_pending_lower' : 'ui.deployment.status_board_lower') }));
+        tile.title = pieceName(enemy);
+        this.applyDeploymentPalette(tile, enemy);
+        const fallback = document.createElement('span');
+        fallback.className = 'deployment-piece-fallback';
+        fallback.textContent = enemy.fallbackGlyph;
+        tile.append(fallback);
+        const asset = this.assets.pieceAsset(enemy);
+        if (asset) {
+          const image = document.createElement('img');
+          image.className = 'deployment-piece-image';
+          image.src = this.assets.resolve(asset);
+          image.alt = '';
+          image.draggable = false;
+          image.addEventListener('error', () => {
+            image.remove();
+            tile.classList.remove('has-image');
+          }, { once: true });
+          tile.append(image);
+          tile.classList.add('has-image');
+        }
+        const cost = document.createElement('span');
+        cost.className = 'deployment-piece-cost';
+        cost.textContent = t('ui.deployment.points', { count: this.state.deploymentUnitCost(enemy) });
+        tile.append(cost);
+        if (enemy.evolutionStage === 'evolved') {
+          const evolved = document.createElement('span');
+          evolved.className = 'deployment-piece-evolved';
+          evolved.textContent = '+';
+          tile.append(evolved);
+        }
+        const name = document.createElement('span');
+        name.className = 'deployment-piece-name';
+        name.textContent = pieceName(enemy);
+        tile.append(name);
+        const status = document.createElement('span');
+        status.className = 'deployment-piece-meta';
+        status.textContent = t(enemy.inReserve ? 'ui.deployment.status_pending' : 'ui.deployment.status_board');
+        card.append(tile, status);
+        this.enemyDeploymentPieces.append(card);
+      }
+    }
     const pointLimit = this.state.deploymentPointLimit();
     const budgeted = pointLimit != null;
+    this.fitRosterGrid(this.deploymentPieces, roster.length);
     this.deploymentPieces.replaceChildren();
 
     for (const unit of roster) {
@@ -218,9 +275,11 @@ class GameApp {
       button.className = `deployment-piece ${unit.id === this.state.selectedId ? 'selected' : ''} ${unit.inReserve ? 'in-reserve' : 'in-lineup'}`;
       const cost = this.state.deploymentUnitCost(unit);
       const affordable = this.state.canAffordDeploymentUnit(unit);
-      button.disabled = Boolean(unit.inReserve && !affordable);
+      const locked = alternating && (this.state.isDeploymentCommitted(unit) || !playerTurn ||
+        (unit.inReserve && this.state.deploymentRoundPlaced('player') >= this.state.deploymentRoundQuota('player')));
+      button.disabled = Boolean(locked || (unit.inReserve && !affordable));
       button.setAttribute('aria-pressed', String(!unit.inReserve));
-      button.setAttribute('aria-label', t('ui.deployment.unit_aria', { action: t(unit.inReserve ? 'ui.deployment.select' : 'ui.deployment.reposition'), name: pieceName(unit), points: cost, evolved: unit.evolutionStage === 'evolved' ? t('ui.board.evolved') : '' }));
+      button.setAttribute('aria-label', t('ui.deployment.unit_aria', { action: t(unit.inReserve ? 'ui.deployment.select' : 'ui.deployment.reposition'), name: pieceName(unit), points: cost, status: t(unit.inReserve ? 'ui.deployment.status_pending_lower' : 'ui.deployment.status_board_lower'), evolved: unit.evolutionStage === 'evolved' ? t('ui.board.evolved') : '' }));
       this.applyDeploymentPalette(button, unit);
 
       const fallback = document.createElement('span');
@@ -259,25 +318,32 @@ class GameApp {
       button.append(name);
 
       button.addEventListener('click', () => {
+        if (!playerTurn || (alternating && this.state.isDeploymentCommitted(unit))) return;
         if (this.state.selectedId === unit.id) this.state.clearSelection();
         else this.state.setSelected(unit.id);
         this.render();
       });
-      card.append(button);
+      const status = document.createElement('div');
+      status.className = 'deployment-piece-meta';
+      const statusLabel = document.createElement('span');
+      statusLabel.textContent = t(unit.inReserve ? 'ui.deployment.status_pending' : 'ui.deployment.status_board');
+      status.append(statusLabel);
 
-      if (budgeted && !unit.inReserve) {
+      if (budgeted && !unit.inReserve && (!alternating || (playerTurn && !this.state.isDeploymentCommitted(unit)))) {
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'deployment-piece-remove';
-        remove.textContent = t('ui.deployment.remove');
+        remove.textContent = '×';
+        remove.title = t('ui.deployment.remove_title', { name: pieceName(unit) });
         remove.setAttribute('aria-label', t('ui.deployment.remove_aria', { name: pieceName(unit) }));
         remove.addEventListener('click', () => {
           if (!this.state.reserveDeploymentUnit(unit)) return;
           this.saveSession();
           this.render();
         });
-        card.append(remove);
+        status.append(remove);
       }
+      card.append(button, status);
 
       this.deploymentPieces.append(card);
     }
@@ -303,7 +369,26 @@ class GameApp {
         this.deploymentStatus.textContent = t('ui.deployment.choose', { placed, total: units.length });
       }
     }
-    if (this.deploymentStart) this.deploymentStart.hidden = !complete;
+    if (alternating && this.deploymentStatus) {
+      const used = this.state.deploymentRoundPlaced('player');
+      const quota = this.state.deploymentRoundQuota('player');
+      this.deploymentStatus.textContent = t('ui.deployment.round_progress', { round: this.state.deploymentRound, used, quota, budget: budgetText });
+    }
+    if (this.deploymentStart) {
+      const available = alternating ? this.state.canFinishDeploymentRound() && !selected?.inReserve : complete;
+      this.deploymentStart.hidden = !available;
+      this.deploymentStart.textContent = t(alternating && this.state.deploymentRound < 3 ? 'ui.deployment.confirm_round' : 'ui.deployment.start');
+    }
+  }
+
+  fitRosterGrid(grid, count) {
+    const cols = Math.min(4, Math.max(1, count));
+    const rows = Math.max(1, Math.ceil(count / cols));
+    grid.style.setProperty('--roster-cols', String(cols));
+    grid.style.setProperty('--roster-rows', String(rows));
+    // Fixed design-space pixels: never depend on row percentages or container queries.
+    // Both bands and the combat notebook use the same piece-width calculation.
+    grid.style.setProperty('--roster-tile-width', `${Math.max(20, Math.min(48, Math.floor(60 / rows)))}px`);
   }
 
   applyDeploymentPalette(element, unit) {
@@ -336,8 +421,10 @@ class GameApp {
   }
 
   deploymentCellClick(unit, x, y) {
+    if (this.state.isAlternatingDeployment() && this.state.deploymentTurn !== 'player') return;
     const deploymentTeam = this.state.deploymentTeam();
     if (unit?.team === deploymentTeam) {
+      if (this.state.isAlternatingDeployment() && this.state.isDeploymentCommitted(unit)) return;
       this.state.setSelected(unit.id);
       this.render();
       return;
@@ -350,7 +437,21 @@ class GameApp {
     this.render();
   }
 
+  deployEnemy() {
+    if (!this.state?.isAlternatingDeployment() || this.state.deploymentTurn !== 'enemy') return;
+    deployEnemyWave(this.state, this.level);
+    this.state.finishEnemyDeploymentRound();
+    this.saveSession();
+  }
+
   startDeployedGame() {
+    if (this.state?.isAlternatingDeployment() && this.state.deploymentRound < 3) {
+      if (!this.state.canFinishDeploymentRound() || !this.state.advanceDeploymentRound()) return;
+      this.deployEnemy();
+      this.saveSession();
+      this.render();
+      return;
+    }
     if (!this.state?.beginPlay()) return;
     this.saveSession();
     this.resolveTurn();

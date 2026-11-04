@@ -1,4 +1,4 @@
-import { t, getLanguage, getGender, setLanguage, setGender, onLocaleChange, playerText } from './i18n/index.js';
+import { t, getLanguage, getGender, setLanguage, setGender, onLocaleChange, playerText, pieceName } from './i18n/index.js';
 import { listMechanicLabs } from './content/levels/index.js?v=20260821-evolution-3';
 
 function mechanicsLabOptions() {
@@ -10,7 +10,7 @@ function mechanicsLabOptions() {
 function notebookSections() {
   return {
     band: [
-      { title: t('notebook.band.title'), html: t('notebook.band.body') },
+      { title: t('notebook.band.title'), html: '<div id="notebook-dynamic-rosters"></div>' },
       { title: t('notebook.factions.title'), html: t('notebook.factions.body') }
     ],
     mission: [
@@ -86,6 +86,77 @@ class NotebookUI {
     if (this.next) this.next.disabled = this.page >= pages.length - 1;
     this.renderFixedActions();
     this.bindSettingsControls();
+    this.renderRosters();
+  }
+
+  renderRosters() {
+    const destination = this.root.querySelector('#notebook-dynamic-rosters');
+    if (!destination) return;
+    destination.replaceChildren();
+    const state = window.turnOverNotebookState;
+    if (!state?.units) return;
+    for (const [team, title] of [['player', 'ui.deployment.your_band'], ['enemy', 'ui.deployment.enemy_band']]) {
+      const section = document.createElement('section');
+      section.className = 'notebook-roster-section';
+      const heading = document.createElement('h3');
+      heading.textContent = t(title);
+      section.append(heading);
+      const units = state.units.filter(unit => unit.team === team);
+      const grid = document.createElement('div');
+      grid.className = 'notebook-roster-grid';
+      const cols = Math.min(4, Math.max(1, units.length));
+      const rows = Math.max(1, Math.ceil(units.length / cols));
+      grid.style.setProperty('--roster-cols', String(cols));
+      grid.style.setProperty('--roster-tile-width', `${Math.max(20, Math.min(48, Math.floor(60 / rows)))}px`);
+      for (const unit of units) {
+        const card = document.createElement('div');
+        card.className = 'notebook-roster-card';
+        const tile = document.createElement('div');
+        tile.className = `deployment-piece readonly notebook-roster-piece ${unit.inReserve ? 'in-reserve' : 'in-lineup'}${unit.destroyed ? ' is-destroyed' : ''}`;
+        const palette = state.assets?.piecePalette(unit);
+        if (palette) {
+          tile.style.setProperty('--unit-primary', palette.primary);
+          tile.style.setProperty('--unit-secondary', palette.secondary);
+          tile.style.setProperty('--unit-text', palette.text);
+        }
+        const fallback = document.createElement('span');
+        fallback.className = 'deployment-piece-fallback';
+        fallback.textContent = unit.fallbackGlyph;
+        tile.append(fallback);
+        const asset = state.assets?.pieceAsset(unit);
+        if (asset) {
+          const image = document.createElement('img');
+          image.className = 'deployment-piece-image';
+          image.src = state.assets.resolve(asset);
+          image.alt = '';
+          image.draggable = false;
+          image.addEventListener('error', () => {
+            image.remove();
+            tile.classList.remove('has-image');
+          }, { once: true });
+          tile.append(image);
+          tile.classList.add('has-image');
+        }
+        if (unit.evolutionStage === 'evolved') {
+          const badge = document.createElement('span');
+          badge.className = 'deployment-piece-evolved';
+          badge.textContent = '+';
+          tile.append(badge);
+        }
+        const name = document.createElement('span');
+        name.className = 'deployment-piece-name';
+        name.textContent = pieceName(unit);
+        tile.append(name);
+        const meta = document.createElement('small');
+        meta.className = 'deployment-piece-meta';
+        meta.textContent = t(unit.destroyed ? 'ui.roster.destroyed' : unit.captured ? 'ui.roster.captured' :
+          unit.inReserve ? 'ui.roster.reserve' : 'ui.deployment.status_board');
+        card.append(tile, meta);
+        grid.append(card);
+      }
+      section.append(grid);
+      destination.append(section);
+    }
   }
 
   renderFixedActions() {
@@ -186,5 +257,7 @@ class LevelControls {
   }
 }
 
-new NotebookUI(document.querySelector('#notebook-ui')).start();
+const notebook = new NotebookUI(document.querySelector('#notebook-ui'));
+notebook.start();
+window.addEventListener('game:rosters-updated', () => notebook.renderRosters());
 new LevelControls().start();
