@@ -26,9 +26,9 @@ deployment: {
 - `rows` contains the legal board `y` coordinates for placement.
 - `pointLimit` is the maximum point value that may participate in the encounter.
 
-Production level limits are resolved through `src/content/balance.js` from the editable machine-readable block in `docs/BALANCE.md`. A level not listed there falls back to the calculated value of its enemy band. Explicit configured limits are compared with the enemy value and produce a console warning when they diverge.
+Production level limits are resolved through `src/content/balance.js` from `balance/levels.csv`. A level not listed there falls back to the calculated value of its enemy band. Explicit configured limits are compared with the enemy value and produce a console warning when they diverge.
 
-The tutorial currently deploys the player on rows `6` and `7`, the two rows nearest the player in the current board coordinate system, with an 18-point budget equal to the current rival band.
+The four campaign levels deploy the player on rows `6` and `7`, nearest the player; budgets are configured in `balance/levels.csv`. Their enemy formations and blocking cells are also CSV-driven.
 
 ## Point costs and lineup selection
 
@@ -37,7 +37,7 @@ Every roster piece has a point cost determined by:
 1. `pieceType`;
 2. `evolutionStage` (`base` or `evolved`).
 
-All costs are read from `docs/BALANCE.md`. An evolved piece must cost more than its base version.
+All costs are read from `balance/pieces.csv` and `balance/levels.csv`. An evolved piece must cost more than its base version.
 
 When a budgeted deployment starts, every player roster piece begins in reserve with `x = null` and `y = null`. Selecting a reserve card previews its legal deployment cells. The piece joins the active lineup only when it is successfully placed on the board, at which point its cost is added to the spent budget.
 
@@ -135,7 +135,7 @@ Deployment changes participation and coordinates only. It must not rotate a unit
 
 ### Evolution and campaign carry
 
-Evolved pieces use the evolved cost configured in `docs/BALANCE.md`.
+Evolved pieces use the evolved cost configured in `balance/pieces.csv` and `balance/levels.csv`.
 
 At a victorious level transition, only participating player survivors are eligible for the normal between-encounter evolution step. Pieces left in reserve carry forward unchanged. A reserve piece that was already evolved remains evolved; a base reserve piece does not evolve for an encounter it did not play.
 
@@ -167,7 +167,7 @@ Notebook section content scrolls vertically when it exceeds the available paper 
 
 ## Relevant files
 
-- `docs/BALANCE.md` — editable point costs and per-level limits; runtime source of truth.
+- `balance/pieces.csv` and `balance/levels.csv` — editable point costs and per-level limits; runtime source of truth.
 - `src/content/balance.js` — parser and point-value helpers.
 - `src/content/levels/tutorial-01.js` — current deployment configuration and enemy-value validation.
 - `src/core/GameState.js` — reserve, point budget, placement and completion logic.
@@ -182,8 +182,8 @@ Notebook section content scrolls vertically when it exceeds the available paper 
 When adding deployment to another level:
 
 1. Add a `deployment` block with the correct team and legal rows.
-2. Add the level limit to `docs/BALANCE.md` or intentionally rely on the enemy-value fallback.
-3. Ensure every piece type that can enter the roster has base/evolved costs in `docs/BALANCE.md`.
+2. Add the level limit to `balance/levels.csv` or intentionally rely on the enemy-value fallback.
+3. Ensure every piece type that can enter the roster has base/evolved costs in `balance/pieces.csv`.
 4. Ensure there are enough non-blocking cells for plausible legal lineups.
 5. Keep initial unit facing explicit in the level/band factory.
 6. Test that blocking board elements cannot be selected as deployment cells.
@@ -192,3 +192,5 @@ When adding deployment to another level:
 9. Confirm AI/tutorial logic remains inactive before **Iniciar partida**.
 
 If future deployment rules need shapes other than whole rows, extend the level configuration and `GameState` validation contract rather than hard-coding a specific level in the UI.
+
+The enemy lineup and exact placement preferences are configured in `balance/enemy-formations.csv`; blocking cells are in `balance/obstacles.csv`. The CSV positions for non-king enemies are preferred in alternating deployment, with the deterministic placement heuristic as fallback.

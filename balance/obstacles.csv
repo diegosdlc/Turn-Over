@@ -1,0 +1,12 @@
+level_id,obstacle_id,x,y,type,blocking,asset,scale,y_offset
+tutorial-01,tutorial-blocker-c4,2,3,blocker,true,./assets/board-elements/tutorial/blocker-placeholder.svg,1.28,-0.32
+tutorial-01,tutorial-blocker-d4,3,3,blocker,true,./assets/board-elements/tutorial/blocker-placeholder.svg,1.28,-0.32
+tutorial-01,tutorial-blocker-f6,5,5,blocker,true,./assets/board-elements/tutorial/blocker-placeholder.svg,1.28,-0.32
+tutorial-02,escort-blocker-c4,2,3,blocker,true,./assets/board-elements/tutorial/blocker-placeholder.svg,1.28,-0.32
+tutorial-02,escort-blocker-e4,4,3,blocker,true,./assets/board-elements/tutorial/blocker-placeholder.svg,1.28,-0.32
+tutorial-03,capture-blocker-c4,2,3,blocker,true,./assets/board-elements/tutorial/blocker-placeholder.svg,1.28,-0.32
+tutorial-03,capture-blocker-f4,5,3,blocker,true,./assets/board-elements/tutorial/blocker-placeholder.svg,1.28,-0.32
+tutorial-03,capture-blocker-e5,4,4,blocker,true,./assets/board-elements/tutorial/blocker-placeholder.svg,1.28,-0.32
+tutorial-04,survive-blocker-c4,2,3,blocker,true,./assets/board-elements/tutorial/blocker-placeholder.svg,1.28,-0.32
+tutorial-04,survive-blocker-d4,3,3,blocker,true,./assets/board-elements/tutorial/blocker-placeholder.svg,1.28,-0.32
+tutorial-04,survive-blocker-f5,5,4,blocker,true,./assets/board-elements/tutorial/blocker-placeholder.svg,1.28,-0.32

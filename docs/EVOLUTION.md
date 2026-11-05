@@ -18,7 +18,7 @@ Every catalogue piece declares an `evolutionProfile`. Units persist:
 
 ## Point cost
 
-Evolution also affects deployment cost. `docs/BALANCE.md` is the editable runtime source of truth for every piece's `base` and `evolved` point values. An evolved unit always consumes the evolved cost while it participates; keeping it in reserve consumes no points in the current encounter.
+Evolution also affects deployment cost. `balance/pieces.csv` is the editable runtime source of truth for every piece's `base` and `evolved` point values. An evolved unit always consumes the evolved cost while it participates; keeping it in reserve consumes no points in the current encounter.
 
 The current provisional values deliberately make a fully evolved four-piece starting band exceed the tutorial level budget. Level 2 therefore exercises the intended choice between evolved capabilities instead of automatically deploying every survivor.
 

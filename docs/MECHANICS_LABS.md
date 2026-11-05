@@ -39,4 +39,4 @@ A lab should be disposable: removing its registry entry and scenario should not 
 
 - `facing-lab` — validates `north` / `south` piece facing, artwork selection and in-match orientation changes.
 - `pawn-evolution-lab` — validates edge activation, Peón+ movement and four prepared diagonal-capture cases.
-- `deployment-budget-lab` — validates lineup selection by points with a 50-point budget. The roster exposes base and evolved versions of king, queen, pawn, bishop, knight and rook simultaneously, so costs and evolved deployment capabilities can be compared directly. Its budget is configured in `docs/BALANCE.md`.
+- `deployment-budget-lab` — validates lineup selection by points with a 50-point budget. The roster exposes base and evolved versions of king, queen, pawn, bishop, knight and rook simultaneously, so costs and evolved deployment capabilities can be compared directly. Its budget is configured in `balance/levels.csv`.

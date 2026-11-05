@@ -1,5 +1,5 @@
 import { createInitialBand, FACINGS, PIECES } from '../bands.js?v=20260821-evolution-3';
-import { levelPointLimit } from '../balance.js?v=20260821-budget-1';
+import { levelPointLimit, levelBalance, enemyBandForLevel, obstaclesForLevel } from '../balance.js?v=20260821-budget-1';
 import { STANDARD_BOARD } from './shared.js';
 
 const PLAYER_POSITIONS = Object.freeze({
@@ -10,54 +10,6 @@ const PLAYER_POSITIONS = Object.freeze({
   knight: { x: 0, y: 7 },
   rook: { x: 0, y: 7 }
 });
-
-const ENEMY_POSITIONS = Object.freeze({
-  king: { x: 5, y: 0 },
-  queen: { x: 4, y: 0 },
-  pawn: { x: 4, y: 1 },
-  bishop: { x: 6, y: 0 }
-});
-
-const TUTORIAL_OBSTACLE_ASSET = './assets/board-elements/tutorial/blocker-placeholder.svg';
-
-const TUTORIAL_OBSTACLES = Object.freeze([
-  {
-    id: 'tutorial-blocker-c4',
-    type: 'blocker',
-    name: 'Obstáculo', i18nNameKey: 'ui.unit.obstacle',
-    x: 2,
-    y: 3,
-    blocking: true,
-    asset: TUTORIAL_OBSTACLE_ASSET,
-    className: 'tutorial-blocker',
-    scale: 1.28,
-    yOffset: -0.32
-  },
-  {
-    id: 'tutorial-blocker-d4',
-    type: 'blocker',
-    name: 'Obstáculo', i18nNameKey: 'ui.unit.obstacle',
-    x: 3,
-    y: 3,
-    blocking: true,
-    asset: TUTORIAL_OBSTACLE_ASSET,
-    className: 'tutorial-blocker',
-    scale: 1.28,
-    yOffset: -0.32
-  },
-  {
-    id: 'tutorial-blocker-f6',
-    type: 'blocker',
-    name: 'Obstáculo', i18nNameKey: 'ui.unit.obstacle',
-    x: 5,
-    y: 5,
-    blocking: true,
-    asset: TUTORIAL_OBSTACLE_ASSET,
-    className: 'tutorial-blocker',
-    scale: 1.28,
-    yOffset: -0.32
-  }
-]);
 
 function cleanCarriedBand(playerBand, playerFactionId) {
   if (!Array.isArray(playerBand) || !playerBand.length) {
@@ -90,28 +42,24 @@ function cleanCarriedBand(playerBand, playerFactionId) {
 
 export function createTutorialEncounter({
   id,
-  name,
-  nextLevelId = null,
   playerFactionId = 'green',
   playerBand = null,
   tutorialSteps = []
 }) {
+  const balance = levelBalance(id);
+  if (balance.kind !== 'campaign') throw new Error('Nivel de campaña inválido: ' + id);
   const playerUnits = cleanCarriedBand(playerBand, playerFactionId);
-  const enemyUnits = createInitialBand({
-    team: 'enemy',
-    factionId: 'green',
-    positions: ENEMY_POSITIONS,
-    facing: FACINGS.SOUTH
-  });
+  const enemyUnits = enemyBandForLevel(id);
 
   return Object.freeze({
     id,
-    name,
-    nextLevelId,
+    name: balance.name,
+    nameKey: balance.nameKey,
+    nextLevelId: balance.nextLevelId,
     board: STANDARD_BOARD,
     teams: {
       player: playerFactionId,
-      enemy: 'green'
+      enemy: enemyUnits[0].faction
     },
     deployment: {
       team: 'player',
@@ -129,18 +77,18 @@ export function createTutorialEncounter({
     },
     ai: {
       team: 'enemy',
-      depth: 2,
-      thinkDelayMs: 450
+      depth: balance.aiDepth,
+      randomness: balance.aiRandomness,
+      thinkDelayMs: balance.aiThinkDelayMs
     },
     rules: {
-      victory: 'elimination',
-      captureChoice: true
+      victory: balance.victory,
+      captureChoice: true,
+      ...(balance.targetRow === null ? {} : { targetRow: balance.targetRow }),
+      ...(balance.surviveRounds === null ? {} : { surviveRounds: balance.surviveRounds })
     },
-    units: [
-      ...playerUnits,
-      ...enemyUnits
-    ],
-    boardElements: TUTORIAL_OBSTACLES,
+    units: [...playerUnits, ...enemyUnits],
+    boardElements: obstaclesForLevel(id),
     specialTiles: [],
     tutorial: {
       enabledByDefault: false,
@@ -173,8 +121,6 @@ const TUTORIAL_STEPS = Object.freeze([
 export function createTutorial01({ playerFactionId = 'green' } = {}) {
   return createTutorialEncounter({
     id: 'tutorial-01',
-    name: 'Nivel 1', nameKey: 'level.tutorial_01',
-    nextLevelId: 'tutorial-02',
     playerFactionId,
     tutorialSteps: TUTORIAL_STEPS
   });

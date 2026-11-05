@@ -39,7 +39,7 @@ Keep authoritative rules/state separate from rendering and UI whenever practical
 - `src/systems/` — assets, audio, sessions, progression and tutorial systems.
 - `src/content/factions.js` — faction identity, special pieces, palettes and optional artwork definitions.
 - `src/content/bands.js` — piece catalogue, starting-band factory and `FACINGS`.
-- `src/content/balance.js` — runtime parser/helpers for editable piece costs and level point limits.
+- `src/content/balance.js` — runtime CSV parser/helpers for piece costs, level budgets, enemy formations and obstacles.
 - `src/content/levels/` — production levels, shared boards and mechanics-lab scenarios.
 - `src/content/levels/labs/` — mechanics-lab registry and test-only behavior helpers.
 - `src/level-ui.js` / `src/level-ui.css` — notebook navigation and in-level composition.
@@ -50,7 +50,7 @@ Detailed contracts:
 
 - `docs/FACTIONS_AND_BANDS.md` — factions, bands, facing, artwork and persistence.
 - `docs/DEPLOYMENT.md` — deployment, lineup/reserve and point-budget lifecycle.
-- `docs/BALANCE.md` — runtime-editable base/evolved costs and per-level point limits.
+- `balance/*.csv` — runtime-editable piece costs, budgets/objectives, enemy formations and obstacle positions; `docs/BALANCE.md` documents the CSV contract.
 - `docs/EVOLUTION.md` — evolution and carried-roster rules.
 - `docs/MECHANICS_LABS.md` — reusable test-level workflow.
 - `docs/FACING_LAB.md` — facing-lab test procedure.
@@ -80,7 +80,7 @@ Detailed contracts:
 21. Base pawns may evolve immediately at the opposite edge; other between-level evolution requires participation and survival in a victorious encounter.
 22. Campaign transitions preserve the complete player roster: participating survivors may evolve, reserve pieces carry forward unchanged, new prisoners join without evolving, and losses are removed.
 23. **Budgeted deployment chooses the encounter lineup from the carried roster.** Placed pieces consume points; reserve pieces are inactive and consume zero. The lineup may not exceed the level limit.
-24. Base/evolved piece costs and per-level point limits are balance data, not hard-coded rule constants. `docs/BALANCE.md` is the editable runtime source of truth.
+24. Base/evolved piece costs, four campaign level budgets/objectives, rival formations and obstacles are balance data, not hard-coded rule constants. The four CSV tables in `balance/` are the runtime source of truth.
 25. The intended level limit is equivalent to the enemy band's point value; the balance layer warns when an explicit level limit diverges from the calculated enemy value.
 26. Session schema 7 persists survival `roundsElapsed` and alternating deployment state. Existing schema-6 saves load with missing counters defaulting to zero; in-progress deployment stays classic.
 
@@ -96,7 +96,7 @@ Rendering, player interaction and AI should call the same movement/rules layer.
 
 ### Data-driven levels and balance
 
-Prefer content/configuration for level setup, assets, deployment zones, behavior hooks and difficulty. Keep balance numbers in `docs/BALANCE.md`; do not scatter level-specific costs through rules/UI code.
+Prefer content/configuration for level setup, assets, deployment zones, behavior hooks and difficulty. Keep balance numbers in the `balance/` CSV tables; do not scatter level-specific costs through rules/UI code.
 
 ### State is authoritative
 
@@ -147,3 +147,7 @@ At the end of a project change:
 5. update the affected system contract(s);
 6. commit and push;
 7. report branch/commit/PR and validation.
+
+## Four-level production campaign
+
+The campaign consists of `tutorial-01` (elimination/destruction), `tutorial-02` (escort-king), `tutorial-03` (capture-king) and `tutorial-04` (survive), in that order. Debug scenarios and mechanics labs remain available but are not campaign progression. The game loads four CSVs in `balance/` at runtime: costs, level budgets/objectives, rival formations and obstacles. Keep CSV IDs stable to preserve progression and session compatibility. 
