@@ -43,7 +43,7 @@ Parámetros utilizados actualmente:
 - `weights.mobility`: importancia de disponer de movimientos.
 - `weights.objective`: importancia de la condición de victoria específica.
 
-Estos valores son provisionales y deben trasladarse al documento de balance cuando terminemos las primeras pruebas de comportamiento.
+La profundidad, aleatoriedad y retardo de la IA en los cuatro niveles de campaña se editan en `balance/levels.csv`. Los pesos de evaluación restantes siguen siendo parámetros del controlador de IA.
 
 ## Compatibilidad
 
