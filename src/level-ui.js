@@ -1,5 +1,6 @@
 import { t, getLanguage, getGender, setLanguage, setGender, onLocaleChange, playerText, pieceName } from './i18n/index.js';
 import { listMechanicLabs } from './content/levels/index.js?v=20260821-evolution-3';
+import { missionTextFor } from './content/mission.js?v=20261109-mission-1';
 
 function mechanicsLabOptions() {
   return listMechanicLabs()
@@ -8,6 +9,10 @@ function mechanicsLabOptions() {
 }
 
 function notebookSections() {
+  const level = window.turnOverNotebookLevel;
+  const missionBody = level
+    ? '<p>' + missionTextFor(level, t) + '</p>'
+    : t('notebook.mission.body');
   return {
     band: [
       { title: t('notebook.band.title'), html: '<div id="notebook-dynamic-rosters"></div>' },

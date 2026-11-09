@@ -5,7 +5,7 @@ Los números y la composición de los **cuatro niveles de campaña** están exte
 | Archivo | Qué se edita |
 | --- | --- |
 | `balance/pieces.csv` | Costes base y evolucionado de las seis piezas. |
-| `balance/levels.csv` | Presupuesto y condición de victoria de cada nivel, duración de supervivencia, profundidad/aleatoriedad/retardo de la IA y enlace al siguiente nivel. Incluye una fila auxiliar para `deployment-budget-lab` (`kind=lab`). |
+| `balance/levels.csv` | Presupuesto y condición de victoria de cada nivel, duración de supervivencia, casilla del rey de misión (`mission_king_x`, `mission_king_y`), profundidad/aleatoriedad/retardo de la IA y enlace al siguiente nivel. Incluye una fila auxiliar para `deployment-budget-lab` (`kind=lab`). |
 | `balance/enemy-formations.csv` | Una fila por pieza rival, con identificador, tipo, facción, evolución, orientación y casilla `x,y`. |
 | `balance/obstacles.csv` | Una fila por obstáculo: casilla, bloqueo y apariencia. Se pueden añadir o quitar filas. |
 
@@ -36,3 +36,11 @@ La formación enemiga se valida y se suma utilizando los mismos costes que el de
 Las bandas del jugador **se arrastran entre niveles**: sobreviven y evolucionan las piezas participantes, se retiran las perdidas y las reservas permanecen sin evolucionar. El presupuesto solo se gasta en piezas que participan.
 
 Los parámetros de IA `weights.material`, `weights.captured`, `weights.mobility`, `weights.objective`, `weights.prisonerSafety` y `weights.rescuePotential` siguen teniendo valores por defecto en `AIController`; esta primera iteración CSV expone la profundidad, aleatoriedad y retardo por nivel.
+
+## Rey protegido de misión
+
+Los niveles de **escolta** (`tutorial-02`) y **supervivencia** (`tutorial-04`) añaden automáticamente un Rey de misión. Su casilla inicial se edita en `balance/levels.csv` mediante las columnas `mission_king_x` y `mission_king_y` (coordenadas 0–7). Por defecto comienza en `2,7`. Debe estar en una fila de despliegue del jugador, 6 o 7, y no puede solaparse con obstáculos bloqueantes ni con la banda rival.
+
+El Rey de misión es una pieza adicional al roster arrastrado; lo controla el jugador durante el combate, pero arranca colocado y bloqueado durante el despliegue. **Cuesta 0 puntos, no cuenta para las cuotas de las tres rondas, no se puede retirar ni cambiar de posición antes del combate, no evoluciona y no pasa al siguiente nivel.** Se distingue visualmente y en las tarjetas del cuaderno. La condición de victoria o derrota se evalúa sobre este rey específico, aunque el jugador tenga otro rey de campaña. Perderlo supone perder estos encuentros; llevarlo a la fila objetivo gana la escolta. La supervivencia requiere que este rey siga vivo tras las rondas establecidas.
+
+En los demás niveles y laboratorios, las columnas de la posición del rey de misión permanecen vacías. La sección **Misión** del cuaderno describe automáticamente el objetivo según `victory`, `target_row` y `survive_rounds` del mismo CSV; los textos ES/EN viven en `locales/texts.csv`.

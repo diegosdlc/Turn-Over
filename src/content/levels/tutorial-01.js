@@ -50,6 +50,20 @@ export function createTutorialEncounter({
   if (balance.kind !== 'campaign') throw new Error('Nivel de campaña inválido: ' + id);
   const playerUnits = cleanCarriedBand(playerBand, playerFactionId);
   const enemyUnits = enemyBandForLevel(id);
+  const missionKing = balance.missionKingPosition ? {
+    id: id + '-mission-king',
+    team: 'player',
+    faction: playerFactionId,
+    facing: FACINGS.NORTH,
+    name: PIECES.king.name,
+    pieceType: 'king',
+    fallbackGlyph: PIECES.king.fallbackGlyph,
+    moveProfile: PIECES.king.moveProfile,
+    evolutionProfile: null,
+    evolutionStage: null,
+    missionKing: true,
+    ...balance.missionKingPosition
+  } : null;
 
   return Object.freeze({
     id,
@@ -87,7 +101,7 @@ export function createTutorialEncounter({
       ...(balance.targetRow === null ? {} : { targetRow: balance.targetRow }),
       ...(balance.surviveRounds === null ? {} : { surviveRounds: balance.surviveRounds })
     },
-    units: [...playerUnits, ...enemyUnits],
+    units: [...playerUnits, ...(missionKing ? [missionKing] : []), ...enemyUnits],
     boardElements: obstaclesForLevel(id),
     specialTiles: [],
     tutorial: {

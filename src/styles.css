@@ -377,3 +377,21 @@ button{font:inherit;letter-spacing:.02em}
   .modal-card{min-width:min(94vw,320px)}
   .tutorial-tooltip{width:min(240px,68vw);font-size:.76rem}
 }
+
+/* Mission kings are fixed, free objective units controlled by the player. */
+.unit.mission-king{
+  outline:3px double #f4d77b;
+  outline-offset:3px;
+  box-shadow:0 0 0 4px rgba(85,47,24,.55),0 0 17px rgba(244,215,123,.75);
+}
+.unit.mission-king::before{
+  content:"★";
+  position:absolute;
+  z-index:4;
+  top:-40%;
+  left:-15%;
+  font-size:clamp(.6rem,1.5vw,1.05rem);
+  color:#ffe7a3;
+  text-shadow:0 1px 2px #4a2718;
+  pointer-events:none;
+}

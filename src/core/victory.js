@@ -13,6 +13,15 @@ function activeKing(state, team) {
   return state.units.find(unit => state.active(unit) && unit.team === team && unit.pieceType === 'king') ?? null;
 }
 
+function missionKingFor(state) {
+  return state.units.find(unit => unit.team === 'player' && unit.missionKing) ?? null;
+}
+
+function protectedKingFor(state) {
+  const missionKing = missionKingFor(state);
+  return missionKing ? (state.active(missionKing) ? missionKing : null) : activeKing(state, 'player');
+}
+
 function eliminatedWinner(state) {
   const playerAlive = activeUnits(state, 'player').length > 0;
   const enemyAlive = activeUnits(state, 'enemy').length > 0;
@@ -32,7 +41,7 @@ export function victoryResultFor(state, level) {
   }
 
   if (victory === VICTORY_TYPES.ESCORT_KING) {
-    const king = activeKing(state, 'player');
+    const king = protectedKingFor(state);
     if (!king) return { winner: 'enemy', reason: 'king-captured' };
     const targetRow = Number.isInteger(level?.rules?.targetRow) ? level.rules.targetRow : 0;
     if (king.y === targetRow) return { winner: 'player', reason: 'king-escaped' };
@@ -41,6 +50,9 @@ export function victoryResultFor(state, level) {
   }
 
   if (victory === VICTORY_TYPES.SURVIVE) {
+    if (missionKingFor(state) && !protectedKingFor(state)) {
+      return { winner: 'enemy', reason: 'king-captured' };
+    }
     if (!activeUnits(state, 'player').length) return { winner: 'enemy', reason: 'elimination' };
     if (!activeUnits(state, 'enemy').length) return { winner: 'player', reason: 'elimination' };
     const rounds = Math.max(1, Number(level?.rules?.surviveRounds) || 1);
@@ -66,7 +78,7 @@ export function objectiveScoreFor(state, level, aiTeam) {
   }
 
   if (victory === VICTORY_TYPES.ESCORT_KING) {
-    const king = activeKing(state, 'player');
+    const king = protectedKingFor(state);
     if (!king) return 50000 * perspective;
     const targetRow = Number.isInteger(level?.rules?.targetRow) ? level.rules.targetRow : 0;
     const distance = Math.abs(king.y - targetRow);
@@ -75,6 +87,7 @@ export function objectiveScoreFor(state, level, aiTeam) {
   }
 
   if (victory === VICTORY_TYPES.SURVIVE) {
+    if (missionKingFor(state) && !protectedKingFor(state)) return 50000 * perspective;
     const rounds = Math.max(1, Number(level?.rules?.surviveRounds) || 1);
     const remaining = Math.max(0, rounds - (state.roundsElapsed ?? 0));
     // The attacking enemy becomes increasingly urgent as the survival clock expires.

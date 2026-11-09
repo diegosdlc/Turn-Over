@@ -10,7 +10,7 @@ const TABLE_URLS = Object.freeze({
 });
 const HEADERS = Object.freeze({
   pieces: 'piece_type,base,evolved',
-  levels: 'level_id,kind,name,name_key,victory,next_level_id,point_limit,target_row,survive_rounds,ai_depth,ai_randomness,ai_think_delay_ms',
+  levels: 'level_id,kind,name,name_key,victory,next_level_id,point_limit,target_row,survive_rounds,ai_depth,ai_randomness,ai_think_delay_ms,mission_king_x,mission_king_y',
   enemies: 'level_id,unit_id,piece_type,faction,facing,evolution_stage,x,y',
   obstacles: 'level_id,obstacle_id,x,y,type,blocking,asset,scale,y_offset'
 });
@@ -75,10 +75,19 @@ export function parseBalanceTables({ pieces, levels, enemies, obstacles }) {
     const surviveRounds = optionalNumber(row.survive_rounds, id + '.survive_rounds', { integer: true, min: 1 });
     if (row.victory === 'escort-king' && targetRow === null) throw new Error('Falta target_row en ' + id);
     if (row.victory === 'survive' && surviveRounds === null) throw new Error('Falta survive_rounds en ' + id);
+    const missionX = optionalNumber(row.mission_king_x, id + '.mission_king_x', { integer: true, max: 7 });
+    const missionY = optionalNumber(row.mission_king_y, id + '.mission_king_y', { integer: true, max: 7 });
+    const requiresMissionKing = row.kind === 'campaign' && ['escort-king', 'survive'].includes(row.victory);
+    if ((missionX === null) !== (missionY === null) ||
+        requiresMissionKing !== (missionX !== null) ||
+        (requiresMissionKing && ![6, 7].includes(missionY))) {
+      throw new Error('Rey de misión inválido en ' + id);
+    }
     levelDefinitions[id] = {
       id, kind: row.kind, name: row.name, nameKey: row.name_key || null,
       victory: row.victory, nextLevelId: row.next_level_id || null,
       pointLimit: limit, targetRow, surviveRounds,
+      missionKingPosition: missionX === null ? null : { x: missionX, y: missionY },
       aiDepth: numeric(row.ai_depth, id + '.ai_depth', { integer: true, min: 1 }),
       aiRandomness: numeric(row.ai_randomness, id + '.ai_randomness', { min: 0, max: 1 }),
       aiThinkDelayMs: numeric(row.ai_think_delay_ms, id + '.ai_think_delay_ms', { integer: true })
@@ -142,6 +151,15 @@ export function parseBalanceTables({ pieces, levels, enemies, obstacles }) {
       scale: row.scale === '' ? 1 : numeric(row.scale, row.obstacle_id + '.scale', { min: 0.01 }),
       yOffset: row.y_offset === '' ? 0 : numeric(row.y_offset, row.obstacle_id + '.y_offset', { min: -10, max: 10 })
     });
+  }
+
+  for (const level of campaign) {
+    const mission = level.missionKingPosition;
+    if (!mission) continue;
+    if (enemyFormations[level.id].some(unit => unit.x === mission.x && unit.y === mission.y) ||
+        levelObstacles[level.id].some(item => item.blocking && item.x === mission.x && item.y === mission.y)) {
+      throw new Error('Rey de misión solapado en ' + level.id);
+    }
   }
 
   return freezeDeep({ pieceCosts, levelPointLimits, levelDefinitions, enemyFormations, levelObstacles });

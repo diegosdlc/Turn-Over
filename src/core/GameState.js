@@ -126,12 +126,16 @@ export class GameState {
       const team = this.deploymentTeam();
       const usesBudget = this.deploymentPointLimit() != null || this.isAlternatingDeployment();
       this.units
-        .filter(unit => unit.team === team)
+        .filter(unit => unit.team === team && !unit.missionKing)
         .forEach(unit => {
           unit.x = null;
           unit.y = null;
           unit.inReserve = usesBudget;
         });
+      const missionKings = this.units.filter(unit => unit.team === team && unit.missionKing);
+      for (const king of missionKings) {
+        this.deploymentCommittedIds.push(king.id);
+      }
       if (this.isAlternatingDeployment()) {
         const enemies = this.units.filter(unit => unit.team === 'enemy');
         const types = this.level.deployment.initialEnemyPieceTypes ?? ['king'];
@@ -164,7 +168,10 @@ export class GameState {
     }
 
     if (victory === 'escort-king') {
-      const playerKing = this.units.find(piece => physicallyActive(piece) && piece.team === 'player' && piece.pieceType === 'king');
+      const missionKing = this.units.find(piece => piece.team === 'player' && piece.missionKing);
+      const playerKing = missionKing
+        ? (physicallyActive(missionKing) ? missionKing : null)
+        : this.units.find(piece => physicallyActive(piece) && piece.team === 'player' && piece.pieceType === 'king');
       if (!playerKing && unit.team === 'player') return false;
       const targetRow = Number.isInteger(this.level?.rules?.targetRow) ? this.level.rules.targetRow : 0;
       if (playerKing?.y === targetRow && unit.team === 'enemy') return false;
@@ -232,7 +239,7 @@ export class GameState {
 
   deploymentRoundQuota(team) {
     if (!this.isAlternatingDeployment()) return Infinity;
-    const roster = this.deploymentRoster(team);
+    const roster = this.deploymentRoster(team).filter(unit => !unit.missionKing);
     // The initial enemy garrison is not part of the three deployment waves.
     const predeployed = team === 'enemy'
       ? (roster.filter(unit => (this.level.deployment.initialEnemyPieceTypes ?? ['king']).includes(unit.pieceType)).length || Math.min(1, roster.length))
@@ -281,7 +288,7 @@ export class GameState {
   }
 
   deploymentUnitCost(unit) {
-    return pointCostForUnit(unit);
+    return unit?.missionKing ? 0 : pointCostForUnit(unit);
   }
 
   deploymentPointsSpent() {
@@ -332,7 +339,7 @@ export class GameState {
   }
 
   canDeployAt(unit, x, y) {
-    if (!this.isDeploying() || !unit) return false;
+    if (!this.isDeploying() || !unit || unit.missionKing) return false;
     if (this.isAlternatingDeployment()) {
       if (unit.team !== this.deploymentTurn || this.isDeploymentCommitted(unit)) return false;
       if (unit.inReserve && this.deploymentRoundPlaced(unit.team) >= this.deploymentRoundQuota(unit.team)) return false;
@@ -351,7 +358,7 @@ export class GameState {
   }
 
   reserveDeploymentUnit(unit) {
-    if (!this.isDeploying() || !unit || unit.team !== this.deploymentTeam()) return false;
+    if (!this.isDeploying() || !unit || unit.missionKing || unit.team !== this.deploymentTeam()) return false;
     if (this.isAlternatingDeployment() && (this.deploymentTurn !== 'player' || this.isDeploymentCommitted(unit))) return false;
     unit.inReserve = true;
     unit.x = null;
@@ -362,7 +369,7 @@ export class GameState {
 
   deploymentComplete() {
     const units = this.deploymentUnits();
-    if (!units.length) return false;
+    if (!units.some(unit => !unit.missionKing)) return false;
     const limit = this.deploymentPointLimit();
     if (limit != null && this.deploymentPointsSpent() > limit) return false;
     if (this.isAlternatingDeployment()) {

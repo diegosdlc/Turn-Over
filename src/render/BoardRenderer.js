@@ -97,9 +97,10 @@ export class BoardRenderer {
     piece.type = 'button';
     piece.className = `unit ${unit.id === this.state.selectedId ? 'selected' : ''} ${this.state.pendingCapture?.targetId === unit.id ? 'awaiting-capture' : ''}`;
     piece.classList.toggle('evolved', isEvolved(unit));
+    piece.classList.toggle('mission-king', Boolean(unit.missionKing));
     const shieldReady = evolutionCapabilitiesFor(unit).rejectsFirstAttack && (unit.evolutionState?.shieldCharges ?? 0) > 0;
     piece.classList.toggle('shield-ready', shieldReady);
-    piece.setAttribute('aria-label', `${pieceName(unit)}${isEvolved(unit) ? t('ui.board.evolved') : ''}${shieldReady ? t('ui.board.shield') : ''}`);
+    piece.setAttribute('aria-label', `${pieceName(unit)}${unit.missionKing ? ' · ' + t('ui.mission.king_tag') : ''}${isEvolved(unit) ? t('ui.board.evolved') : ''}${shieldReady ? t('ui.board.shield') : ''}`);
     this.applyFactionPalette(piece, unit);
 
     const fallback = document.createElement('span');

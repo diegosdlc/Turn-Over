@@ -116,3 +116,7 @@ Then read `PROJECT_CONTEXT.md`, this file, `README.md`, the relevant contract in
 ## Current campaign balancing
 
 The production campaign has four CSV-driven encounters: `tutorial-01` destruction, `tutorial-02` escort, `tutorial-03` capture and `tutorial-04` survival. All use three-wave alternating deployment. The rival king begins at the configured square; further enemy units prefer their configured positions when each deployment wave is placed. Debug scenarios and labs remain separately available. Automated CSV validation covers budgets, victory conditions, enemy lineups, obstacles and invalid CSV inputs.
+
+## PR #20 extension — special king and mission page
+
+Escort and survival campaign encounters have an independently identified player-controlled mission king, fixed at deployment start, marked on board and in notebooks, cost-free and excluded from carried rosters and deployment quotas. Its death loses the objective, even if another king remains. Level-specific mission descriptions now appear in the mission notebook, with ES/EN localization.

@@ -2,6 +2,13 @@ export function restoreSessionState(state, savedState) {
   if (!Array.isArray(savedState?.units)) return;
 
   state.units = savedState.units;
+  // Older in-progress campaigns were saved before the free mission king existed.
+  // Add it only when missing; never resurrect an existing captured/destroyed king.
+  const requiredKing = state.level.units.find(unit => unit.missionKing);
+  if (requiredKing && !state.units.some(unit => unit.id === requiredKing.id)) {
+    state.units = [...state.units, { ...structuredClone(requiredKing), inReserve: false,
+      captured: false, destroyed: false, capturedBy: null, recruitedBy: null }];
+  }
   state.currentTurn = savedState.currentTurn === 'enemy' ? 'enemy' : 'player';
   state.finished = Boolean(savedState.finished);
   state.phase = savedState.phase === 'deployment' ? 'deployment' : 'play';

@@ -151,3 +151,7 @@ At the end of a project change:
 ## Four-level production campaign
 
 The campaign consists of `tutorial-01` (elimination/destruction), `tutorial-02` (escort-king), `tutorial-03` (capture-king) and `tutorial-04` (survive), in that order. Debug scenarios and mechanics labs remain available but are not campaign progression. The game loads four CSVs in `balance/` at runtime: costs, level budgets/objectives, rival formations and obstacles. Keep CSV IDs stable to preserve progression and session compatibility. 
+
+## Mission king rules
+
+Escort and survival campaign levels instantiate one extra `missionKing: true` unit, placed from `mission_king_x/y` in `balance/levels.csv`. It is player-controlled in combat but predeployed, locked, free, excluded from the three-wave quota, and never carried/evolved. Victory checking targets the special unit specifically, not any carried king. Notebook mission copy is derived from level victory rules and localized through `locales/texts.csv`.

@@ -194,3 +194,7 @@ When adding deployment to another level:
 If future deployment rules need shapes other than whole rows, extend the level configuration and `GameState` validation contract rather than hard-coding a specific level in the UI.
 
 The enemy lineup and exact placement preferences are configured in `balance/enemy-formations.csv`; blocking cells are in `balance/obstacles.csv`. The CSV positions for non-king enemies are preferred in alternating deployment, with the deterministic placement heuristic as fallback.
+
+## Rey de misión predesplegado
+
+Para los objetivos de escolta y supervivencia de la campaña hay un Rey de misión independiente, creado desde la posición del nivel en `balance/levels.csv`. Su `missionKing: true` lo identifica en estado, UI y guardados. Se mantiene activo y fijo durante las tres rondas de despliegue: no consume presupuesto, no entra en las cuotas, no puede seleccionarse para recolocarlo ni retirarse. Al comenzar el combate es una unidad normal controlada por el jugador. Se excluye de la evolución y del roster persistido tras la victoria. La misión solo se considera cumplida si sobrevive o alcanza el objetivo **ese rey**, no otro rey de la banda.

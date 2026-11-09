@@ -13,9 +13,9 @@ function carryUnit(unit) {
 }
 
 export function buildNextPlayerBand(units, levelId) {
-  const participatingSurvivors = units.filter(unit => !unit.inReserve && !unit.captured && !unit.destroyed && unit.team === 'player');
-  const reserve = units.filter(unit => unit.inReserve && !unit.captured && !unit.destroyed && unit.team === 'player');
-  const recruits = units.filter(unit => unit.captured && !unit.destroyed && unit.capturedBy === 'player');
+  const participatingSurvivors = units.filter(unit => !unit.inReserve && !unit.captured && !unit.destroyed && unit.team === 'player' && !unit.missionKing);
+  const reserve = units.filter(unit => unit.inReserve && !unit.captured && !unit.destroyed && unit.team === 'player' && !unit.missionKing);
+  const recruits = units.filter(unit => unit.captured && !unit.destroyed && unit.capturedBy === 'player' && !unit.missionKing);
 
   const evolvedSurvivors = evolveSurvivingBand(participatingSurvivors.map(carryUnit));
   const carriedReserve = reserve.map(carryUnit);

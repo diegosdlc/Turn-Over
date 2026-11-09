@@ -56,3 +56,8 @@ Las tres nuevas condiciones son:
 - `survive`
 
 El contador `roundsElapsed` forma parte del estado en memoria y se guarda y restaura con el snapshot de sesión (esquema `7`, compatible con el esquema `6`). Una partida de supervivencia reanudada conserva así el número de rondas completadas. Los snapshots anteriores sin contador siguen siendo válidos y se restauran con `0` rondas: las rondas pasadas no pueden reconstruirse a partir del tablero.
+
+
+## Rey de misión en la campaña
+
+Los niveles de campaña `tutorial-02` (escolta) y `tutorial-04` (supervivencia) añaden un rey especial, sin coste y ya desplegado. El evaluador terminal del nivel de escolta y supervivencia considera específicamente esta unidad; los laboratorios `scenario-escort-king` y `scenario-survive` conservan su lógica histórica sin rey adicional.

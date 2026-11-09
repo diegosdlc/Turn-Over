@@ -143,6 +143,8 @@ class GameApp {
     this.cancelAiTurn();
     this.nextPlayerBand = null;
     this.level = level;
+    window.turnOverNotebookLevel = { id: level.id, rules: level.rules };
+    window.dispatchEvent(new Event('game:mission-updated'));
     this.state = new GameState(level);
     if (savedState) this.restoreSavedState(savedState);
     this.ai = level.ai ? new AIController(level.ai) : null;
@@ -187,7 +189,7 @@ class GameApp {
   }
 
   render() {
-    window.turnOverNotebookState = { units: this.state.units, assets: this.assets };
+    window.turnOverNotebookState = { units: this.state.units, assets: this.assets, level: this.level };
     window.dispatchEvent(new Event('game:rosters-updated'));
     this.renderer.render();
     this.renderDeployment();
@@ -272,14 +274,14 @@ class GameApp {
 
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = `deployment-piece ${unit.id === this.state.selectedId ? 'selected' : ''} ${unit.inReserve ? 'in-reserve' : 'in-lineup'}`;
+      button.className = `deployment-piece ${unit.id === this.state.selectedId ? 'selected' : ''} ${unit.inReserve ? 'in-reserve' : 'in-lineup'}${unit.missionKing ? ' mission-king' : ''}`;
       const cost = this.state.deploymentUnitCost(unit);
       const affordable = this.state.canAffordDeploymentUnit(unit);
-      const locked = alternating && (this.state.isDeploymentCommitted(unit) || !playerTurn ||
-        (unit.inReserve && this.state.deploymentRoundPlaced('player') >= this.state.deploymentRoundQuota('player')));
+      const locked = unit.missionKing || (alternating && (this.state.isDeploymentCommitted(unit) || !playerTurn ||
+        (unit.inReserve && this.state.deploymentRoundPlaced('player') >= this.state.deploymentRoundQuota('player'))));
       button.disabled = Boolean(locked || (unit.inReserve && !affordable));
       button.setAttribute('aria-pressed', String(!unit.inReserve));
-      button.setAttribute('aria-label', t('ui.deployment.unit_aria', { action: t(unit.inReserve ? 'ui.deployment.select' : 'ui.deployment.reposition'), name: pieceName(unit), points: cost, status: t(unit.inReserve ? 'ui.deployment.status_pending_lower' : 'ui.deployment.status_board_lower'), evolved: unit.evolutionStage === 'evolved' ? t('ui.board.evolved') : '' }));
+      button.setAttribute('aria-label', unit.missionKing ? t('ui.mission.king_aria') : t('ui.deployment.unit_aria', { action: t(unit.inReserve ? 'ui.deployment.select' : 'ui.deployment.reposition'), name: pieceName(unit), points: cost, status: t(unit.inReserve ? 'ui.deployment.status_pending_lower' : 'ui.deployment.status_board_lower'), evolved: unit.evolutionStage === 'evolved' ? t('ui.board.evolved') : '' }));
       this.applyDeploymentPalette(button, unit);
 
       const fallback = document.createElement('span');
@@ -301,7 +303,7 @@ class GameApp {
 
       const costBadge = document.createElement('span');
       costBadge.className = 'deployment-piece-cost';
-      costBadge.textContent = t('ui.deployment.points', { count: cost });
+      costBadge.textContent = unit.missionKing ? t('ui.mission.king_tag') : t('ui.deployment.points', { count: cost });
       button.append(costBadge);
 
       if (unit.evolutionStage === 'evolved') {
@@ -318,7 +320,7 @@ class GameApp {
       button.append(name);
 
       button.addEventListener('click', () => {
-        if (!playerTurn || (alternating && this.state.isDeploymentCommitted(unit))) return;
+        if (!playerTurn || unit.missionKing || (alternating && this.state.isDeploymentCommitted(unit))) return;
         if (this.state.selectedId === unit.id) this.state.clearSelection();
         else this.state.setSelected(unit.id);
         this.render();
@@ -326,10 +328,10 @@ class GameApp {
       const status = document.createElement('div');
       status.className = 'deployment-piece-meta';
       const statusLabel = document.createElement('span');
-      statusLabel.textContent = t(unit.inReserve ? 'ui.deployment.status_pending' : 'ui.deployment.status_board');
+      statusLabel.textContent = unit.missionKing ? t('ui.mission.king_status') : t(unit.inReserve ? 'ui.deployment.status_pending' : 'ui.deployment.status_board');
       status.append(statusLabel);
 
-      if (budgeted && !unit.inReserve && (!alternating || (playerTurn && !this.state.isDeploymentCommitted(unit)))) {
+      if (budgeted && !unit.missionKing && !unit.inReserve && (!alternating || (playerTurn && !this.state.isDeploymentCommitted(unit)))) {
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'deployment-piece-remove';
