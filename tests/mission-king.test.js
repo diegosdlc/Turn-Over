@@ -49,6 +49,7 @@ test('protected king is placed, locked, free and excluded from deployment quotas
     assert.equal(quota.reduce((a,b)=>a+b,0), roster.length);
     state.deploymentRound = 3;
     assert.equal(state.deploymentComplete(), false, 'Mission king alone cannot finish deployment');
+    state.deploymentTurn = 'player';
     const available = roster.find(unit => state.canAffordDeploymentUnit(unit));
     assert.ok(available);
     assert.ok(state.placeDeploymentUnit(available, 3, 7));

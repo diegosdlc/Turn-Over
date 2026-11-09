@@ -51,7 +51,7 @@ test('the next band keeps survivors and recruits, drops losses and evolves eligi
   assert.equal(isEvolved(recruit), false);
 
   const second = getLevel('tutorial-02', { playerFactionId: 'green', playerBand: band });
-  const deployedBand = second.units.filter(unit => unit.team === 'player');
+  const deployedBand = second.units.filter(unit => unit.team === 'player' && !unit.missionKing);
   assert.equal(deployedBand.length, band.length);
   assert.equal(isEvolved(deployedBand.find(unit => unit.id === recruit.id)), false);
   assert.ok(deployedBand.filter(unit => ['king', 'queen'].includes(unit.pieceType)).every(isEvolved));
