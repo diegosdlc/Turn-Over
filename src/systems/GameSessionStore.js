@@ -6,8 +6,19 @@ export function restoreSessionState(state, savedState) {
   // Add it only when missing; never resurrect an existing captured/destroyed king.
   const requiredKing = state.level.units.find(unit => unit.missionKing);
   if (requiredKing && !state.units.some(unit => unit.id === requiredKing.id)) {
-    state.units = [...state.units, { ...structuredClone(requiredKing), inReserve: false,
-      captured: false, destroyed: false, capturedBy: null, recruitedBy: null }];
+    const size = state.level.board.size ?? 8;
+    const occupied = new Set(state.units.filter(unit => !unit.inReserve && !unit.destroyed && !unit.captured &&
+      Number.isInteger(unit.x) && Number.isInteger(unit.y)).map(unit => unit.x + ',' + unit.y));
+    const blocking = new Set((state.level.boardElements ?? []).filter(item => item.blocking)
+      .map(item => item.x + ',' + item.y));
+    const candidates = [requiredKing, ...Array.from({ length: size * 2 }, (_, index) => ({
+      x: index % size, y: size - 1 - Math.floor(index / size)
+    }))];
+    const position = candidates.find(({ x, y }) => x >= 0 && x < size && y >= 0 && y < size &&
+      !occupied.has(x + ',' + y) && !blocking.has(x + ',' + y));
+    if (!position) throw new Error('No hay casilla libre para restaurar el Rey de misión.');
+    state.units = [...state.units, { ...structuredClone(requiredKing), x: position.x, y: position.y,
+      inReserve: false, captured: false, destroyed: false, capturedBy: null, recruitedBy: null }];
   }
   state.currentTurn = savedState.currentTurn === 'enemy' ? 'enemy' : 'player';
   state.finished = Boolean(savedState.finished);

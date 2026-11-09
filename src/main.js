@@ -143,7 +143,7 @@ class GameApp {
     this.cancelAiTurn();
     this.nextPlayerBand = null;
     this.level = level;
-    window.turnOverNotebookLevel = { id: level.id, rules: level.rules };
+    window.turnOverNotebookLevel = { id: level.id, rules: level.rules, hasMissionKing: level.units.some(unit => unit.missionKing) };
     window.dispatchEvent(new Event('game:mission-updated'));
     this.state = new GameState(level);
     if (savedState) this.restoreSavedState(savedState);

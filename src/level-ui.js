@@ -19,8 +19,7 @@ function notebookSections() {
       { title: t('notebook.factions.title'), html: t('notebook.factions.body') }
     ],
     mission: [
-      { title: t('notebook.mission.title'), html: t('notebook.mission.body') },
-      { title: t('notebook.mission_notes.title'), html: t('notebook.mission_notes.body') }
+      { title: t('notebook.mission.title'), html: missionBody }
     ],
     rules: [
       { title: t('notebook.rules.title'), html: t('notebook.rules.body') },

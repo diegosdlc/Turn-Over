@@ -109,9 +109,14 @@ test('session restoration preserves mission king and migrates legacy snapshots m
   assert.equal(victoryResultFor(state, level)?.winner, 'enemy');
 
   const legacy = new GameState(level);
-  restoreSessionState(legacy, { units: state.units.filter(unit => !unit.missionKing), phase: 'deployment' });
+  const occupied = state.units.filter(unit => !unit.missionKing);
+  const otherKing = occupied.find(unit => unit.team === 'player' && unit.pieceType === 'king');
+  otherKing.x = 2; otherKing.y = 7; otherKing.inReserve = false;
+  restoreSessionState(legacy, { units: occupied, phase: 'deployment' });
   assert.equal(legacy.units.filter(unit => unit.missionKing).length, 1);
-  assert.equal(legacy.units.find(unit => unit.missionKing).inReserve, false);
+  const restoredKing = legacy.units.find(unit => unit.missionKing);
+  assert.equal(restoredKing.inReserve, false);
+  assert.notDeepEqual([restoredKing.x,restoredKing.y], [otherKing.x,otherKing.y]);
 });
 
 test('invalid mission king coordinates are rejected by balance CSV validator', () => {
@@ -133,4 +138,10 @@ test('mission objective copy follows level rules and interpolates the parameters
   }
   assert.ok(missionTextFor(getLevel('tutorial-02'),translator).includes('"row":1'));
   assert.ok(missionTextFor(getLevel('tutorial-04'),translator).includes('"rounds":8'));
+});
+
+test('legacy scenarios without mission king retain their original objective descriptions', () => {
+  const translator = key => key;
+  assert.equal(missionTextFor(getLevel('scenario-escort-king'),translator), 'mission.escort_legacy');
+  assert.equal(missionTextFor(getLevel('scenario-survive'),translator), 'mission.survive_legacy');
 });
