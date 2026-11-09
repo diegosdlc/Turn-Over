@@ -120,3 +120,7 @@ The production campaign has four CSV-driven encounters: `tutorial-01` destructio
 ## PR #20 extension — special king and mission page
 
 Escort and survival campaign encounters have an independently identified player-controlled mission king, fixed at deployment start, marked on board and in notebooks, cost-free and excluded from carried rosters and deployment quotas. Its death loses the objective, even if another king remains. Level-specific mission descriptions now appear in the mission notebook, with ES/EN localization.
+
+## Deployment integration verification (PR #20)
+
+Reviewed GitHub Actions Pages deployment for PR #20: the latest Pages run reported success and included `preview/pr-20`; earlier failed statuses were unit tests, not Pages deployment. Added static asset and syntax checks so missing module imports or invalid JavaScript in browser-only entrypoints fail CI. Ensured the mission king is visibly marked in the in-game band notebook and updated stylesheet query versions to invalidate old browser caches.

@@ -116,7 +116,7 @@ class NotebookUI {
         const card = document.createElement('div');
         card.className = 'notebook-roster-card';
         const tile = document.createElement('div');
-        tile.className = `deployment-piece readonly notebook-roster-piece ${unit.inReserve ? 'in-reserve' : 'in-lineup'}${unit.destroyed ? ' is-destroyed' : ''}`;
+        tile.className = `deployment-piece readonly notebook-roster-piece ${unit.inReserve ? 'in-reserve' : 'in-lineup'}${unit.destroyed ? ' is-destroyed' : ''}${unit.missionKing ? ' mission-king' : ''}`;
         const palette = state.assets?.piecePalette(unit);
         if (palette) {
           tile.style.setProperty('--unit-primary', palette.primary);
@@ -149,12 +149,14 @@ class NotebookUI {
         }
         const name = document.createElement('span');
         name.className = 'deployment-piece-name';
-        name.textContent = pieceName(unit);
+        name.textContent = unit.missionKing ? t('ui.mission.king_tag') : pieceName(unit);
         tile.append(name);
         const meta = document.createElement('small');
         meta.className = 'deployment-piece-meta';
-        meta.textContent = t(unit.destroyed ? 'ui.roster.destroyed' : unit.captured ? 'ui.roster.captured' :
-          unit.inReserve ? 'ui.roster.reserve' : 'ui.deployment.status_board');
+        meta.textContent = unit.missionKing && !unit.destroyed && !unit.captured
+          ? t('ui.mission.king_status')
+          : t(unit.destroyed ? 'ui.roster.destroyed' : unit.captured ? 'ui.roster.captured' :
+            unit.inReserve ? 'ui.roster.reserve' : 'ui.deployment.status_board');
         card.append(tile, meta);
         grid.append(card);
       }
