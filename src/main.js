@@ -294,7 +294,10 @@ class GameApp {
         image.src = this.assets.resolve(asset);
         image.alt = '';
         image.draggable = false;
-        image.addEventListener('error', () => image.remove(), { once: true });
+        image.addEventListener('error', () => {
+          image.remove();
+          button.classList.remove('has-image');
+        }, { once: true });
         button.append(image);
         button.classList.add('has-image');
       }
