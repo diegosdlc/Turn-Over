@@ -4,6 +4,13 @@ export function restoreSessionState(state, savedState) {
   state.units = savedState.units;
   state.boardElements = Array.isArray(savedState.boardElements)
     ? structuredClone(savedState.boardElements) : structuredClone(state.level.boardElements ?? []);
+  const pending = savedState.pendingClosure;
+  const size = state.level.board.size ?? 8;
+  state.pendingClosure = pending && Number.isInteger(pending.x) && Number.isInteger(pending.y)
+    && Number.isInteger(pending.forAction) && pending.x >= 0 && pending.y >= 0
+    && pending.x < size && pending.y < size && pending.forAction > 0
+    && !(state.boardElements ?? []).some(item => item.blocking && item.x === pending.x && item.y === pending.y)
+    ? {x: pending.x, y: pending.y, forAction: pending.forAction} : null;
   state.combatActionsCompleted = Number.isSafeInteger(savedState.combatActionsCompleted) && savedState.combatActionsCompleted >= 0
     ? savedState.combatActionsCompleted : 0;
   state.encroachmentSeed = Number.isSafeInteger(savedState.encroachmentSeed)
@@ -87,6 +94,7 @@ export class GameSessionStore {
           boardElements: state.boardElements,
           combatActionsCompleted: state.combatActionsCompleted,
           encroachmentSeed: state.encroachmentSeed,
+          pendingClosure: state.pendingClosure,
           currentTurn: state.currentTurn,
           finished: state.finished,
           phase: state.phase,

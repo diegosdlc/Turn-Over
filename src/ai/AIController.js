@@ -96,7 +96,7 @@ function simulate(state, level, action, simulateImmediateClosure = false) {
     advanceTurn(next); // roundsElapsed must be current before a survival victory check.
     if (simulateImmediateClosure && !victoryResultFor(next, level)) {
       const closure = applyEncroachment(next, level);
-      if (closure.status === 'trapped') next.forcedClosureLoss = true;
+      if (closure.status === 'trapped' || closure.noNextCandidate) next.forcedClosureLoss = true;
     }
     return next;
   }
@@ -163,6 +163,7 @@ function cloneState(state) {
     boardElements,
     combatActionsCompleted: state.combatActionsCompleted ?? 0,
     encroachmentSeed: state.encroachmentSeed ?? 0,
+    pendingClosure: state.pendingClosure ? {...state.pendingClosure} : null,
     roundsElapsed: state.roundsElapsed ?? 0,
     isDeploying() { return this.phase === 'deployment'; },
     active(unit) {

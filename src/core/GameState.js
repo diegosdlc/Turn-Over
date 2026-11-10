@@ -111,6 +111,7 @@ export class GameState {
   reset() {
     this.boardElements = clone(this.level.boardElements ?? []);
     this.combatActionsCompleted = 0;
+    this.pendingClosure = null;
     this.encroachmentSeed = seedForLevel(this.level.id ?? '');
     this.units = clone(this.level.units).map(unit => ({
       ...unit,

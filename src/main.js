@@ -537,7 +537,9 @@ class GameApp {
     this.checkEnd();
     if (this.state.finished) return;
     const closure = applyEncroachment(this.state, this.level);
-    if (closure.status === 'trapped') {
+    this.checkEnd(); // A collapsing tile can destroy a king or the last unit.
+    if (this.state.finished) return;
+    if (closure.status === 'trapped' || closure.noNextCandidate) {
       this.finishEncroachmentLoss();
       return;
     }

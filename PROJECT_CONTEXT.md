@@ -158,3 +158,7 @@ Escort and survival campaign levels instantiate one extra `missionKing: true` un
 
 ## Arena encroachment
 After completed combat action #10 (configurable per campaign level in `balance/levels.csv`) each subsequent action causes one new permanent wall, unless standard victory has already occurred. Candidate walls must preserve legal actions for both sides, geometric connectivity between teams and an escort route. If none is valid the player loses and the current level restarts. Dynamic obstacles and RNG seed live in `GameState` and session saves; AI uses current obstacles and projects immediate closure at root. See `docs/BALANCE.md`.
+
+## Collapse warning and destruction
+
+The arena warning begins at action `encroachment_start_action - 1`, and each subsequent completed action resolves the previous warning and selects another. Pieces or captured prisoners still on the warned tile are destroyed with no recruitment; victory is checked again after the closure. `pendingClosure` is persisted in session state and restored for deterministic continuation. Walls are smaller and visually animated; the warning is animated independently, and both respect reduced-motion preferences. Rules copy is maintained in `locales/texts.csv`.
