@@ -11,6 +11,8 @@ import { TutorialSystem } from './systems/TutorialSystem.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20260821-evolution-3';
 import { AIController } from './ai/AIController.js?v=20260821-budget-1';
 import { legalActionsFor } from './core/rules.js?v=20260821-evolution-3';
+import { victoryResultFor } from './core/victory.js';
+import { applyEncroachment } from './core/encroachment.js';
 import { buildNextPlayerBand } from './core/campaign.js?v=20260821-budget-1';
 import { deployEnemyWave } from './ai/DeploymentAI.js';
 
@@ -531,12 +533,17 @@ class GameApp {
 
   finishMove() {
     this.state.clearSelection();
+    this.state.combatActionsCompleted += 1;
     this.checkEnd();
-    if (!this.state.finished) {
-      this.state.changeTurn();
-      this.saveSession();
-      this.resolveTurn();
+    if (this.state.finished) return;
+    const closure = applyEncroachment(this.state, this.level);
+    if (closure.status === 'trapped') {
+      this.finishEncroachmentLoss();
+      return;
     }
+    this.state.changeTurn();
+    this.saveSession();
+    this.resolveTurn();
   }
 
   resolveTurn() {
@@ -549,9 +556,15 @@ class GameApp {
       return;
     }
 
+    // Check a terminal objective before skipping a turn; the skip does not count
+    // as an action and must never create a new obstacle.
+    this.checkEnd();
+    if (this.state.finished) return;
     const skippedTeam = this.state.currentTurn;
     this.state.clearSelection();
     this.state.changeTurn();
+    this.checkEnd();
+    if (this.state.finished) return;
     if (legalActionsFor(this.state, this.level).length) {
       this.render();
       this.showTurnPassed(skippedTeam);
@@ -653,10 +666,31 @@ class GameApp {
   }
 
   checkEnd() {
-    const playerUnits = this.state.units.filter(unit => this.state.active(unit) && unit.team === 'player');
-    const enemyUnits = this.state.units.filter(unit => this.state.active(unit) && unit.team === 'enemy');
-    if (!playerUnits.length) this.finish('enemy');
-    else if (!enemyUnits.length) this.finish('player');
+    const result = victoryResultFor(this.state, this.level);
+    if (result) this.finish(result.winner);
+  }
+
+  finishEncroachmentLoss() {
+    if (this.state.finished) return;
+    this.state.finished = true;
+    this.session.clear();
+    this.cancelAiTurn();
+    this.render();
+    this.lastDialog = null;
+    this.resultContent.replaceChildren();
+    const card = document.createElement('section');
+    card.className = 'modal-card end-card';
+    const heading = document.createElement('h2');
+    heading.textContent = t('ui.encroachment.loss_title');
+    const message = document.createElement('p');
+    message.textContent = t('ui.encroachment.loss_body');
+    card.append(heading, message);
+    this.resultContent.append(card);
+    if (!this.resultDialog.open) this.resultDialog.showModal();
+    const finishedState = this.state;
+    window.setTimeout(() => {
+      if (this.state === finishedState && this.homeScreen.hidden) this.resetLevel();
+    }, 2000);
   }
 
   finish(winner) {

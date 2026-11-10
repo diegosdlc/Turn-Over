@@ -155,3 +155,6 @@ The campaign consists of `tutorial-01` (elimination/destruction), `tutorial-02` 
 ## Mission king rules
 
 Escort and survival campaign levels instantiate one extra `missionKing: true` unit, placed from `mission_king_x/y` in `balance/levels.csv`. It is player-controlled in combat but predeployed, locked, free, excluded from the three-wave quota, and never carried/evolved. Victory checking targets the special unit specifically, not any carried king. Notebook mission copy is derived from level victory rules and localized through `locales/texts.csv`.
+
+## Arena encroachment
+After completed combat action #10 (configurable per campaign level in `balance/levels.csv`) each subsequent action causes one new permanent wall, unless standard victory has already occurred. Candidate walls must preserve legal actions for both sides, geometric connectivity between teams and an escort route. If none is valid the player loses and the current level restarts. Dynamic obstacles and RNG seed live in `GameState` and session saves; AI uses current obstacles and projects immediate closure at root. See `docs/BALANCE.md`.

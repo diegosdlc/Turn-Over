@@ -175,7 +175,7 @@ export class BoardRenderer {
   }
 
   renderBoardElements() {
-    for (const element of this.level.boardElements ?? []) {
+    for (const element of this.state.boardElements ?? this.level.boardElements ?? []) {
       const base = cellBox(this.projection, element.x, element.y);
       const box = insetBox(base, element.insetX ?? 0.16, element.insetY ?? 0.02);
       const scale = element.scale ?? 1;

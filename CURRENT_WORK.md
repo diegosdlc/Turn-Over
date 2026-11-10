@@ -124,3 +124,6 @@ Escort and survival campaign encounters have an independently identified player-
 ## Deployment integration verification (PR #20)
 
 Reviewed GitHub Actions Pages deployment for PR #20: the latest Pages run reported success and included `preview/pr-20`; earlier failed statuses were unit tests, not Pages deployment. Added static asset and syntax checks so missing module imports or invalid JavaScript in browser-only entrypoints fail CI. Ensured the mission king is visibly marked in the in-game band notebook and updated stylesheet query versions to invalidate old browser caches.
+
+## Progressive arena closure
+Four campaign levels close one extra tile per completed combat action from action 10, using the `encroachment_start_action` balance CSV column. The scheduler excludes occupied cells and preserves moves for both teams, shared geometry and the escort goal path. No candidate results in player defeat and automatic level reset. Blocked cells, action count and RNG seed persist with the session. AI search includes a one-ply closure projection and space heuristic. Scenarios and labs keep this off unless explicitly configured. `tests/encroachment.test.js` covers corridor, prisoners, counts, persistence and AI simulation.

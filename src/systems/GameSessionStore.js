@@ -2,6 +2,12 @@ export function restoreSessionState(state, savedState) {
   if (!Array.isArray(savedState?.units)) return;
 
   state.units = savedState.units;
+  state.boardElements = Array.isArray(savedState.boardElements)
+    ? structuredClone(savedState.boardElements) : structuredClone(state.level.boardElements ?? []);
+  state.combatActionsCompleted = Number.isSafeInteger(savedState.combatActionsCompleted) && savedState.combatActionsCompleted >= 0
+    ? savedState.combatActionsCompleted : 0;
+  state.encroachmentSeed = Number.isSafeInteger(savedState.encroachmentSeed)
+    ? savedState.encroachmentSeed >>> 0 : state.encroachmentSeed;
   // Older in-progress campaigns were saved before the free mission king existed.
   // Add it only when missing; never resurrect an existing captured/destroyed king.
   const requiredKing = state.level.units.find(unit => unit.missionKing);
@@ -9,7 +15,7 @@ export function restoreSessionState(state, savedState) {
     const size = state.level.board.size ?? 8;
     const occupied = new Set(state.units.filter(unit => !unit.inReserve && !unit.destroyed && !unit.captured &&
       Number.isInteger(unit.x) && Number.isInteger(unit.y)).map(unit => unit.x + ',' + unit.y));
-    const blocking = new Set((state.level.boardElements ?? []).filter(item => item.blocking)
+    const blocking = new Set((state.boardElements ?? []).filter(item => item.blocking)
       .map(item => item.x + ',' + item.y));
     const candidates = [requiredKing, ...Array.from({ length: size * 2 }, (_, index) => ({
       x: index % size, y: size - 1 - Math.floor(index / size)
@@ -78,6 +84,9 @@ export class GameSessionStore {
         playerFactionId: level.teams.player,
         state: {
           units: state.units,
+          boardElements: state.boardElements,
+          combatActionsCompleted: state.combatActionsCompleted,
+          encroachmentSeed: state.encroachmentSeed,
           currentTurn: state.currentTurn,
           finished: state.finished,
           phase: state.phase,

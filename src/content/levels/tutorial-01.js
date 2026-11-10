@@ -98,6 +98,7 @@ export function createTutorialEncounter({
     rules: {
       victory: balance.victory,
       captureChoice: true,
+      encroachmentStartAction: balance.encroachmentStartAction,
       ...(balance.targetRow === null ? {} : { targetRow: balance.targetRow }),
       ...(balance.surviveRounds === null ? {} : { surviveRounds: balance.surviveRounds })
     },

@@ -16,6 +16,14 @@ function clone(value) {
     : JSON.parse(JSON.stringify(value));
 }
 
+function seedForLevel(id) {
+  let seed = 2166136261;
+  for (const character of String(id)) {
+    seed = Math.imul(seed ^ character.charCodeAt(0), 16777619) >>> 0;
+  }
+  return seed;
+}
+
 function physicallyActive(unit) {
   return Boolean(unit && !unit.captured && !unit.destroyed && !unit.inReserve);
 }
@@ -59,7 +67,7 @@ export function applyRookShieldRejection(state, level, attacker, target) {
   const y = target.y + dy;
   const size = level.board.size ?? 8;
   const blocked = x < 0 || x >= size || y < 0 || y >= size ||
-    level.boardElements?.some(element => element.blocking && element.x === x && element.y === y) ||
+    (state.boardElements ?? level.boardElements)?.some(element => element.blocking && element.x === x && element.y === y) ||
     state.units.some(unit => physicallyActive(unit) && unit.x === x && unit.y === y) ||
     state.units.some(unit => unit.captured && !unit.destroyed && unit.x === x && unit.y === y);
 
@@ -101,6 +109,9 @@ export class GameState {
   }
 
   reset() {
+    this.boardElements = clone(this.level.boardElements ?? []);
+    this.combatActionsCompleted = 0;
+    this.encroachmentSeed = seedForLevel(this.level.id ?? '');
     this.units = clone(this.level.units).map(unit => ({
       ...unit,
       evolutionStage: normalizeEvolutionStage(unit),
@@ -335,7 +346,7 @@ export class GameState {
   deploymentCellBlocked(x, y, ignoredUnitId = null) {
     const occupied = this.activeAt(x, y);
     if (occupied && occupied.id !== ignoredUnitId) return true;
-    return (this.level.boardElements ?? []).some(element => element.blocking && element.x === x && element.y === y);
+    return (this.boardElements ?? []).some(element => element.blocking && element.x === x && element.y === y);
   }
 
   canDeployAt(unit, x, y) {

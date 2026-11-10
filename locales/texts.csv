@@ -185,3 +185,6 @@
 "ui.mission.king_status","Estado visible del rey especial en el cuaderno.","Objetivo protegido · 0 pts","Protected objective · 0 pts","Objetivos"
 "mission.escort_legacy","Objetivo clásico de escolta sin rey especial.","Lleva tu rey hasta la fila {row}. Si pierdes tu rey antes, pierdes el encuentro.","Take your king to row {row}. Losing your king before reaching it means defeat.","Objetivos"
 "mission.survive_legacy","Objetivo clásico de supervivencia sin rey especial.","Conserva al menos una pieza de tu banda durante {rounds} rondas completas.","Keep at least one of your pieces alive for {rounds} completed rounds.","Objetivos"
+"ui.encroachment.blocked","Nombre del obstáculo que aparece durante el cierre del escenario.","Casilla cerrada","Closed tile","Cierre del tablero"
+"ui.encroachment.loss_title","Título al no poder cerrar ninguna casilla de forma válida.","El escenario se ha cerrado","The arena has closed","Cierre del tablero"
+"ui.encroachment.loss_body","Aviso de derrota y reinicio automático cuando no quedan bloqueos legales.","No quedan casillas que se puedan bloquear sin inmovilizar a una banda. Has perdido. Se reinicia el encuentro.","No more tiles can be blocked without immobilizing a band. You lose. The encounter will restart.","Cierre del tablero"
