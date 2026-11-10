@@ -162,3 +162,7 @@ After completed combat action #10 (configurable per campaign level in `balance/l
 ## Collapse warning and destruction
 
 The arena warning begins at action `encroachment_start_action - 1`, and each subsequent completed action resolves the previous warning and selects another. Pieces or captured prisoners still on the warned tile are destroyed with no recruitment; victory is checked again after the closure. `pendingClosure` is persisted in session state and restored for deterministic continuation. Walls are smaller and visually animated; the warning is animated independently, and both respect reduced-motion preferences. Rules copy is maintained in `locales/texts.csv`.
+
+## Asymmetric capture mission
+
+In `capture-king`, player wins if enemy king is captured/destroyed; enemy wins only by eliminating all active player pieces. The player's king is ordinary material in this mission and its loss does not deactivate the remaining band. The AI protects its own king, and does not score a player-king assassination as terminal success.

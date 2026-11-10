@@ -60,3 +60,7 @@ El cierre se **anuncia con una acción completa de antelación**. Desde la acci�
 **Cualquier pieza activa o prisionero que ocupe la casilla anunciada cuando se cierra es destruido**, sin capturarse ni entrar en los reclutamientos. Puede ser una pieza de cualquiera de los bandos, incluso un rey o el Rey de misión: se comprueba la victoria/derrota del escenario inmediatamente después del cierre. No se anuncian casillas ocupadas inicialmente, pero sí pueden ocuparse mientras dura el aviso. Las casillas elegidas deben conservar la conectividad y las acciones legales cuando no se haya producido ya una victoria. Si la casilla anunciada deja de ser válida para el cierre por cambios en el tablero, se vuelve a anunciar otra en lugar de crear una barrera imposible; si no queda ninguna, el jugador pierde y se reinicia el nivel.
 
 `pendingClosure` se guarda junto con los obstáculos, las acciones y la semilla de la partida. La IA simula los cierres y las destrucciones inmediatas al evaluar sus acciones candidatas.
+
+## Captura asimétrica del rey (nivel 3)
+
+En `tutorial-03` y en el laboratorio `scenario-capture-king`, solo el **rey rival** es un objetivo especial. El jugador gana al capturarlo o destruirlo, aunque queden otras piezas enemigas. La IA rival gana al eliminar toda la banda del jugador, **no al capturar su rey**. Si el jugador pierde su propio rey, las piezas restantes siguen activas y pueden completar el objetivo. La IA puntúa especialmente la conservación de su rey, no la eliminación selectiva del rey jugador.

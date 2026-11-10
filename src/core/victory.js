@@ -34,7 +34,8 @@ export function victoryResultFor(state, level) {
   const victory = level?.rules?.victory ?? VICTORY_TYPES.ELIMINATION;
 
   if (victory === VICTORY_TYPES.CAPTURE_KING) {
-    if (!activeKing(state, 'player')) return { winner: 'enemy', reason: 'king-captured' };
+    // Only the defending enemy king is a terminal objective. The attacker
+    // may lose their own king and continue while any player units survive.
     if (!activeKing(state, 'enemy')) return { winner: 'player', reason: 'king-captured' };
     const winner = eliminatedWinner(state);
     return winner ? { winner, reason: 'elimination' } : null;
@@ -69,12 +70,10 @@ export function objectiveScoreFor(state, level, aiTeam) {
   const perspective = aiTeam === 'enemy' ? 1 : -1;
 
   if (victory === VICTORY_TYPES.CAPTURE_KING) {
-    const playerKing = activeKing(state, 'player');
+    // The enemy wins by wiping out the attacking band, not by killing its king.
+    // Reward keeping the only protected objective (the enemy king) alive.
     const enemyKing = activeKing(state, 'enemy');
-    let score = 0;
-    if (playerKing) score -= 1800;
-    if (enemyKing) score += 1800;
-    return score * perspective;
+    return (enemyKing ? 1800 : -50000) * perspective;
   }
 
   if (victory === VICTORY_TYPES.ESCORT_KING) {

@@ -174,11 +174,6 @@ export class GameState {
     if (this.isDeploying() || this.finished) return true;
 
     const victory = this.level?.rules?.victory ?? 'elimination';
-    if (victory === 'capture-king') {
-      const kingAlive = this.units.some(piece => physicallyActive(piece) && piece.team === unit.team && piece.pieceType === 'king');
-      if (!kingAlive) return false;
-    }
-
     if (victory === 'escort-king') {
       const missionKing = this.units.find(piece => piece.team === 'player' && piece.missionKing);
       const playerKing = missionKing

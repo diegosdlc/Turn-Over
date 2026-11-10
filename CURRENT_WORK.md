@@ -131,3 +131,7 @@ Four campaign levels close one extra tile per completed combat action from actio
 ## Preview: warning and tile collapse
 
 A pending closure is previewed one combat action in advance. The warning and smaller wall have CSS entry animations; the current warning is stored in `pendingClosure` and restored on reload. If an active piece or frozen prisoner moves onto the warned tile before the wall arrives, it is destroyed when the tile collapses and terminal objectives are evaluated again. The rules notebook and balance guide describe the hazard in Spanish and English.
+
+## Capture-king objective correction
+
+Capture is deliberately asymmetric: only the defender's (enemy) king is a terminal target. The defending AI must eliminate the full player band to win. Removing the player's king does not disable remaining pieces or end the battle. Mission text is updated in Spanish/English and the AI objective evaluation now rewards defending its own king, without granting a royal-target bonus for killing the player's king.

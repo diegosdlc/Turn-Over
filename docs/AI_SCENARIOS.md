@@ -9,7 +9,8 @@ Esta rama añade tres escenarios jugables para validar que la IA responde a cond
 - ID: `scenario-capture-king`
 - URL: `?level=scenario-capture-king`
 - Victoria: capturar o destruir el rey rival.
-- La IA considera la supervivencia de ambos reyes como parte prioritaria de la evaluación.
+- La IA protege su propio rey. Capturar o destruir el rey del jugador no provoca la victoria automática: debe eliminar la banda completa.
+- El jugador conserva el control de sus otras piezas aunque pierda su rey.
 
 ### Cruzar con el rey
 
