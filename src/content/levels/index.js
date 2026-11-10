@@ -1,7 +1,9 @@
 import { t } from '../../i18n/index.js';
 import { getMechanicLabFactory, listMechanicLabs } from './labs/index.js?v=20260821-budget-lab-1';
-import { createTutorial01, tutorial01 } from './tutorial-01.js?v=20261026-rounds-1';
-import { createTutorial02, tutorial02 } from './tutorial-02.js?v=20261026-rounds-1';
+import { createTutorial01, tutorial01 } from './tutorial-01.js?v=20261104-csv-balance-1';
+import { createTutorial02, tutorial02 } from './tutorial-02.js?v=20261104-csv-balance-1';
+import { createTutorial03, tutorial03 } from './tutorial-03.js?v=20261104-csv-balance-1';
+import { createTutorial04, tutorial04 } from './tutorial-04.js?v=20261104-csv-balance-1';
 import {
   createCaptureKingScenario,
   createEscortKingScenario,
@@ -20,6 +22,8 @@ const SCENARIOS = Object.freeze([
 const LEVEL_FACTORIES = new Map([
   [tutorial01.id, createTutorial01],
   [tutorial02.id, createTutorial02],
+  [tutorial03.id, createTutorial03],
+  [tutorial04.id, createTutorial04],
   [scenarioCaptureKing.id, createCaptureKingScenario],
   [scenarioEscortKing.id, createEscortKingScenario],
   [scenarioSurvive.id, createSurvivalScenario]

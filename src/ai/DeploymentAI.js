@@ -9,6 +9,12 @@ export function deployEnemyWave(state, level) {
   let placed = 0;
   for (const unit of available) {
     if (placed >= quota) break;
+    const preferred = level.units.find(piece => piece.id === unit.id && piece.team === 'enemy');
+    // CSV coordinates define the rival formation; heuristics are a fallback only.
+    if (preferred && state.placeDeploymentUnit(unit, preferred.x, preferred.y)) {
+      placed += 1;
+      continue;
+    }
     const size = level.board.size ?? 8;
     const cells = [];
     for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {

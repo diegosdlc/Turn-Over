@@ -377,3 +377,89 @@ button{font:inherit;letter-spacing:.02em}
   .modal-card{min-width:min(94vw,320px)}
   .tutorial-tooltip{width:min(240px,68vw);font-size:.76rem}
 }
+
+/* Mission kings are fixed, free objective units controlled by the player. */
+.unit.mission-king{
+  outline:3px double #f4d77b;
+  outline-offset:3px;
+  box-shadow:0 0 0 4px rgba(85,47,24,.55),0 0 17px rgba(244,215,123,.75);
+}
+.unit.mission-king::before{
+  content:"★";
+  position:absolute;
+  z-index:4;
+  top:-40%;
+  left:-15%;
+  font-size:clamp(.6rem,1.5vw,1.05rem);
+  color:#ffe7a3;
+  text-shadow:0 1px 2px #4a2718;
+  pointer-events:none;
+}
+
+/* New walls permanently close a tile after the encroachment threshold. */
+.board-element.encroachment-blocker {
+  z-index:5;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(145deg,#4a4651,#27242c);
+  border:2px solid #b5a3a3;
+  border-radius:12%;
+  box-shadow:0 2px 6px rgba(20,15,22,.8),inset 0 2px 5px rgba(255,255,255,.18);
+  color:#e2d4d0;
+  font-size:clamp(.8rem,2.4vw,1.8rem);
+  font-weight:bold;
+  pointer-events:none;
+}
+
+/* Compact progressive walls and animated warnings. */
+.board-element.encroachment-blocker {
+  z-index: 8;
+  border-radius: 15%;
+  box-shadow: 0 2px 5px rgba(20,15,22,.66), inset 0 1px 3px rgba(255,255,255,.15);
+  pointer-events: none;
+  transform-origin: 50% 70%;
+}
+.board-element.encroachment-blocker.encroachment-entering {
+  animation: encroachment-wall-appear 460ms cubic-bezier(.17,1.45,.45,1) both;
+}
+.encroachment-warning {
+  z-index: 11;
+  position: absolute;
+  display: grid;
+  place-items: center;
+  color: #fff4cb;
+  background: rgba(172,54,33,.35);
+  border: 2px dashed #f2a550;
+  border-radius: 48%;
+  box-shadow: 0 0 9px #d7512e, inset 0 0 8px rgba(255,207,107,.35);
+  pointer-events: none;
+  transform-origin: center;
+}
+.encroachment-warning-entering {
+  animation: encroachment-warning-appear 390ms ease-out both;
+}
+.encroachment-warning-pulse {
+  font-size: clamp(.75rem,2.2vw,1.5rem);
+  font-weight: 900;
+  text-shadow: 0 1px 3px #2d1d16;
+  animation: encroachment-warning-pulse 1.1s ease-in-out infinite alternate;
+}
+@keyframes encroachment-warning-appear {
+  from { opacity:0; transform:scale(.1) rotate(-28deg); }
+  68% { opacity:1; transform:scale(1.17) rotate(4deg); }
+  to { opacity:1; transform:scale(1) rotate(0deg); }
+}
+@keyframes encroachment-warning-pulse {
+  from { opacity:.65; transform:scale(.8); }
+  to { opacity:1; transform:scale(1.15); }
+}
+@keyframes encroachment-wall-appear {
+  from { opacity:0; transform:scale(.12) translateY(-25%); }
+  63% { opacity:1; transform:scale(1.13) translateY(-5%); }
+  to { opacity:1; transform:scale(1) translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .encroachment-warning-entering,
+  .encroachment-warning-pulse,
+  .board-element.encroachment-blocker.encroachment-entering { animation:none; }
+}

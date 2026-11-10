@@ -5,12 +5,15 @@ export function inside(level, x, y) {
   return x >= 0 && x < size && y >= 0 && y < size;
 }
 
-export function blockingElementAt(level, x, y) {
-  return level.boardElements?.find(element => element.blocking && element.x === x && element.y === y) ?? null;
+export function blockingElementAt(level, x, y, state = null) {
+  // The board's mutable obstacles belong to the active game state, never the level template.
+  return (state?.boardElements ?? level.boardElements)?.find(element =>
+    element.blocking && element.x === x && element.y === y
+  ) ?? null;
 }
 
 function squareOption(state, level, unit, x, y) {
-  if (blockingElementAt(level, x, y)) return null;
+  if (blockingElementAt(level, x, y, state)) return null;
 
   const occupant = state.activeAt(x, y);
   if (occupant) return occupant.team !== unit.team ? { x, y, kind: 'capture' } : null;
@@ -22,7 +25,7 @@ function squareOption(state, level, unit, x, y) {
 }
 
 function blocksLineMovement(state, level, x, y) {
-  return Boolean(blockingElementAt(level, x, y) || state.activeAt(x, y));
+  return Boolean(blockingElementAt(level, x, y, state) || state.activeAt(x, y));
 }
 
 function validLineMoves(state, level, unit, directions) {
@@ -119,7 +122,7 @@ function pawnMoves(state, level, unit, evolved = false) {
     const destinationY = unit.y + dy;
     if (
       inside(level, unit.x, destinationY) &&
-      !blockingElementAt(level, unit.x, destinationY) &&
+      !blockingElementAt(level, unit.x, destinationY, state) &&
       !state.activeAt(unit.x, destinationY)
     ) {
       const frozen = state.prisonersAt(unit.x, destinationY);
@@ -132,7 +135,7 @@ function pawnMoves(state, level, unit, evolved = false) {
     for (const dx of [-1, 1]) {
       const x = unit.x + dx;
       const y = unit.y + dy;
-      if (!inside(level, x, y) || blockingElementAt(level, x, y)) continue;
+      if (!inside(level, x, y) || blockingElementAt(level, x, y, state)) continue;
       const target = state.activeAt(x, y);
       if (target && target.team !== unit.team) moves.push({ x, y, kind: 'capture' });
     }

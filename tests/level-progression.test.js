@@ -51,7 +51,7 @@ test('the next band keeps survivors and recruits, drops losses and evolves eligi
   assert.equal(isEvolved(recruit), false);
 
   const second = getLevel('tutorial-02', { playerFactionId: 'green', playerBand: band });
-  const deployedBand = second.units.filter(unit => unit.team === 'player');
+  const deployedBand = second.units.filter(unit => unit.team === 'player' && !unit.missionKing);
   assert.equal(deployedBand.length, band.length);
   assert.equal(isEvolved(deployedBand.find(unit => unit.id === recruit.id)), false);
   assert.ok(deployedBand.filter(unit => ['king', 'queen'].includes(unit.pieceType)).every(isEvolved));
@@ -63,7 +63,7 @@ test('the next band keeps survivors and recruits, drops losses and evolves eligi
 test('level 2 uses the carried composition and resets it into deployment', () => {
   const band = buildNextPlayerBand([piece('knight'), piece('pawn')], 'tutorial-01');
   const second = getLevel('tutorial-02', { playerFactionId: 'yellow', playerBand: band });
-  const playerUnits = second.units.filter(unit => unit.team === 'player');
+  const playerUnits = second.units.filter(unit => unit.team === 'player' && !unit.missionKing);
 
   assert.deepEqual(playerUnits.map(unit => unit.pieceType).sort(), ['knight', 'pawn']);
   assert.ok(playerUnits.every(isEvolved));

@@ -1,6 +1,6 @@
 # Turn Over — Current Work
 
-Last updated: 2026-11-03
+Last updated: 2026-11-04
 
 ## Project naming
 
@@ -32,10 +32,10 @@ The deployment system supports lineup selection by point budget.
 - **Iniciar partida** appears when at least one participating piece is validly placed and the lineup is within budget. Spending the full budget is optional.
 - Session schema `7` persists alternating deployment rounds and commitments; schema-6 saves remain loadable.
 - Reset returns the deployment roster to reserve and spent points to zero.
-- `docs/BALANCE.md` is the runtime-editable source of truth for base/evolved costs and per-level limits.
-- The current tutorial enemy band is worth 18 points, so `tutorial-01` and `tutorial-02` currently use an 18-point limit.
+- `balance/` CSV files are the runtime source of truth for costs, level limits, rival formations and obstacle positions.
+- Four campaign levels are linked in order: destruction (18), escort (22), capture of king (26) and survival (30). The rival lineup matches each initial budget.
 
-See `docs/DEPLOYMENT.md` and `docs/BALANCE.md`.
+See `docs/DEPLOYMENT.md`, `balance/` and the four files in `balance/`.
 
 ## Piece evolution and carried roster
 
@@ -45,7 +45,7 @@ See `docs/DEPLOYMENT.md` and `docs/BALANCE.md`.
 - Pieces left in deployment reserve carry forward unchanged; they do not gain a free evolution for an encounter they did not play.
 - New recruits join without evolving and become eligible after participating in and surviving a later encounter.
 - Rey and Reina require joint participation/survival for the between-level royal evolution.
-- Evolved pieces use the higher deployment cost configured in `docs/BALANCE.md`.
+- Evolved pieces use the higher deployment cost configured in `balance/`.
 - `tutorial-01` unlocks `tutorial-02`, which uses the complete carried roster for the next deployment choice.
 
 See `docs/EVOLUTION.md`.
@@ -97,7 +97,7 @@ Production factions currently fall back to CSS chess-token graphics when final b
 - replace placeholder notebook content with final level-specific content;
 - implement the menu-to-level notebook transition animation;
 - replace placeholder obstacle/facing/evolution artwork with final production assets;
-- iterate the numbers in `docs/BALANCE.md` as gameplay testing produces better cost/limit data.
+- iterate the four balance CSV tables as gameplay tests establish suitable costs, budgets and level layouts.
 
 ## Local development
 
@@ -112,3 +112,26 @@ git pull --ff-only origin main
 ```
 
 Then read `PROJECT_CONTEXT.md`, this file, `README.md`, the relevant contract in `docs/`, and the relevant source files. Commit and push durable changes before changing device/environment.
+
+## Current campaign balancing
+
+The production campaign has four CSV-driven encounters: `tutorial-01` destruction, `tutorial-02` escort, `tutorial-03` capture and `tutorial-04` survival. All use three-wave alternating deployment. The rival king begins at the configured square; further enemy units prefer their configured positions when each deployment wave is placed. Debug scenarios and labs remain separately available. Automated CSV validation covers budgets, victory conditions, enemy lineups, obstacles and invalid CSV inputs.
+
+## PR #20 extension — special king and mission page
+
+Escort and survival campaign encounters have an independently identified player-controlled mission king, fixed at deployment start, marked on board and in notebooks, cost-free and excluded from carried rosters and deployment quotas. Its death loses the objective, even if another king remains. Level-specific mission descriptions now appear in the mission notebook, with ES/EN localization.
+
+## Deployment integration verification (PR #20)
+
+Reviewed GitHub Actions Pages deployment for PR #20: the latest Pages run reported success and included `preview/pr-20`; earlier failed statuses were unit tests, not Pages deployment. Added static asset and syntax checks so missing module imports or invalid JavaScript in browser-only entrypoints fail CI. Ensured the mission king is visibly marked in the in-game band notebook and updated stylesheet query versions to invalidate old browser caches.
+
+## Progressive arena closure
+Four campaign levels close one extra tile per completed combat action from action 10, using the `encroachment_start_action` balance CSV column. The scheduler excludes occupied cells and preserves moves for both teams, shared geometry and the escort goal path. No candidate results in player defeat and automatic level reset. Blocked cells, action count and RNG seed persist with the session. AI search includes a one-ply closure projection and space heuristic. Scenarios and labs keep this off unless explicitly configured. `tests/encroachment.test.js` covers corridor, prisoners, counts, persistence and AI simulation.
+
+## Preview: warning and tile collapse
+
+A pending closure is previewed one combat action in advance. The warning and smaller wall have CSS entry animations; the current warning is stored in `pendingClosure` and restored on reload. If an active piece or frozen prisoner moves onto the warned tile before the wall arrives, it is destroyed when the tile collapses and terminal objectives are evaluated again. The rules notebook and balance guide describe the hazard in Spanish and English.
+
+## Capture-king objective correction
+
+Capture is deliberately asymmetric: only the defender's (enemy) king is a terminal target. The defending AI must eliminate the full player band to win. Removing the player's king does not disable remaining pieces or end the battle. Mission text is updated in Spanish/English and the AI objective evaluation now rewards defending its own king, without granting a royal-target bonus for killing the player's king.

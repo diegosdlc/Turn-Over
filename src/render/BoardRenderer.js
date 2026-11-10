@@ -12,6 +12,12 @@ export class BoardRenderer {
     this.onCellClick = onCellClick;
     this.onCaptureAction = onCaptureAction;
     this.projection = level.board.projection;
+    // Existing walls must not replay their arrival animations on load.
+    this.seenWallIds = new Set((state.boardElements ?? []).filter(item =>
+      item.type === 'encroachment').map(item => item.id));
+    this.seenWarningKey = state.pendingClosure
+      ? state.pendingClosure.x + ',' + state.pendingClosure.y + ':' + state.pendingClosure.forAction
+      : null;
     this.configureBoardArtwork();
   }
 
@@ -43,6 +49,7 @@ export class BoardRenderer {
     }
 
     this.renderBoardElements();
+    this.renderClosureWarning();
     this.board.dataset.turn = this.state.currentTurn;
     this.board.dataset.phase = this.state.phase ?? 'play';
   }
@@ -97,9 +104,10 @@ export class BoardRenderer {
     piece.type = 'button';
     piece.className = `unit ${unit.id === this.state.selectedId ? 'selected' : ''} ${this.state.pendingCapture?.targetId === unit.id ? 'awaiting-capture' : ''}`;
     piece.classList.toggle('evolved', isEvolved(unit));
+    piece.classList.toggle('mission-king', Boolean(unit.missionKing));
     const shieldReady = evolutionCapabilitiesFor(unit).rejectsFirstAttack && (unit.evolutionState?.shieldCharges ?? 0) > 0;
     piece.classList.toggle('shield-ready', shieldReady);
-    piece.setAttribute('aria-label', `${pieceName(unit)}${isEvolved(unit) ? t('ui.board.evolved') : ''}${shieldReady ? t('ui.board.shield') : ''}`);
+    piece.setAttribute('aria-label', `${pieceName(unit)}${unit.missionKing ? ' · ' + t('ui.mission.king_tag') : ''}${isEvolved(unit) ? t('ui.board.evolved') : ''}${shieldReady ? t('ui.board.shield') : ''}`);
     this.applyFactionPalette(piece, unit);
 
     const fallback = document.createElement('span');
@@ -174,7 +182,7 @@ export class BoardRenderer {
   }
 
   renderBoardElements() {
-    for (const element of this.level.boardElements ?? []) {
+    for (const element of this.state.boardElements ?? this.level.boardElements ?? []) {
       const base = cellBox(this.projection, element.x, element.y);
       const box = insetBox(base, element.insetX ?? 0.16, element.insetY ?? 0.02);
       const scale = element.scale ?? 1;
@@ -185,6 +193,10 @@ export class BoardRenderer {
 
       const node = document.createElement('div');
       node.className = `board-element ${element.blocking ? 'blocking' : ''} ${element.className ?? ''}`;
+      if (element.type === 'encroachment') {
+        if (!this.seenWallIds.has(element.id)) node.classList.add('encroachment-entering');
+        this.seenWallIds.add(element.id);
+      }
       node.setAttribute('aria-label', element.i18nNameKey ? t(element.i18nNameKey) : (element.name ?? t('ui.board.element')));
       place(node, box, this.projection);
 
@@ -199,6 +211,30 @@ export class BoardRenderer {
       }
       this.board.append(node);
     }
+  }
+
+  renderClosureWarning() {
+    const warning = this.state.pendingClosure;
+    if (!warning || this.state.finished || this.state.isDeploying()) {
+      this.seenWarningKey = null;
+      return;
+    }
+    const size = this.level.board.size ?? 8;
+    if (warning.x < 0 || warning.y < 0 || warning.x >= size || warning.y >= size) return;
+    const box = insetBox(cellBox(this.projection, warning.x, warning.y), 0.22, 0.19);
+    const marker = document.createElement('div');
+    marker.className = 'encroachment-warning';
+    const markerKey = warning.x + ',' + warning.y + ':' + warning.forAction;
+    if (markerKey !== this.seenWarningKey) marker.classList.add('encroachment-warning-entering');
+    this.seenWarningKey = markerKey;
+    marker.setAttribute('role', 'img');
+    marker.setAttribute('aria-label', t('ui.encroachment.warning'));
+    place(marker, box, this.projection);
+    const pulse = document.createElement('span');
+    pulse.className = 'encroachment-warning-pulse';
+    pulse.textContent = '!';
+    marker.append(pulse);
+    this.board.append(marker);
   }
 
   applyFactionPalette(element, unit) {

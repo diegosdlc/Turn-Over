@@ -2,6 +2,37 @@ export function restoreSessionState(state, savedState) {
   if (!Array.isArray(savedState?.units)) return;
 
   state.units = savedState.units;
+  state.boardElements = Array.isArray(savedState.boardElements)
+    ? structuredClone(savedState.boardElements) : structuredClone(state.level.boardElements ?? []);
+  const pending = savedState.pendingClosure;
+  const size = state.level.board.size ?? 8;
+  state.pendingClosure = pending && Number.isInteger(pending.x) && Number.isInteger(pending.y)
+    && Number.isInteger(pending.forAction) && pending.x >= 0 && pending.y >= 0
+    && pending.x < size && pending.y < size && pending.forAction > 0
+    && !(state.boardElements ?? []).some(item => item.blocking && item.x === pending.x && item.y === pending.y)
+    ? {x: pending.x, y: pending.y, forAction: pending.forAction} : null;
+  state.combatActionsCompleted = Number.isSafeInteger(savedState.combatActionsCompleted) && savedState.combatActionsCompleted >= 0
+    ? savedState.combatActionsCompleted : 0;
+  state.encroachmentSeed = Number.isSafeInteger(savedState.encroachmentSeed)
+    ? savedState.encroachmentSeed >>> 0 : state.encroachmentSeed;
+  // Older in-progress campaigns were saved before the free mission king existed.
+  // Add it only when missing; never resurrect an existing captured/destroyed king.
+  const requiredKing = state.level.units.find(unit => unit.missionKing);
+  if (requiredKing && !state.units.some(unit => unit.id === requiredKing.id)) {
+    const size = state.level.board.size ?? 8;
+    const occupied = new Set(state.units.filter(unit => !unit.inReserve && !unit.destroyed && !unit.captured &&
+      Number.isInteger(unit.x) && Number.isInteger(unit.y)).map(unit => unit.x + ',' + unit.y));
+    const blocking = new Set((state.boardElements ?? []).filter(item => item.blocking)
+      .map(item => item.x + ',' + item.y));
+    const candidates = [requiredKing, ...Array.from({ length: size * 2 }, (_, index) => ({
+      x: index % size, y: size - 1 - Math.floor(index / size)
+    }))];
+    const position = candidates.find(({ x, y }) => x >= 0 && x < size && y >= 0 && y < size &&
+      !occupied.has(x + ',' + y) && !blocking.has(x + ',' + y));
+    if (!position) throw new Error('No hay casilla libre para restaurar el Rey de misión.');
+    state.units = [...state.units, { ...structuredClone(requiredKing), x: position.x, y: position.y,
+      inReserve: false, captured: false, destroyed: false, capturedBy: null, recruitedBy: null }];
+  }
   state.currentTurn = savedState.currentTurn === 'enemy' ? 'enemy' : 'player';
   state.finished = Boolean(savedState.finished);
   state.phase = savedState.phase === 'deployment' ? 'deployment' : 'play';
@@ -60,6 +91,10 @@ export class GameSessionStore {
         playerFactionId: level.teams.player,
         state: {
           units: state.units,
+          boardElements: state.boardElements,
+          combatActionsCompleted: state.combatActionsCompleted,
+          encroachmentSeed: state.encroachmentSeed,
+          pendingClosure: state.pendingClosure,
           currentTurn: state.currentTurn,
           finished: state.finished,
           phase: state.phase,
