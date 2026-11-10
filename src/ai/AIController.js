@@ -1,5 +1,5 @@
 import { legalActionsFor, optionsFor } from '../core/rules.js?v=20260821-evolution-3';
-import { applyRookShieldRejection, applyRoyalSwap, completeUnitMove } from '../core/GameState.js?v=20260822-victory-1';
+import { applyRookShieldRejection, applyRoyalSwap, completeUnitMove } from '../core/GameState.js?v=20261110-pawn-edge-facing-1';
 import { objectiveScoreFor, victoryResultFor } from '../core/victory.js?v=20260822-victory-1';
 import { applyEncroachment } from '../core/encroachment.js';
 

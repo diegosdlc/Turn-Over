@@ -32,7 +32,7 @@ export function completeUnitMove(state, level, unit, action) {
   if (!unit || !Number.isInteger(action?.x) || !Number.isInteger(action?.y)) return false;
   unit.x = action.x;
   unit.y = action.y;
-  return applyEvolutionEvent({
+  const evolved = applyEvolutionEvent({
     state,
     level,
     unit,
@@ -44,6 +44,16 @@ export function completeUnitMove(state, level, unit, action) {
       targetId: action.targetId ?? null
     }
   });
+
+  // Pawns turn back at either end of the board, including after capture,
+  // destruction or a shield-rejected move. This changes their artwork and
+  // saved facing, but not their movement or evolution rules.
+  if (unit.pieceType === 'pawn') {
+    const lastRow = (level.board.size ?? 8) - 1;
+    if (action.y === 0) unit.facing = 'south';
+    else if (action.y === lastRow) unit.facing = 'north';
+  }
+  return evolved;
 }
 
 function releaseFriendlyPrisoners(state, x, y, team) {

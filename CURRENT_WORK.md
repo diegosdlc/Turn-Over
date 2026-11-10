@@ -56,6 +56,7 @@ See `docs/EVOLUTION.md`.
 - `team`, origin `faction` and `facing` remain independent.
 - The tutorial starts player pieces facing north and enemy pieces facing south.
 - `GameState.setFacing()` and `GameState.turnAround()` are authoritative orientation operations.
+- Pawns now face `south` upon landing on the top row (`y = 0`) and `north` on the bottom row (`y = size - 1`), including after capture/destruction and repeated rebounds by evolved pawns. The persisted facing drives faction sprites; movement/AI rules are unchanged.
 - `AssetRegistry.pieceAsset()` supports optional artwork by faction, piece type and facing, with CSS token fallback.
 
 See `docs/FACTIONS_AND_BANDS.md`.
