@@ -33,7 +33,7 @@ Generated units carry a stable id, controlling `team`, origin `faction`, `facing
 
 A recruited enemy piece may become player-controlled while keeping its origin faction artwork. Facing can change independently from either team or faction.
 
-`GameState.setFacing()` assigns an explicit orientation and `GameState.turnAround()` swaps north/south. Movement does not normally rotate pieces, **except pawns reaching the first or last board row**: after a completed move, capture, destruction or shield rejection that lands on `y = 0`, the pawn faces `south` (front sprite); landing on `y = board.size - 1` makes it face `north` (rear sprite). This also applies to evolved pawns returning to either edge, regardless of faction or controlling team. The facing change is saved as unit state and does not alter legal movement or evolution rules.
+`GameState.setFacing()` assigns an explicit orientation and `GameState.turnAround()` swaps north/south. **All pieces now automatically face the direction of their last completed movement**, using the board's projected vertical displacement: negative screen-Y selects `north` (rear artwork), positive screen-Y selects `south` (front artwork), and approximately zero preserves the prior facing. Because the board is isometric, a move along the logical east/west (`x`) axis may change projected screen-Y and therefore facing even when logical `y` remains unchanged. This applies to pawns (including evolved pawns reversing direction), captures, destruction, rejected attacks and royal swaps for either team and any faction. Direction persists in saved unit state; legal movement and evolution are unchanged.
 
 The tutorial starts player pieces facing north and enemy pieces facing south.
 

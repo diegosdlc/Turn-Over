@@ -72,7 +72,6 @@ export function createFacingLab() {
       description: 'Prueba frontal/espalda y cambios de encaramiento.', descriptionKey: 'lab.facing.description'
     }),
     behavior: createLabBehavior({
-      flipFacingOnMove: true,
       keepPlayerTurn: true
     }),
     units: [
