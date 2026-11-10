@@ -89,7 +89,7 @@ The no-legal-moves lifecycle is implemented: a side with no legal move loses its
 
 Playable factions are **Verde** (alfil), **Roja** (torre) and **Amarilla** (caballo). A new starting band contains rey, reina, peón and the selected faction's special piece. The tutorial opponent is always Verde.
 
-Production factions currently fall back to CSS chess-token graphics when final bitmap artwork is not configured.
+The green faction pawn uses turquoise glass WebP sprites with distinct north (rear three-quarter) and south (front three-quarter) views. Its artwork is selected by origin faction and facing for both player and enemy; remaining piece types keep their CSS chess-token fallback.
 
 ## Remaining work / next focus
 
