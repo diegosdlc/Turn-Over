@@ -51,7 +51,9 @@ export function connectedAfterClosure(state, level) {
   if (!playerCells.length || !enemyCells.length) return false;
   const regions = components(state, level);
   // Prevent any active piece from becoming isolated from its own army's contested region.
-  if (!regions.some(region => playerCells.some(cell=>region.has(cell)) && enemyCells.some(cell=>region.has(cell)))) return false;
+  const contested = regions.find(region =>
+    playerCells.some(cell=>region.has(cell)) && enemyCells.some(cell=>region.has(cell)));
+  if (!contested || !active.every(unit => contested.has(key(unit.x,unit.y)))) return false;
 
   if (level.rules?.victory === 'escort-king') {
     const mission = active.find(unit=>unit.team==='player' && unit.missionKing) ??
