@@ -15,8 +15,8 @@ function createUnit(pieceType, overrides = {}) {
     x: overrides.x ?? 3,
     y: overrides.y ?? 3,
     moveProfile: pieceType,
-    evolutionProfile: null,
-    evolutionStage: null
+    evolutionProfile: overrides.evolutionProfile ?? null,
+    evolutionStage: overrides.evolutionStage ?? null
   };
 }
 
