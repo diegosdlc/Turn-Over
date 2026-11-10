@@ -1,5 +1,6 @@
 import { t, getLanguage, getGender, setLanguage, setGender, onLocaleChange, playerText, pieceName } from './i18n/index.js';
 import { listMechanicLabs } from './content/levels/index.js?v=20260821-evolution-3';
+import { missionTextFor } from './content/mission.js?v=20261109-mission-1';
 
 function mechanicsLabOptions() {
   return listMechanicLabs()
@@ -8,14 +9,17 @@ function mechanicsLabOptions() {
 }
 
 function notebookSections() {
+  const level = window.turnOverNotebookLevel;
+  const missionBody = level
+    ? '<p>' + missionTextFor(level, t) + '</p>'
+    : t('notebook.mission.body');
   return {
     band: [
       { title: t('notebook.band.title'), html: '<div id="notebook-dynamic-rosters"></div>' },
       { title: t('notebook.factions.title'), html: t('notebook.factions.body') }
     ],
     mission: [
-      { title: t('notebook.mission.title'), html: t('notebook.mission.body') },
-      { title: t('notebook.mission_notes.title'), html: t('notebook.mission_notes.body') }
+      { title: t('notebook.mission.title'), html: missionBody }
     ],
     rules: [
       { title: t('notebook.rules.title'), html: t('notebook.rules.body') },
@@ -112,7 +116,7 @@ class NotebookUI {
         const card = document.createElement('div');
         card.className = 'notebook-roster-card';
         const tile = document.createElement('div');
-        tile.className = `deployment-piece readonly notebook-roster-piece ${unit.inReserve ? 'in-reserve' : 'in-lineup'}${unit.destroyed ? ' is-destroyed' : ''}`;
+        tile.className = `deployment-piece readonly notebook-roster-piece ${unit.inReserve ? 'in-reserve' : 'in-lineup'}${unit.destroyed ? ' is-destroyed' : ''}${unit.missionKing ? ' mission-king' : ''}`;
         const palette = state.assets?.piecePalette(unit);
         if (palette) {
           tile.style.setProperty('--unit-primary', palette.primary);
@@ -145,12 +149,14 @@ class NotebookUI {
         }
         const name = document.createElement('span');
         name.className = 'deployment-piece-name';
-        name.textContent = pieceName(unit);
+        name.textContent = unit.missionKing ? t('ui.mission.king_tag') : pieceName(unit);
         tile.append(name);
         const meta = document.createElement('small');
         meta.className = 'deployment-piece-meta';
-        meta.textContent = t(unit.destroyed ? 'ui.roster.destroyed' : unit.captured ? 'ui.roster.captured' :
-          unit.inReserve ? 'ui.roster.reserve' : 'ui.deployment.status_board');
+        meta.textContent = unit.missionKing && !unit.destroyed && !unit.captured
+          ? t('ui.mission.king_status')
+          : t(unit.destroyed ? 'ui.roster.destroyed' : unit.captured ? 'ui.roster.captured' :
+            unit.inReserve ? 'ui.roster.reserve' : 'ui.deployment.status_board');
         card.append(tile, meta);
         grid.append(card);
       }

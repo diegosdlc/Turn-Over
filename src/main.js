@@ -1,7 +1,7 @@
 import { initI18n, t, pieceName, factionName, onLocaleChange, setLanguage, setGender, getLanguage, getGender, refreshStaticTranslations } from './i18n/index.js';
 import { GAME_CONFIG } from './config/gameConfig.js';
-import { FACTIONS, PLAYER_FACTION_IDS } from './content/factions.js?v=20261110-green-pawn-1';
-import { getLevel, getNextLevel } from './content/levels/index.js?v=20261026-rounds-1';
+import { FACTIONS, PLAYER_FACTION_IDS } from './content/factions.js?v=20261110-green-pawn-merged-1';
+import { getLevel, getNextLevel } from './content/levels/index.js?v=20261104-csv-balance-1';
 import { GameState } from './core/GameState.js?v=20261026-rounds-1';
 import { AssetRegistry } from './systems/AssetRegistry.js';
 import { AudioManager } from './systems/AudioManager.js?v=20260814-1700';
@@ -11,6 +11,8 @@ import { TutorialSystem } from './systems/TutorialSystem.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20260821-evolution-3';
 import { AIController } from './ai/AIController.js?v=20260821-budget-1';
 import { legalActionsFor } from './core/rules.js?v=20260821-evolution-3';
+import { victoryResultFor } from './core/victory.js';
+import { applyEncroachment } from './core/encroachment.js';
 import { buildNextPlayerBand } from './core/campaign.js?v=20260821-budget-1';
 import { deployEnemyWave } from './ai/DeploymentAI.js';
 
@@ -143,6 +145,8 @@ class GameApp {
     this.cancelAiTurn();
     this.nextPlayerBand = null;
     this.level = level;
+    window.turnOverNotebookLevel = { id: level.id, rules: level.rules, hasMissionKing: level.units.some(unit => unit.missionKing) };
+    window.dispatchEvent(new Event('game:mission-updated'));
     this.state = new GameState(level);
     if (savedState) this.restoreSavedState(savedState);
     this.ai = level.ai ? new AIController(level.ai) : null;
@@ -187,7 +191,7 @@ class GameApp {
   }
 
   render() {
-    window.turnOverNotebookState = { units: this.state.units, assets: this.assets };
+    window.turnOverNotebookState = { units: this.state.units, assets: this.assets, level: this.level };
     window.dispatchEvent(new Event('game:rosters-updated'));
     this.renderer.render();
     this.renderDeployment();
@@ -272,14 +276,14 @@ class GameApp {
 
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = `deployment-piece ${unit.id === this.state.selectedId ? 'selected' : ''} ${unit.inReserve ? 'in-reserve' : 'in-lineup'}`;
+      button.className = `deployment-piece ${unit.id === this.state.selectedId ? 'selected' : ''} ${unit.inReserve ? 'in-reserve' : 'in-lineup'}${unit.missionKing ? ' mission-king' : ''}`;
       const cost = this.state.deploymentUnitCost(unit);
       const affordable = this.state.canAffordDeploymentUnit(unit);
-      const locked = alternating && (this.state.isDeploymentCommitted(unit) || !playerTurn ||
-        (unit.inReserve && this.state.deploymentRoundPlaced('player') >= this.state.deploymentRoundQuota('player')));
+      const locked = unit.missionKing || (alternating && (this.state.isDeploymentCommitted(unit) || !playerTurn ||
+        (unit.inReserve && this.state.deploymentRoundPlaced('player') >= this.state.deploymentRoundQuota('player'))));
       button.disabled = Boolean(locked || (unit.inReserve && !affordable));
       button.setAttribute('aria-pressed', String(!unit.inReserve));
-      button.setAttribute('aria-label', t('ui.deployment.unit_aria', { action: t(unit.inReserve ? 'ui.deployment.select' : 'ui.deployment.reposition'), name: pieceName(unit), points: cost, status: t(unit.inReserve ? 'ui.deployment.status_pending_lower' : 'ui.deployment.status_board_lower'), evolved: unit.evolutionStage === 'evolved' ? t('ui.board.evolved') : '' }));
+      button.setAttribute('aria-label', unit.missionKing ? t('ui.mission.king_aria') : t('ui.deployment.unit_aria', { action: t(unit.inReserve ? 'ui.deployment.select' : 'ui.deployment.reposition'), name: pieceName(unit), points: cost, status: t(unit.inReserve ? 'ui.deployment.status_pending_lower' : 'ui.deployment.status_board_lower'), evolved: unit.evolutionStage === 'evolved' ? t('ui.board.evolved') : '' }));
       this.applyDeploymentPalette(button, unit);
 
       const fallback = document.createElement('span');
@@ -304,7 +308,7 @@ class GameApp {
 
       const costBadge = document.createElement('span');
       costBadge.className = 'deployment-piece-cost';
-      costBadge.textContent = t('ui.deployment.points', { count: cost });
+      costBadge.textContent = unit.missionKing ? t('ui.mission.king_tag') : t('ui.deployment.points', { count: cost });
       button.append(costBadge);
 
       if (unit.evolutionStage === 'evolved') {
@@ -321,7 +325,7 @@ class GameApp {
       button.append(name);
 
       button.addEventListener('click', () => {
-        if (!playerTurn || (alternating && this.state.isDeploymentCommitted(unit))) return;
+        if (!playerTurn || unit.missionKing || (alternating && this.state.isDeploymentCommitted(unit))) return;
         if (this.state.selectedId === unit.id) this.state.clearSelection();
         else this.state.setSelected(unit.id);
         this.render();
@@ -329,10 +333,10 @@ class GameApp {
       const status = document.createElement('div');
       status.className = 'deployment-piece-meta';
       const statusLabel = document.createElement('span');
-      statusLabel.textContent = t(unit.inReserve ? 'ui.deployment.status_pending' : 'ui.deployment.status_board');
+      statusLabel.textContent = unit.missionKing ? t('ui.mission.king_status') : t(unit.inReserve ? 'ui.deployment.status_pending' : 'ui.deployment.status_board');
       status.append(statusLabel);
 
-      if (budgeted && !unit.inReserve && (!alternating || (playerTurn && !this.state.isDeploymentCommitted(unit)))) {
+      if (budgeted && !unit.missionKing && !unit.inReserve && (!alternating || (playerTurn && !this.state.isDeploymentCommitted(unit)))) {
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'deployment-piece-remove';
@@ -532,12 +536,19 @@ class GameApp {
 
   finishMove() {
     this.state.clearSelection();
+    this.state.combatActionsCompleted += 1;
     this.checkEnd();
-    if (!this.state.finished) {
-      this.state.changeTurn();
-      this.saveSession();
-      this.resolveTurn();
+    if (this.state.finished) return;
+    const closure = applyEncroachment(this.state, this.level);
+    this.checkEnd(); // A collapsing tile can destroy a king or the last unit.
+    if (this.state.finished) return;
+    if (closure.status === 'trapped' || closure.noNextCandidate) {
+      this.finishEncroachmentLoss();
+      return;
     }
+    this.state.changeTurn();
+    this.saveSession();
+    this.resolveTurn();
   }
 
   resolveTurn() {
@@ -550,9 +561,15 @@ class GameApp {
       return;
     }
 
+    // Check a terminal objective before skipping a turn; the skip does not count
+    // as an action and must never create a new obstacle.
+    this.checkEnd();
+    if (this.state.finished) return;
     const skippedTeam = this.state.currentTurn;
     this.state.clearSelection();
     this.state.changeTurn();
+    this.checkEnd();
+    if (this.state.finished) return;
     if (legalActionsFor(this.state, this.level).length) {
       this.render();
       this.showTurnPassed(skippedTeam);
@@ -654,10 +671,31 @@ class GameApp {
   }
 
   checkEnd() {
-    const playerUnits = this.state.units.filter(unit => this.state.active(unit) && unit.team === 'player');
-    const enemyUnits = this.state.units.filter(unit => this.state.active(unit) && unit.team === 'enemy');
-    if (!playerUnits.length) this.finish('enemy');
-    else if (!enemyUnits.length) this.finish('player');
+    const result = victoryResultFor(this.state, this.level);
+    if (result) this.finish(result.winner);
+  }
+
+  finishEncroachmentLoss() {
+    if (this.state.finished) return;
+    this.state.finished = true;
+    this.session.clear();
+    this.cancelAiTurn();
+    this.render();
+    this.lastDialog = null;
+    this.resultContent.replaceChildren();
+    const card = document.createElement('section');
+    card.className = 'modal-card end-card';
+    const heading = document.createElement('h2');
+    heading.textContent = t('ui.encroachment.loss_title');
+    const message = document.createElement('p');
+    message.textContent = t('ui.encroachment.loss_body');
+    card.append(heading, message);
+    this.resultContent.append(card);
+    if (!this.resultDialog.open) this.resultDialog.showModal();
+    const finishedState = this.state;
+    window.setTimeout(() => {
+      if (this.state === finishedState && this.homeScreen.hidden) this.resetLevel();
+    }, 2000);
   }
 
   finish(winner) {

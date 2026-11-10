@@ -618,3 +618,14 @@ html.touch-ui .notebook-roster-card .deployment-piece-name{
   background:rgba(135,76,65,.3);
   outline:1px solid #7b4b42;
 }
+
+.deployment-piece.mission-king{
+  outline:2px double #e8bd64;
+  outline-offset:2px;
+  box-shadow:0 0 0 2px rgba(96,61,29,.42);
+}
+.deployment-piece.mission-king .deployment-piece-cost{
+  font-size:clamp(.45rem,.7vw,.57rem);
+  background:#f5dea0;
+  color:#3c2916;
+}

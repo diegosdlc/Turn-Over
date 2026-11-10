@@ -1,6 +1,7 @@
 import { legalActionsFor, optionsFor } from '../core/rules.js?v=20260821-evolution-3';
 import { applyRookShieldRejection, applyRoyalSwap, completeUnitMove } from '../core/GameState.js?v=20260822-victory-1';
 import { objectiveScoreFor, victoryResultFor } from '../core/victory.js?v=20260822-victory-1';
+import { applyEncroachment } from '../core/encroachment.js';
 
 export class AIController {
   constructor(config = {}) {
@@ -21,6 +22,7 @@ export class AIController {
       material: 1,
       captured: 0.65,
       mobility: 2,
+      space: 4,
       objective: 1,
       prisonerSafety: 0.8,
       rescuePotential: 0.55,
@@ -37,7 +39,7 @@ export class AIController {
     if (!actions.length) return null;
 
     const scored = actions.map(action => {
-      const next = simulate(state, level, action);
+      const next = simulate(state, level, action, true);
       return {
         action,
         score: minimax(next, level, this.depth - 1, -Infinity, Infinity, this.team, this)
@@ -54,7 +56,7 @@ export function legalActions(state, level) {
 }
 
 function minimax(state, level, depth, alpha, beta, aiTeam, ai) {
-  const result = victoryResultFor(state, level);
+  const result = state.forcedClosureLoss ? { winner: 'enemy', reason: 'encroachment' } : victoryResultFor(state, level);
   if (result || depth <= 0) return evaluate(state, level, aiTeam, ai, result);
 
   const actions = legalActions(state, level);
@@ -86,7 +88,18 @@ function advanceTurn(state) {
   if (completedRound) state.roundsElapsed = (state.roundsElapsed ?? 0) + 1;
 }
 
-function simulate(state, level, action) {
+function simulate(state, level, action, simulateImmediateClosure = false) {
+  // Exact closure is evaluated for each root choice; projecting every random
+  // closure at deeper minimax plies would multiply the search tree dramatically.
+  function finishSimulatedAction() {
+    next.combatActionsCompleted = (next.combatActionsCompleted ?? 0) + 1;
+    advanceTurn(next); // roundsElapsed must be current before a survival victory check.
+    if (simulateImmediateClosure && !victoryResultFor(next, level)) {
+      const closure = applyEncroachment(next, level);
+      if (closure.status === 'trapped' || closure.noNextCandidate) next.forcedClosureLoss = true;
+    }
+    return next;
+  }
   const next = cloneState(state);
   const unit = next.units.find(piece => piece.id === action.unitId);
   if (!unit) return next;
@@ -94,15 +107,13 @@ function simulate(state, level, action) {
   if (action.kind === 'royal-swap') {
     const partner = next.units.find(piece => piece.id === action.targetId);
     if (partner) applyRoyalSwap(next, unit, partner);
-    advanceTurn(next);
-    return next;
+    return finishSimulatedAction();
   }
 
   if (action.kind === 'capture' || action.kind === 'destroy') {
     const target = next.units.find(piece => piece.id === action.targetId);
     if (target && applyRookShieldRejection(next, level, unit, target)) {
-      advanceTurn(next);
-      return next;
+      return finishSimulatedAction();
     }
   }
 
@@ -132,8 +143,7 @@ function simulate(state, level, action) {
   }
 
   completeUnitMove(next, level, unit, action);
-  advanceTurn(next);
-  return next;
+  return finishSimulatedAction();
 }
 
 function cloneState(state) {
@@ -143,16 +153,29 @@ function cloneState(state) {
   const teamEvolution = typeof structuredClone === 'function'
     ? structuredClone(state.teamEvolution)
     : JSON.parse(JSON.stringify(state.teamEvolution));
+  const boardElements = typeof structuredClone === 'function'
+    ? structuredClone(state.boardElements ?? levelBoardElements(state))
+    : JSON.parse(JSON.stringify(state.boardElements ?? levelBoardElements(state)));
   return {
     ...state,
     units,
     teamEvolution,
+    boardElements,
+    combatActionsCompleted: state.combatActionsCompleted ?? 0,
+    encroachmentSeed: state.encroachmentSeed ?? 0,
+    pendingClosure: state.pendingClosure ? {...state.pendingClosure} : null,
     roundsElapsed: state.roundsElapsed ?? 0,
-    active(unit) { return Boolean(unit && !unit.captured && !unit.destroyed && !unit.inReserve); },
+    isDeploying() { return this.phase === 'deployment'; },
+    active(unit) {
+      if (typeof state.active === 'function') return state.active.call(this, unit);
+      return Boolean(unit && !unit.captured && !unit.destroyed && !unit.inReserve);
+    },
     activeAt(x, y) { return this.units.find(unit => this.active(unit) && unit.x === x && unit.y === y) ?? null; },
     prisonersAt(x, y) { return this.units.filter(unit => unit.captured && !unit.destroyed && unit.x === x && unit.y === y); }
   };
 }
+
+function levelBoardElements(state) { return state.level?.boardElements ?? []; }
 
 function releaseFriendlyPrisoners(state, x, y, team) {
   state.prisonersAt(x, y)
@@ -178,6 +201,13 @@ function evaluate(state, level, aiTeam, ai, result) {
   score += prisonerPositionScore(state, level, aiTeam, ai);
   score += (mobilityFor(state, level, aiTeam) - mobilityFor(state, level, opponent)) * ai.weights.mobility;
   score += objectiveScoreFor(state, level, aiTeam) * ai.weights.objective;
+  if (Number.isInteger(level.rules?.encroachmentStartAction)) {
+    // Adjacent free cells give a team local options when the arena contracts.
+    const approaching = Math.min(1, (state.combatActionsCompleted ?? 0) /
+      Math.max(1, level.rules.encroachmentStartAction));
+    score += (localSpace(state, level, aiTeam) - localSpace(state, level, opponent)) *
+      ai.weights.space * approaching;
+  }
   return score;
 }
 
@@ -237,4 +267,20 @@ function mobilityFor(state, level, team) {
   }
   state.currentTurn = previousTurn;
   return moves;
+}
+
+function localSpace(state, level, team) {
+  const size = level.board.size ?? 8;
+  const blocked = new Set((state.boardElements ?? level.boardElements ?? [])
+    .filter(item=>item.blocking).map(item=>item.x+','+item.y));
+  let space=0;
+  for (const unit of state.units) {
+    if (!state.active(unit) || unit.team!==team) continue;
+    for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++) {
+      if (!dx && !dy) continue;
+      const x=unit.x+dx, y=unit.y+dy;
+      if(x>=0 && y>=0 && x<size && y<size && !blocked.has(x+','+y)) space++;
+    }
+  }
+  return space;
 }

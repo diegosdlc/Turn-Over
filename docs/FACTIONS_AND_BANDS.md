@@ -50,7 +50,7 @@ pieceAssets: {
 }
 ```
 
-`AssetRegistry.pieceAsset()` resolves `faction -> pieceType -> facing` and keeps compatibility with the older single-string artwork shape. Production factions currently fall back to CSS chess-token graphics when final bitmap art is not configured.
+`AssetRegistry.pieceAsset()` resolves `faction -> pieceType -> facing` and keeps compatibility with the older single-string artwork shape. The green pawn now uses turquoise glass WebP assets (`pawn-north.webp` for rear three-quarter view, `pawn-south.webp` for front three-quarter view), independently of team. Other production pieces still fall back to CSS chess-token graphics.
 
 When both sides are green, player green uses the light fallback palette and AI green uses the dark fallback palette.
 
@@ -82,7 +82,7 @@ Budgeted deployment chooses the active encounter lineup from the complete carrie
 - Reserve pieces stay in the campaign roster but are inactive for movement, AI and victory detection in that encounter.
 - An evolved reserve piece keeps its evolved stage but consumes no points until selected for a future encounter.
 
-Point costs and per-level limits live in `docs/BALANCE.md`; see `docs/DEPLOYMENT.md` for the full interaction contract.
+Point costs and per-level limits live in `balance/pieces.csv` and `balance/levels.csv`; see `docs/DEPLOYMENT.md` for the full interaction contract.
 
 ## Campaign transition
 
@@ -123,6 +123,6 @@ In-progress session schema is version `6`. A saved session contains:
 - `src/core/evolution.js`
 - `src/systems/AssetRegistry.js`
 - `src/systems/GameSessionStore.js`
-- `docs/BALANCE.md`
+- `balance/pieces.csv` and `balance/levels.csv`
 - `docs/DEPLOYMENT.md`
 - `docs/EVOLUTION.md`

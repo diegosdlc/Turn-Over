@@ -1,6 +1,11 @@
 # Piece assets
 
-The green faction pawn now has facing-specific translucent turquoise glass sprites:\n\n- `assets/pieces/green/pawn-north.webp` — three-quarter rear view (north).\n- `assets/pieces/green/pawn-south.webp` — three-quarter front view (south).\n\nBoth are 96×96 transparent WebP assets, optimized for the current small board tokens. Other pieces still use the CSS chess-token fallback.
+The green faction pawn uses facing-specific turquoise glass sprites:
+
+- `assets/pieces/green/pawn-north.webp` — rear three-quarter view for north.
+- `assets/pieces/green/pawn-south.webp` — front three-quarter view for south.
+
+Both are transparent WebP assets for the tabletop board and deployment roster. Remaining production pieces keep their CSS chess-token fallback.
 
 If a future level needs faction-specific artwork, store it in subfolders, for example:
 

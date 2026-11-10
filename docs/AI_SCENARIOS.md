@@ -9,7 +9,8 @@ Esta rama añade tres escenarios jugables para validar que la IA responde a cond
 - ID: `scenario-capture-king`
 - URL: `?level=scenario-capture-king`
 - Victoria: capturar o destruir el rey rival.
-- La IA considera la supervivencia de ambos reyes como parte prioritaria de la evaluación.
+- La IA protege su propio rey. Capturar o destruir el rey del jugador no provoca la victoria automática: debe eliminar la banda completa.
+- El jugador conserva el control de sus otras piezas aunque pierda su rey.
 
 ### Cruzar con el rey
 
@@ -43,7 +44,7 @@ Parámetros utilizados actualmente:
 - `weights.mobility`: importancia de disponer de movimientos.
 - `weights.objective`: importancia de la condición de victoria específica.
 
-Estos valores son provisionales y deben trasladarse al documento de balance cuando terminemos las primeras pruebas de comportamiento.
+La profundidad, aleatoriedad y retardo de la IA en los cuatro niveles de campaña se editan en `balance/levels.csv`. Los pesos de evaluación restantes siguen siendo parámetros del controlador de IA.
 
 ## Compatibilidad
 
@@ -56,3 +57,8 @@ Las tres nuevas condiciones son:
 - `survive`
 
 El contador `roundsElapsed` forma parte del estado en memoria y se guarda y restaura con el snapshot de sesión (esquema `7`, compatible con el esquema `6`). Una partida de supervivencia reanudada conserva así el número de rondas completadas. Los snapshots anteriores sin contador siguen siendo válidos y se restauran con `0` rondas: las rondas pasadas no pueden reconstruirse a partir del tablero.
+
+
+## Rey de misión en la campaña
+
+Los niveles de campaña `tutorial-02` (escolta) y `tutorial-04` (supervivencia) añaden un rey especial, sin coste y ya desplegado. El evaluador terminal del nivel de escolta y supervivencia considera específicamente esta unidad; los laboratorios `scenario-escort-king` y `scenario-survive` conservan su lógica histórica sin rey adicional.
