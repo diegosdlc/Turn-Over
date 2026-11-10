@@ -18,9 +18,9 @@ The board contains paired test pieces for the three current faction-specific spe
 
 Each pair starts with one unit facing `north` and the other facing `south`. The lab uses simple SVG placeholders whose labels make the active orientation explicit.
 
-Moving a player piece calls the normal `GameState.turnAround()` operation through a generic level lifecycle hook before the unit leaves its origin. The next render therefore resolves the opposite artwork through `AssetRegistry.pieceAsset()`.
+Every completed movement now sets the piece's north/south facing based on its **projected vertical displacement** on the isometric board. This includes east/west movement along a board axis, since those moves have a vertical component on screen. A purely lateral displacement preserves the previous facing. The next render resolves the matching artwork through `AssetRegistry.pieceAsset()`.
 
-The lab keeps the player turn after each movement so several orientation changes can be tested consecutively. This behavior is configured by the lab and is not enabled in normal levels.
+The lab keeps the player turn after each movement so consecutive changes of direction and sprite can be tested. Only the turn-retention behavior is lab-specific; automatic facing now works in normal levels too.
 
 ## Shared mechanics-lab framework
 

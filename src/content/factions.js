@@ -15,7 +15,12 @@ export const FACTIONS = Object.freeze({
         text: '#fffdf4'
       }
     },
-    pieceAssets: {}
+    pieceAssets: {
+      pawn: {
+        north: './assets/pieces/green/pawn-north.webp',
+        south: './assets/pieces/green/pawn-south.webp'
+      }
+    }
   },
   red: {
     id: 'red',

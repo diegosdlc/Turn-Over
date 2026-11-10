@@ -33,7 +33,7 @@ Generated units carry a stable id, controlling `team`, origin `faction`, `facing
 
 A recruited enemy piece may become player-controlled while keeping its origin faction artwork. Facing can change independently from either team or faction.
 
-`GameState.setFacing()` assigns an explicit orientation and `GameState.turnAround()` swaps north/south. Movement does not automatically rotate pieces.
+`GameState.setFacing()` assigns an explicit orientation and `GameState.turnAround()` swaps north/south. **All pieces now automatically face the direction of their last completed movement**, using the board's projected vertical displacement: negative screen-Y selects `north` (rear artwork), positive screen-Y selects `south` (front artwork), and approximately zero preserves the prior facing. Because the board is isometric, a move along the logical east/west (`x`) axis may change projected screen-Y and therefore facing even when logical `y` remains unchanged. This applies to pawns (including evolved pawns reversing direction), captures, destruction, rejected attacks and royal swaps for either team and any faction. Direction persists in saved unit state; legal movement and evolution are unchanged.
 
 The tutorial starts player pieces facing north and enemy pieces facing south.
 
@@ -50,7 +50,7 @@ pieceAssets: {
 }
 ```
 
-`AssetRegistry.pieceAsset()` resolves `faction -> pieceType -> facing` and keeps compatibility with the older single-string artwork shape. Production factions currently fall back to CSS chess-token graphics when final bitmap art is not configured.
+`AssetRegistry.pieceAsset()` resolves `faction -> pieceType -> facing` and keeps compatibility with the older single-string artwork shape. The green pawn now uses turquoise glass WebP assets (`pawn-north.webp` for rear three-quarter view, `pawn-south.webp` for front three-quarter view), independently of team. Other production pieces still fall back to CSS chess-token graphics.
 
 When both sides are green, player green uses the light fallback palette and AI green uses the dark fallback palette.
 

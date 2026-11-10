@@ -1,6 +1,6 @@
 # Turn Over — Current Work
 
-Last updated: 2026-11-04
+Last updated: 2026-11-10
 
 ## Project naming
 
@@ -56,6 +56,7 @@ See `docs/EVOLUTION.md`.
 - `team`, origin `faction` and `facing` remain independent.
 - The tutorial starts player pieces facing north and enemy pieces facing south.
 - `GameState.setFacing()` and `GameState.turnAround()` are authoritative orientation operations.
+- All pieces select `north` (up on screen) or `south` (down on screen) from the projected vertical component of completed displacement, including logical east/west moves on the isometric board. Approximately lateral moves retain their facing. Pawns now turn when their actual direction changes, not simply because they reached an edge. Applied to player, AI, captures/destruction, shield-rejected moves and royal swaps. The persisted facing drives artwork; movement/AI rules are unchanged.
 - `AssetRegistry.pieceAsset()` supports optional artwork by faction, piece type and facing, with CSS token fallback.
 
 See `docs/FACTIONS_AND_BANDS.md`.
@@ -89,7 +90,7 @@ The no-legal-moves lifecycle is implemented: a side with no legal move loses its
 
 Playable factions are **Verde** (alfil), **Roja** (torre) and **Amarilla** (caballo). A new starting band contains rey, reina, peón and the selected faction's special piece. The tutorial opponent is always Verde.
 
-Production factions currently fall back to CSS chess-token graphics when final bitmap artwork is not configured.
+The green faction pawn uses turquoise glass WebP sprites: north shows its back at a three-quarter angle, south shows its front. The asset is selected from the piece's origin faction and its explicit facing, independently of controlling team. Other pieces retain the CSS chess-token fallback.
 
 ## Remaining work / next focus
 

@@ -6,9 +6,11 @@ import {
   normalizeEvolutionStage
 } from './evolution.js?v=20260821-evolution-3';
 import { pointCostForUnit } from '../content/balance.js?v=20260821-budget-1';
+import { facingForDisplacement } from './facing.js';
 
 const NEXT_TEAM = Object.freeze({ player: 'enemy', enemy: 'player' });
 const OPPOSITE_FACING = Object.freeze({ north: 'south', south: 'north' });
+const MOVE_ORIGINS = new WeakMap(); // Transient; no changes to saved-game schema.
 
 function clone(value) {
   return typeof structuredClone === 'function'
@@ -30,9 +32,13 @@ function physicallyActive(unit) {
 
 export function completeUnitMove(state, level, unit, action) {
   if (!unit || !Number.isInteger(action?.x) || !Number.isInteger(action?.y)) return false;
+  const previous = MOVE_ORIGINS.get(unit);
+  MOVE_ORIGINS.delete(unit);
+  const fromX = Number.isInteger(action.fromX) ? action.fromX : (previous?.x ?? unit.x);
+  const fromY = Number.isInteger(action.fromY) ? action.fromY : (previous?.y ?? unit.y);
   unit.x = action.x;
   unit.y = action.y;
-  return applyEvolutionEvent({
+  const evolved = applyEvolutionEvent({
     state,
     level,
     unit,
@@ -44,6 +50,11 @@ export function completeUnitMove(state, level, unit, action) {
       targetId: action.targetId ?? null
     }
   });
+
+  // Use the board's isometric projection: even board-axis east/west moves
+  // change the vertical position on screen. Purely lateral moves keep facing.
+  unit.facing = facingForDisplacement(level, fromX, fromY, action.x, action.y, unit.facing);
+  return evolved;
 }
 
 function releaseFriendlyPrisoners(state, x, y, team) {
@@ -77,7 +88,7 @@ export function applyRookShieldRejection(state, level, attacker, target) {
     attacker.x = null;
     attacker.y = null;
     releaseFriendlyPrisoners(state, originX, originY, attacker.team);
-    completeUnitMove(state, level, attacker, { kind: 'rejected', x, y });
+    completeUnitMove(state, level, attacker, { kind: 'rejected', x, y, fromX: originX, fromY: originY });
   }
   return true;
 }
@@ -98,6 +109,8 @@ export function applyRoyalSwap(state, first, second) {
   first.y = secondPosition.y;
   second.x = firstPosition.x;
   second.y = firstPosition.y;
+  first.facing = facingForDisplacement(state.level, firstPosition.x, firstPosition.y, first.x, first.y, first.facing);
+  second.facing = facingForDisplacement(state.level, secondPosition.x, secondPosition.y, second.x, second.y, second.facing);
   state.teamEvolution[first.team].royalSwapCharges -= 1;
   return true;
 }
@@ -414,6 +427,7 @@ export class GameState {
     const originX = unit.x;
     const originY = unit.y;
     this.level.behavior?.beforeLeaveOrigin?.({ state: this, unit, x: originX, y: originY });
+    MOVE_ORIGINS.set(unit, { x: originX, y: originY });
     unit.x = null;
     unit.y = null;
     this.releaseFriendlyPrisonerFrom(originX, originY, unit.team);

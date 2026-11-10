@@ -122,7 +122,10 @@ export class BoardRenderer {
       image.src = this.assets.resolve(asset);
       image.alt = '';
       image.draggable = false;
-      image.addEventListener('error', () => image.remove(), { once: true });
+      image.addEventListener('error', () => {
+        image.remove();
+        piece.classList.remove('has-image');
+      }, { once: true });
       piece.append(image);
       piece.classList.add('has-image');
     }
