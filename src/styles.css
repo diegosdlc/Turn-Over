@@ -175,6 +175,7 @@ button{font:inherit;letter-spacing:.02em}
 }
 .unit.has-image{
   border-color:transparent;
+  border-radius:0;
   background:transparent;
   box-shadow:none;
   text-shadow:none;
