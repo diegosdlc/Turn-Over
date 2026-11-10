@@ -174,6 +174,7 @@ button{font:inherit;letter-spacing:.02em}
   filter:drop-shadow(0 7px 5px rgba(0,0,0,.34));
 }
 .unit.has-image{
+  border-color:transparent;
   background:transparent;
   box-shadow:none;
   text-shadow:none;
