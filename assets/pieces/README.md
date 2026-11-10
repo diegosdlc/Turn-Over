@@ -1,6 +1,6 @@
 # Piece assets
 
-The current factions intentionally use the CSS token graphics and do not register bitmap artwork. The existing files are retained as unused references.
+The green faction pawn now has facing-specific translucent turquoise glass sprites:\n\n- `assets/pieces/green/pawn-north.webp` — three-quarter rear view (north).\n- `assets/pieces/green/pawn-south.webp` — three-quarter front view (south).\n\nBoth are 96×96 transparent WebP assets, optimized for the current small board tokens. Other pieces still use the CSS chess-token fallback.
 
 If a future level needs faction-specific artwork, store it in subfolders, for example:
 
