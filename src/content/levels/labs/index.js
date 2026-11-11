@@ -1,5 +1,5 @@
 import { t } from '../../../i18n/index.js';
-import { BALANCE } from '../../balance.js';
+import { BALANCE } from '../../balance.js?v=20261111-campaign-picker-1';
 
 // The former mechanics-lab selector is temporarily a campaign playtest picker.
 // Entries are the real campaign level factories, not duplicated test scenarios.
