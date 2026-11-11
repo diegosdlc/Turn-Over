@@ -1,7 +1,28 @@
 import { t, pieceName } from '../i18n/index.js';
 import { cellBox, insetBox, place } from '../core/geometry.js';
+import { movementVector, VISUAL_DURATION_MS } from './animationGeometry.js';
 import { optionsFor } from '../core/rules.js?v=20260821-evolution-3';
 import { evolutionCapabilitiesFor, isEvolved } from '../core/evolution.js?v=20260821-evolution-3';
+
+const CHAINS_SVG = `<svg viewBox="0 0 100 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="13" y="19" width="49" height="32" rx="16" transform="rotate(-28 37 35)" stroke="currentColor" stroke-width="9"/>
+  <rect x="40" y="19" width="49" height="32" rx="16" transform="rotate(28 64 35)" stroke="currentColor" stroke-width="9"/>
+  <path d="M42 31l16 8" stroke="#fff6d9" stroke-width="3" stroke-linecap="round"/>
+</svg>`;
+const SWORDS_SVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <g transform="rotate(-43 50 50)">
+    <path d="M50 8 58 23 55 65 45 65 42 23Z" fill="#f9efd4" stroke="#534638" stroke-width="3"/>
+    <path d="M50 12V62" stroke="#ac9c7d" stroke-width="2"/>
+    <path d="M32 66H68" stroke="#6b332d" stroke-width="8" stroke-linecap="round"/>
+    <path d="M50 68V89" stroke="#534638" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <g transform="rotate(43 50 50)">
+    <path d="M50 8 58 23 55 65 45 65 42 23Z" fill="#f9efd4" stroke="#534638" stroke-width="3"/>
+    <path d="M50 12V62" stroke="#ac9c7d" stroke-width="2"/>
+    <path d="M32 66H68" stroke="#6b332d" stroke-width="8" stroke-linecap="round"/>
+    <path d="M50 68V89" stroke="#534638" stroke-width="8" stroke-linecap="round"/>
+  </g>
+</svg>`;
 
 export class BoardRenderer {
   constructor({ board, level, state, assets, onCellClick, onCaptureAction }) {
@@ -12,6 +33,9 @@ export class BoardRenderer {
     this.onCellClick = onCellClick;
     this.onCaptureAction = onCaptureAction;
     this.projection = level.board.projection;
+    this.visualQueue = [];
+    this.frameVisuals = [];
+    this.animationUntil = 0;
     // Existing walls must not replay their arrival animations on load.
     this.seenWallIds = new Set((state.boardElements ?? []).filter(item =>
       item.type === 'encroachment').map(item => item.id));
@@ -30,7 +54,42 @@ export class BoardRenderer {
     this.board.style.setProperty('--board-bg-top', frame.top ?? '0%');
   }
 
+  reducedMotion() {
+    return typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  queueDeployment(unit) {
+    if (!this.reducedMotion() && unit) this.visualQueue.push({ type: 'deployment', unitId: unit.id });
+  }
+
+  queueMovement(unit, from) {
+    if (this.reducedMotion() || !unit || !from || unit.x == null || unit.y == null ||
+        from.x == null || from.y == null || (unit.x === from.x && unit.y === from.y)) return;
+    this.visualQueue.push({ type: 'movement', unitId: unit.id, from: { x: from.x, y: from.y } });
+  }
+
+  queueImpact(kind, x, y) {
+    if (!this.reducedMotion() && (kind === 'capture' || kind === 'destroy')) {
+      this.visualQueue.push({ type: 'impact', kind, x, y });
+    }
+  }
+
+  remainingAnimationMs() {
+    return this.reducedMotion() ? 0 : Math.max(0, this.animationUntil - Date.now());
+  }
+
+  clearVisualEffects() {
+    this.visualQueue.length = 0;
+    this.frameVisuals = [];
+    this.animationUntil = 0;
+  }
+
   render() {
+    this.frameVisuals = this.visualQueue.splice(0);
+    const durations = this.frameVisuals
+      .filter(effect => effect.type !== 'impact')
+      .map(effect => VISUAL_DURATION_MS[effect.type] ?? 0);
+    if (durations.length) this.animationUntil = Date.now() + Math.max(...durations);
     this.board.innerHTML = '';
     const deploying = this.state.isDeploying?.() ?? false;
     const selectedOptions = deploying || this.state.pendingCapture ? [] : optionsFor(this.state, this.level, this.state.selected());
@@ -50,6 +109,8 @@ export class BoardRenderer {
 
     this.renderBoardElements();
     this.renderClosureWarning();
+    this.renderImpactEffects();
+    this.frameVisuals = [];
     this.board.dataset.turn = this.state.currentTurn;
     this.board.dataset.phase = this.state.phase ?? 'play';
   }
@@ -87,6 +148,11 @@ export class BoardRenderer {
       const prisoner = document.createElement('div');
       prisoner.className = 'prisoner';
       prisoner.textContent = piece.fallbackGlyph;
+      const chains = document.createElement('span');
+      chains.className = 'prisoner-chains';
+      chains.setAttribute('aria-hidden', 'true');
+      chains.innerHTML = CHAINS_SVG;
+      prisoner.append(chains);
       this.applyFactionPalette(prisoner, piece);
 
       const prisonerBox = insetBox(box, 0.31, 0.25);
@@ -132,6 +198,25 @@ export class BoardRenderer {
 
     const pieceBox = this.unitBox(box);
     place(piece, pieceBox, this.projection);
+
+    const deployment = this.frameVisuals.find(effect => effect.type === 'deployment' && effect.unitId === unit.id);
+    const movement = this.frameVisuals.find(effect => effect.type === 'movement' && effect.unitId === unit.id);
+    if (deployment) {
+      piece.classList.add('unit-deploying');
+      const spark = document.createElement('span');
+      spark.className = 'unit-deployment-spark';
+      spark.setAttribute('aria-hidden', 'true');
+      piece.append(spark);
+    } else if (movement) {
+      const vector = movementVector(this.projection, movement.from, { x, y }, this.board.clientWidth, this.board.clientHeight);
+      if (vector) {
+        piece.classList.add('unit-moving');
+        piece.style.setProperty('--travel-x', vector.x + 'px');
+        piece.style.setProperty('--travel-y', vector.y + 'px');
+        piece.style.setProperty('--travel-mid-x', vector.x / 2 + 'px');
+        piece.style.setProperty('--travel-mid-y', vector.y / 2 + 'px');
+      }
+    }
 
     piece.addEventListener('click', event => {
       event.stopPropagation();
@@ -238,6 +323,18 @@ export class BoardRenderer {
     pulse.textContent = '!';
     marker.append(pulse);
     this.board.append(marker);
+  }
+
+  renderImpactEffects() {
+    for (const effect of this.frameVisuals) {
+      if (effect.type !== 'impact') continue;
+      const marker = document.createElement('div');
+      marker.className = 'board-impact board-impact-' + effect.kind;
+      marker.setAttribute('aria-hidden', 'true');
+      marker.innerHTML = effect.kind === 'capture' ? CHAINS_SVG : SWORDS_SVG;
+      place(marker, insetBox(cellBox(this.projection, effect.x, effect.y), 0.08, 0.03), this.projection);
+      this.board.append(marker);
+    }
   }
 
   applyFactionPalette(element, unit) {
