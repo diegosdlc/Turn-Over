@@ -3,4 +3,3 @@ tutorial-01,campaign,Nivel 1 · Destrucción,level.tutorial_01,elimination,tutor
 tutorial-02,campaign,Nivel 2 · Escolta,level.tutorial_02,escort-king,tutorial-03,22,0,,3,0.02,450,2,7,10
 tutorial-03,campaign,Nivel 3 · Captura,level.tutorial_03,capture-king,tutorial-04,26,,,3,0.03,450,,,10
 tutorial-04,campaign,Nivel 4 · Supervivencia,level.tutorial_04,survive,,30,,8,2,0.03,450,2,7,10
-deployment-budget-lab,lab,Laboratorio de presupuesto,,elimination,,50,,,2,0.04,450,,,

@@ -1,9 +1,9 @@
 import { t } from '../../i18n/index.js';
-import { getMechanicLabFactory, listMechanicLabs } from './labs/index.js?v=20260821-budget-lab-1';
-import { createTutorial01, tutorial01 } from './tutorial-01.js?v=20261104-csv-balance-1';
-import { createTutorial02, tutorial02 } from './tutorial-02.js?v=20261104-csv-balance-1';
-import { createTutorial03, tutorial03 } from './tutorial-03.js?v=20261104-csv-balance-1';
-import { createTutorial04, tutorial04 } from './tutorial-04.js?v=20261104-csv-balance-1';
+import { listMechanicLabs } from './labs/index.js?v=20261111-campaign-picker-1';
+import { createTutorial01, tutorial01 } from './tutorial-01.js?v=20261111-campaign-picker-1';
+import { createTutorial02, tutorial02 } from './tutorial-02.js?v=20261111-campaign-picker-1';
+import { createTutorial03, tutorial03 } from './tutorial-03.js?v=20261111-campaign-picker-1';
+import { createTutorial04, tutorial04 } from './tutorial-04.js?v=20261111-campaign-picker-1';
 import {
   createCaptureKingScenario,
   createEscortKingScenario,
@@ -30,14 +30,13 @@ const LEVEL_FACTORIES = new Map([
 ]);
 
 export function getLevel(levelId, options = {}) {
-  const createLevel = LEVEL_FACTORIES.get(levelId) ?? getMechanicLabFactory(levelId);
+  const createLevel = LEVEL_FACTORIES.get(levelId);
   return createLevel ? createLevel(options) : null;
 }
 
 export function listLevels() {
   return [
-    ...LEVEL_FACTORIES.keys(),
-    ...listMechanicLabs().map(lab => lab.id)
+    ...LEVEL_FACTORIES.keys()
   ].map(levelId => getLevel(levelId));
 }
 
@@ -53,3 +52,5 @@ export function getNextLevel(level, options = {}) {
     ...options
   }) : null;
 }
+
+export { playerPresetBandForLevel } from '../balance.js?v=20261111-campaign-picker-1';

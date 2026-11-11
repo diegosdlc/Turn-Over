@@ -136,3 +136,25 @@ A pending closure is previewed one combat action in advance. The warning and sma
 ## Capture-king objective correction
 
 Capture is deliberately asymmetric: only the defender's (enemy) king is a terminal target. The defending AI must eliminate the full player band to win. Removing the player's king does not disable remaining pieces or end the battle. Mission text is updated in Spanish/English and the AI objective evaluation now rewards defending its own king, without granting a royal-target bonus for killing the player's king.
+
+## Piece action animations (PR preview, 2026-11-11)
+
+The board presentation now plays visual-only CSS feedback without changing combat rules or serialized state:
+
+- A placed piece fades into view with a short glow/starburst; AI deployment waves receive the same cue.
+- A selected piece raises and gently floats until it is deselected or moved.
+- A completed movement floats across the projected board coordinates to its target, for both player and AI (including capture, destroy and deployment reposition).
+- Captured prisoners remain visibly bound with a chain graphic, and a short chain burst announces capture.
+- A crossed-swords burst announces destruction.
+- All effects are ignored when the user prefers reduced motion. They are not persisted or replayed when loading saved sessions. The AI waits for movement visuals before taking its next action.
+
+Animation geometry and timing live under `src/render/animationGeometry.js`, presentation under `src/render/BoardRenderer.js` and `src/styles.css`, and triggers under `src/main.js`. Run `npm test` and verify visually on mobile and desktop, including resumed battles and alternating enemy deployment.
+
+
+## 2026-11-11 — Campaign playtest picker (PR #22)
+
+The old mechanics-lab menu has been repurposed as **Pruebas de campaña**: the four production level IDs now appear in the same settings dropdown. Selecting a level opens `?level=<id>&lab=1` with the current player faction, using a separate editable roster in `balance/player-presets.csv`. Normal `?level=<id>` behavior remains unchanged. Test-mode victory, restart and next-level navigation are isolated from normal session saves, campaign unlocks and carried-band progression; the three-wave deployment and budget apply as in production.
+
+Escorts mark all non-blocking cells in the victory target row, with a visual goal flag. The marker updates with arena closure and respects reduced-motion settings.
+
+The former facing, pawn, budget and victory labs have been unregistered/retired. References above describe the previous baseline; consult `docs/MECHANICS_LABS.md` for the current temporary workflow. Verify through unit tests and visual browser checks for the destination markers, faction-specific CSV presets and preserved normal saves.

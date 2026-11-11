@@ -53,7 +53,7 @@ Detailed contracts:
 - `balance/*.csv` — runtime-editable piece costs, budgets/objectives, enemy formations and obstacle positions; `docs/BALANCE.md` documents the CSV contract.
 - `docs/EVOLUTION.md` — evolution and carried-roster rules.
 - `docs/MECHANICS_LABS.md` — reusable test-level workflow.
-- `docs/FACING_LAB.md` — facing-lab test procedure.
+- `docs/MECHANICS_LABS.md` — current campaign playtest picker and CSV roster contract.
 
 ## Established game/design decisions
 
@@ -150,7 +150,7 @@ At the end of a project change:
 
 ## Four-level production campaign
 
-The campaign consists of `tutorial-01` (elimination/destruction), `tutorial-02` (escort-king), `tutorial-03` (capture-king) and `tutorial-04` (survive), in that order. Debug scenarios and mechanics labs remain available but are not campaign progression. The game loads four CSVs in `balance/` at runtime: costs, level budgets/objectives, rival formations and obstacles. Keep CSV IDs stable to preserve progression and session compatibility. 
+The campaign consists of `tutorial-01` (elimination/destruction), `tutorial-02` (escort-king), `tutorial-03` (capture-king) and `tutorial-04` (survive), in that order. Independent `scenario-*` development fixtures remain available, but retired mechanics labs are no longer registered. The game loads four CSVs in `balance/` at runtime: costs, level budgets/objectives, rival formations and obstacles. Keep CSV IDs stable to preserve progression and session compatibility. 
 
 ## Mission king rules
 
@@ -166,3 +166,13 @@ The arena warning begins at action `encroachment_start_action - 1`, and each sub
 ## Asymmetric capture mission
 
 In `capture-king`, player wins if enemy king is captured/destroyed; enemy wins only by eliminating all active player pieces. The player's king is ordinary material in this mission and its loss does not deactivate the remaining band. The AI protects its own king, and does not score a player-king assassination as terminal success.
+
+
+## Temporary campaign playtest selector (PR #22 extension, 2026-11-11)
+
+- The former mechanics labs are retired from the registry. The notebook settings dropdown lists the four real campaign levels.
+- `?level=tutorial-XX&lab=1` starts an isolated test run, using `balance/player-presets.csv` for the carried player band; normal campaign mode and `?level=tutorial-XX` still use real progression/session state.
+- `player` faction and `special` piece placeholders resolve dynamically to the selected playable faction, while recruit factions remain as configured.
+- The selected test roster remains in reserve for the standard budgeted three-wave deployment. Test results must not clear, overwrite or advance normal save/progression data.
+- Escort goal markers are generated from the exact `targetRow` victory rule and skip blocked cells; they are non-interactive visual feedback, not new game rules.
+- The previous mechanics-lab factories/behavior are no longer required for the application. Development `scenario-*` fixtures and engine-level mechanic tests remain independent.

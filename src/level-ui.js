@@ -1,5 +1,5 @@
 import { t, getLanguage, getGender, setLanguage, setGender, onLocaleChange, playerText, pieceName } from './i18n/index.js';
-import { listMechanicLabs } from './content/levels/index.js?v=20260821-evolution-3';
+import { listMechanicLabs } from './content/levels/index.js?v=20261111-campaign-picker-1';
 import { missionTextFor } from './content/mission.js?v=20261109-mission-1';
 
 function mechanicsLabOptions() {
@@ -181,10 +181,15 @@ class NotebookUI {
     if (language) { language.value = getLanguage(); language.addEventListener('change', () => setLanguage(language.value)); }
     if (gender) { gender.value = getGender(); gender.addEventListener('change', () => setGender(gender.value)); }
     const mechanicsLab = this.root.querySelector('#notebook-mechanics-lab');
+    if (mechanicsLab && window.turnOverNotebookLevel?.playtest) {
+      mechanicsLab.value = window.turnOverNotebookLevel.id;
+    }
     mechanicsLab?.addEventListener('change', () => {
       if (mechanicsLab.value) {
         const url = new URL(window.location.href);
         url.searchParams.set('level', mechanicsLab.value);
+        url.searchParams.set('lab', '1');
+        url.searchParams.set('faction', window.turnOverNotebookLevel?.playerFactionId ?? 'green');
         url.searchParams.delete('tutorial');
         window.location.href = url.href;
       }

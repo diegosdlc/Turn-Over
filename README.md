@@ -38,10 +38,10 @@ Then open `http://localhost:8000/`.
 - `src/content/factions.js` — playable factions and art/palette metadata.
 - `src/content/bands.js` — chess-derived piece definitions and starting-band creation.
 - `src/content/balance.js` — runtime parser/accessor for editable point-balance data.
-- `src/content/levels/` — production encounters and mechanics labs.
+- `src/content/levels/` — production encounters and independent development scenarios.
 - `src/systems/ProgressionStore.js` — persistent campaign progression/carried band.
 - `src/systems/GameSessionStore.js` — resumable in-progress encounter snapshot.
-- `balance/` — four runtime CSV tables for piece costs, level budgets and objectives, enemy formations, and obstacles.
+- `balance/` — four production balancing CSV tables, plus a fifth editable playtest roster CSV.
 
 ## Current gameplay model
 
@@ -69,19 +69,19 @@ See [`docs/EVOLUTION.md`](docs/EVOLUTION.md).
 
 Budgeted deployment is declarative per level. `GameState` owns reserve participation, affordability, placement legality, refunds and the transition into play. Spending the entire allowance is optional, but at least one piece must participate.
 
-Costs, budgets, enemy formations, victory objectives and obstacle locations live in the four CSVs under [`balance/`](balance/). The browser loads them at runtime, so tweaking encounters does not require code edits. See [`docs/BALANCE.md`](docs/BALANCE.md) for validation rules.
+Costs, budgets, enemy formations, victory objectives and obstacle locations live in the four CSVs under [`balance/`](balance/). The browser loads them at runtime, so tweaking encounters does not require code edits. Test-only carried rosters live in a fifth CSV, `balance/player-presets.csv`. See [`docs/BALANCE.md`](docs/BALANCE.md) for validation rules.
 
 See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
-## Mechanics labs
+## Temporary campaign playtests
 
-Registered mechanics labs are addressable with `?level=<lab-id>` and automatically appear under **Ajustes → Laboratorios de mecánicas**. Labs exercise the same engine operations as production gameplay and keep test-only behavior in generic level hooks.
+**Ajustes → Pruebas de campaña** uses the former mechanics-lab dropdown to launch the four **real** production encounters in isolated test mode. Open the selector or visit `?level=tutorial-02&lab=1` (optionally `&faction=red` or `&faction=yellow`). Normal `?level=tutorial-02` continues to use the carried campaign roster.
 
-The four campaign encounters are `tutorial-01` (destruction), `tutorial-02` (escort), `tutorial-03` (capture of king), and `tutorial-04` (survival). They remain linked through the carried band. The `scenario-*` levels and labs are development fixtures, not part of the four-level campaign.
+In playtest mode the starting roster is read from `balance/player-presets.csv` instead of campaign progression. It models evolved survivors and recruits separately for each level; deployment and point limits still apply. Testing does not overwrite the normal in-progress session or campaign progression. Legacy mechanics labs are retired; `scenario-*` development scenarios remain available directly through their URLs.
 
-Current labs include `facing-lab`, `pawn-evolution-lab` and `deployment-budget-lab`. The deployment-budget lab exposes base and evolved versions of all six piece types with a 50-point allowance for rapid lineup/balance testing.
+Escort missions mark unblocked squares on the target row with gold destination flags.
 
-See [`docs/MECHANICS_LABS.md`](docs/MECHANICS_LABS.md).
+See [`docs/MECHANICS_LABS.md`](docs/MECHANICS_LABS.md) and [`docs/BALANCE.md`](docs/BALANCE.md).
 
 ## Progression and local session
 
@@ -92,8 +92,8 @@ Session schema `7` saves in-progress units (including facing, evolution and rese
 ## Useful development URLs
 
 - `?level=tutorial-01&tutorial=1` — force tutorial tooltips.
-- `?level=<level-id>` — open a normal level or mechanics lab directly.
-- `?level=deployment-budget-lab` — open the 50-point base/evolved deployment lab directly.
+- `?level=<level-id>` — open a normal campaign encounter or a development `scenario-*` directly.
+- `?level=tutorial-02&lab=1` — isolated campaign level 2 playtest using the CSV roster.
 - `?level=tutorial-02&faction=<green|red|yellow>` — direct evolved-band development shortcut when there is no saved carried roster.
 - `?level=tutorial-03` / `?level=tutorial-04` — directly test the capture/survival campaign encounters.
 

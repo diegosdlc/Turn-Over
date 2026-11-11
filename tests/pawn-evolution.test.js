@@ -114,11 +114,14 @@ test('evolution remains active after the pawn leaves the evolution edge', () => 
   assert.ok(options.has('move:3,2'));
 });
 
-test('the pawn evolution lab is registered with ready-to-test scenarios', () => {
-  assert.ok(listMechanicLabs().some(lab => lab.id === 'pawn-evolution-lab'));
-  const lab = getLevel('pawn-evolution-lab');
-  assert.ok(lab);
-  assert.equal(lab.behavior.beforeChangeTurn(), false);
-  assert.equal(lab.units.filter(unit => unit.evolutionStage === 'evolved').length, 4);
-  assert.ok(lab.units.some(unit => unit.id === 'pawn-ready-to-evolve' && unit.y === 1));
+test('the temporary playtest picker replaces all retired mechanics labs', () => {
+  assert.deepEqual(listMechanicLabs().map(lab => lab.id), [
+    'tutorial-01', 'tutorial-02', 'tutorial-03', 'tutorial-04'
+  ]);
+  for (const oldId of [
+    'facing-lab', 'pawn-evolution-lab', 'deployment-budget-lab',
+    'lab-victory-capture', 'lab-victory-escort', 'lab-victory-survive'
+  ]) {
+    assert.equal(getLevel(oldId), null);
+  }
 });
