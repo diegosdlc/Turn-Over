@@ -114,8 +114,8 @@ test('invalid mission king coordinates are rejected by balance CSV validator', (
       'tutorial-02,campaign,Nivel 2 · Escolta,level.tutorial_02,escort-king,tutorial-03,22,0,,3,0.02,450,2,5')
   }), /Rey de misión inválido/);
   assert.throws(() => parseBalanceTables({
-    ...files, levels: files.levels.replace('tutorial-04,campaign,Nivel 4 · Supervivencia,level.tutorial_04,survive,,20,,8,2,0,450,,,10,4',
-      'tutorial-04,campaign,Nivel 4 · Supervivencia,level.tutorial_04,survive,,20,,8,2,0,450,2,7,10,4')
+    ...files, levels: files.levels.replace('tutorial-04,campaign,Nivel 4 · Supervivencia,level.tutorial_04,survive,,20,,8,2,0.03,450,,,10',
+      'tutorial-04,campaign,Nivel 4 · Supervivencia,level.tutorial_04,survive,,20,,8,2,0.03,450,2,7,10')
   }), /Rey de misión inválido/);
 });
 

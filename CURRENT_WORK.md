@@ -162,3 +162,7 @@ The former facing, pawn, budget and victory labs have been unregistered/retired.
 ## Survival objective and visible HUD (2026-11-11)
 
 The fourth campaign level has an intentionally smaller player deployment budget (20 points against 30 enemy). It no longer adds the free protected king; any active player unit surviving eight completed enemy turns (or enemy skips) earns victory. Losing the regular king does not end the encounter. A fixed localized countdown is displayed during combat and restored from saved sessions. Old survival saves drop the obsolete mission king automatically. See `docs/BALANCE.md`.
+
+## AI profiles from CSV (2026-11-11)
+
+The five runtime tactical profiles `balanced`, `defensive`, `interceptor`, `hunter`, `aggressive` live in `balance/ai-profiles.csv`. Each campaign level selects its behavior via `balance/levels.csv` column `ai_profile`. The level still overrides search depth, randomness, delay and (for survival) aggression. Profile fields weight material, mobility, objectives, chase pressure, capture threats, king safety, survival eliminations and willingness to sacrifice. The shared minimax, legal moves and terminal goals remain unchanged. CSV parser validates references, duplicates and numeric ranges.

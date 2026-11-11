@@ -1,5 +1,5 @@
 import { createInitialBand, FACINGS, PIECES } from '../bands.js?v=20260821-evolution-3';
-import { levelPointLimit, levelBalance, enemyBandForLevel, obstaclesForLevel } from '../balance.js?v=20261111-survival-aggression-1';
+import { levelPointLimit, levelBalance, enemyBandForLevel, obstaclesForLevel } from '../balance.js?v=20261111-ai-profiles-1';
 import { STANDARD_BOARD } from './shared.js';
 
 const PLAYER_POSITIONS = Object.freeze({

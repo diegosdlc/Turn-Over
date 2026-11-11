@@ -1,6 +1,6 @@
 # Balance editable de Turn Over
 
-Los números y la composición de los **cuatro niveles de campaña** están externalizados a CSV, siguiendo el mismo criterio que `locales/texts.csv`. Los CSV de `balance/` son la **única fuente de verdad de ejecución**; este documento es una guía, no un archivo de datos. Un quinto archivo define exclusivamente el roster de las pruebas temporales.
+Los números y la composición de los **cuatro niveles de campaña** están externalizados a CSV, siguiendo el mismo criterio que `locales/texts.csv`. Los CSV de `balance/` son la **única fuente de verdad de ejecución**; este documento es una guía, no un archivo de datos. Un sexto archivo define exclusivamente el roster de las pruebas temporales.
 
 | Archivo | Qué se edita |
 | --- | --- |
@@ -8,6 +8,7 @@ Los números y la composición de los **cuatro niveles de campaña** están exte
 | `balance/levels.csv` | Presupuesto y condición de victoria de cada nivel, duración de supervivencia, casilla del rey de misión (`mission_king_x`, `mission_king_y`), profundidad/aleatoriedad/retardo de la IA y enlace al siguiente nivel. El antiguo laboratorio de presupuesto ha sido retirado. |
 | `balance/enemy-formations.csv` | Una fila por pieza rival, con identificador, tipo, facción, evolución, orientación y casilla `x,y`. |
 | `balance/obstacles.csv` | Una fila por obstáculo: casilla, bloqueo y apariencia. Se pueden añadir o quitar filas. |
+| `balance/ai-profiles.csv` | Perfiles de comportamiento de la IA reutilizables, con pesos tácticos y prioridades de riesgo. |
 | `balance/player-presets.csv` | **Solo pruebas:** una fila por pieza inicial de la banda de cada nivel, con evolución, facción de origen y orientación. |
 
 Los archivos están en UTF-8 con cabeceras exactas, comas y comillas CSV estándar. Se pueden editar en Excel, LibreOffice Calc o Google Sheets, exportando como CSV. Reinicia la página para cargar los nuevos valores; el navegador usa `cache: 'no-store'`.
@@ -31,7 +32,7 @@ La formación enemiga se valida y se suma utilizando los mismos costes que el de
 - Los presupuestos son enteros positivos; la IA recibe parámetros numéricos válidos.
 - Cada nivel de campaña requiere una formación rival con rey; no puede haber IDs de pieza ni casillas repetidas.
 - Los obstáculos no pueden solaparse ni ocupar una casilla inicial rival si bloquean.
-- Un error estructural en cualquiera de los cinco CSV impide cargar el balance y lo muestra como error, para evitar partidas mal configuradas.
+- Un error estructural en cualquiera de los seis CSV impide cargar el balance y lo muestra como error, para evitar partidas mal configuradas.
 - Ejecuta `npm test` después de editar tablas: incluye validación de todos los niveles y pruebas de cambios de datos.
 
 Las bandas del jugador **se arrastran entre niveles**: sobreviven y evolucionan las piezas participantes, se retiran las perdidas y las reservas permanecen sin evolucionar. El presupuesto solo se gasta en piezas que participan.
@@ -85,3 +86,20 @@ Una ronda se completa cuando la IA finaliza su acción (incluidos intercambios o
 ## Agresividad de la IA en supervivencia
 
 La última columna de `balance/levels.csv`, `ai_aggression` (valor entre 0 y 5), ajusta la presión ofensiva del modo supervivencia. Su valor inicial es **4** y los demás niveles lo mantienen en **0**. En supervivencia, la IA prioriza eliminar piezas individuales del jugador antes de la octava ronda, incluso si el intercambio le cuesta más material; también prefiere la destrucción irreversible frente a una captura recuperable, acorta distancias hacia las piezas restantes y busca crear amenazas concretas. La aleatoriedad está inicialmente en 0 para mantener la presión consistente. Eliminar toda la IA sigue dando al jugador una victoria inmediata, por lo que el perfil no se sacrifica cuando eso le causaría una derrota segura. Para ajustar la dificultad sin tocar JavaScript, edita `ai_aggression` y `ai_randomness` y recarga.
+
+## Perfiles reutilizables de IA
+
+Los cinco perfiles se editan en `balance/ai-profiles.csv`. La columna `ai_profile` de `balance/levels.csv` selecciona qué perfil se aplica en cada nivel; `ai_depth`, `ai_randomness`, `ai_think_delay_ms` y `ai_aggression` siguen siendo modificaciones independientes del nivel.
+
+| Nivel | `ai_profile` inicial | Intención |
+| --- | --- | --- |
+| 1 · Destrucción | `balanced` | Material y movilidad equilibrados. |
+| 2 · Escolta | `interceptor` | Presión hacia el rey/las rutas y prioridad del objetivo. |
+| 3 · Captura | `defensive` | Conservar las piezas, en especial al rey protegido de la IA. |
+| 4 · Supervivencia | `aggressive` | Perseguir, amenazar y eliminar la banda contraria, aceptando sacrificios. |
+
+También existe `hunter`, orientado a perseguir piezas aisladas y generar capturas. Se puede asignar a cualquier nivel sin modificar JavaScript.
+
+Las columnas `material`, `captured`, `mobility`, `space`, `objective`, `prisoner_safety` y `rescue_potential` controlan los pesos del minimax existente. `pursuit` penaliza la distancia hasta piezas enemigas; `threat` recompensa amenazas de captura; `king_safety` penaliza que el rey propio pueda ser capturado. En supervivencia también se aplican `survival_target` (prioridad por eliminar cada miembro de la banda), `own_force` (cuidado por conservar atacantes) y `destroy_bonus` (preferencia por destrucción definitiva). Esos tres últimos pesos, junto con `ai_aggression`, determinan la tolerancia al intercambio desfavorable.
+
+Los valores son números finitos entre **0 y 2000**. El parser valida la cabecera, los perfiles repetidos, los números y las referencias inexistentes desde `levels.csv`. Si se edita un perfil, los niveles que lo utilizan lo heredan automáticamente al recargar la página. No se cambian las reglas de movimiento ni las condiciones de victoria; solo la puntuación de las jugadas.

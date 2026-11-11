@@ -7,14 +7,16 @@ const TABLE_URLS = Object.freeze({
   levels: new URL('../../balance/levels.csv', import.meta.url),
   enemies: new URL('../../balance/enemy-formations.csv', import.meta.url),
   obstacles: new URL('../../balance/obstacles.csv', import.meta.url),
-  playerPresets: new URL('../../balance/player-presets.csv', import.meta.url)
+  playerPresets: new URL('../../balance/player-presets.csv', import.meta.url),
+  aiProfiles: new URL('../../balance/ai-profiles.csv', import.meta.url)
 });
 const HEADERS = Object.freeze({
   pieces: 'piece_type,base,evolved',
-  levels: 'level_id,kind,name,name_key,victory,next_level_id,point_limit,target_row,survive_rounds,ai_depth,ai_randomness,ai_think_delay_ms,mission_king_x,mission_king_y,encroachment_start_action,ai_aggression',
+  levels: 'level_id,kind,name,name_key,victory,next_level_id,point_limit,target_row,survive_rounds,ai_depth,ai_randomness,ai_think_delay_ms,mission_king_x,mission_king_y,encroachment_start_action,ai_aggression,ai_profile',
   enemies: 'level_id,unit_id,piece_type,faction,facing,evolution_stage,x,y',
   obstacles: 'level_id,obstacle_id,x,y,type,blocking,asset,scale,y_offset',
-  playerPresets: 'level_id,unit_id,piece_type,faction,facing,evolution_stage'
+  playerPresets: 'level_id,unit_id,piece_type,faction,facing,evolution_stage',
+  aiProfiles: 'profile_id,material,captured,mobility,space,objective,prisoner_safety,rescue_potential,pursuit,threat,king_safety,survival_target,own_force,destroy_bonus'
 });
 const VICTORIES = new Set(['elimination', 'escort-king', 'capture-king', 'survive']);
 
@@ -53,7 +55,38 @@ function position(x, y, label) {
 }
 
 // Pure parser for CI and editor validation. An omitted preset table keeps legacy callers valid.
-export function parseBalanceTables({ pieces, levels, enemies, obstacles, playerPresets = null }) {
+export function parseBalanceTables({ pieces, levels, enemies, obstacles, playerPresets = null, aiProfiles = null }) {
+  // The runtime always supplies aiProfiles; omitted tables allow older isolated
+  // parser tests to remain compatible with the previous four-table contract.
+  const tacticalProfiles = {};
+  for (const row of aiProfiles === null ? [] : rowsFor(aiProfiles, 'aiProfiles')) {
+    const id = row.profile_id;
+    if (!id || !/^[a-z][a-z0-9-]*$/.test(id) || tacticalProfiles[id]) {
+      throw new Error('Perfil de IA inválido/repetido: ' + id);
+    }
+    const positive = field => numeric(row[field], 'aiProfiles.' + id + '.' + field, { min: 0, max: 2000 });
+    tacticalProfiles[id] = {
+      id,
+      weights: {
+        material: positive('material'),
+        captured: positive('captured'),
+        mobility: positive('mobility'),
+        space: positive('space'),
+        objective: positive('objective'),
+        prisonerSafety: positive('prisoner_safety'),
+        rescuePotential: positive('rescue_potential')
+      },
+      tactics: {
+        pursuit: positive('pursuit'),
+        threat: positive('threat'),
+        kingSafety: positive('king_safety'),
+        survivalTarget: positive('survival_target'),
+        ownForce: positive('own_force'),
+        destroyBonus: positive('destroy_bonus')
+      }
+    };
+  }
+  if (aiProfiles !== null && !Object.keys(tacticalProfiles).length) throw new Error('No hay perfiles de IA.');
   const pieceCosts = {};
   for (const row of rowsFor(pieces, 'pieces')) {
     if (!PIECES[row.piece_type] || pieceCosts[row.piece_type]) throw new Error('Tipo de pieza inválido/repetido: ' + row.piece_type);
@@ -81,6 +114,10 @@ export function parseBalanceTables({ pieces, levels, enemies, obstacles, playerP
     const missionY = optionalNumber(row.mission_king_y, id + '.mission_king_y', { integer: true, max: 7 });
     const encroachmentStartAction = optionalNumber(row.encroachment_start_action, id + '.encroachment_start_action', { integer: true, min: 1 });
     const aiAggression = numeric(row.ai_aggression, id + '.ai_aggression', { min: 0, max: 5 });
+    const aiProfileId = row.ai_profile;
+    if (!aiProfileId || (aiProfiles !== null && !tacticalProfiles[aiProfileId])) {
+      throw new Error('Perfil de IA desconocido para ' + id + ': ' + aiProfileId);
+    }
     const requiresMissionKing = row.kind === 'campaign' && row.victory === 'escort-king';
     if ((missionX === null) !== (missionY === null) ||
         requiresMissionKing !== (missionX !== null) ||
@@ -95,6 +132,7 @@ export function parseBalanceTables({ pieces, levels, enemies, obstacles, playerP
       aiDepth: numeric(row.ai_depth, id + '.ai_depth', { integer: true, min: 1 }),
       aiRandomness: numeric(row.ai_randomness, id + '.ai_randomness', { min: 0, max: 1 }),
       aiAggression,
+      aiProfileId,
       aiThinkDelayMs: numeric(row.ai_think_delay_ms, id + '.ai_think_delay_ms', { integer: true })
     };
     levelPointLimits[id] = limit;
@@ -196,7 +234,7 @@ export function parseBalanceTables({ pieces, levels, enemies, obstacles, playerP
     }
   }
 
-  return freezeDeep({ pieceCosts, levelPointLimits, levelDefinitions, enemyFormations, levelObstacles, playerPresetBands });
+  return freezeDeep({ pieceCosts, levelPointLimits, levelDefinitions, enemyFormations, levelObstacles, playerPresetBands, aiProfiles: tacticalProfiles });
 }
 
 async function loadBalance() {
@@ -214,6 +252,13 @@ export function levelBalance(levelId) {
   const level = BALANCE.levelDefinitions[levelId];
   if (!level) throw new Error('No hay balance para el nivel ' + levelId);
   return level;
+}
+
+export function aiProfileForLevel(levelId) {
+  const level = levelBalance(levelId);
+  const profile = BALANCE.aiProfiles[level.aiProfileId];
+  if (!profile) throw new Error('Perfil de IA no encontrado: ' + level.aiProfileId);
+  return profile;
 }
 
 export function enemyBandForLevel(levelId) {

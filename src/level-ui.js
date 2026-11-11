@@ -1,5 +1,5 @@
 import { t, getLanguage, getGender, setLanguage, setGender, onLocaleChange, playerText, pieceName } from './i18n/index.js';
-import { listMechanicLabs } from './content/levels/index.js?v=20261111-survival-aggression-1';
+import { listMechanicLabs } from './content/levels/index.js?v=20261111-ai-profiles-1';
 import { missionTextFor } from './content/mission.js?v=20261109-mission-1';
 
 function mechanicsLabOptions() {

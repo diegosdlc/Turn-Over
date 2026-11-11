@@ -41,7 +41,7 @@ Then open `http://localhost:8000/`.
 - `src/content/levels/` — production encounters and independent development scenarios.
 - `src/systems/ProgressionStore.js` — persistent campaign progression/carried band.
 - `src/systems/GameSessionStore.js` — resumable in-progress encounter snapshot.
-- `balance/` — four production balancing CSV tables, plus a fifth editable playtest roster CSV.
+- `balance/` — five production balancing CSV tables (including AI profiles), plus a sixth editable playtest roster CSV.
 
 ## Current gameplay model
 
@@ -69,7 +69,7 @@ See [`docs/EVOLUTION.md`](docs/EVOLUTION.md).
 
 Budgeted deployment is declarative per level. `GameState` owns reserve participation, affordability, placement legality, refunds and the transition into play. Spending the entire allowance is optional, but at least one piece must participate.
 
-Costs, budgets, enemy formations, victory objectives and obstacle locations live in the four CSVs under [`balance/`](balance/). The browser loads them at runtime, so tweaking encounters does not require code edits. Test-only carried rosters live in a fifth CSV, `balance/player-presets.csv`. See [`docs/BALANCE.md`](docs/BALANCE.md) for validation rules.
+Costs, budgets, enemy formations, victory objectives, obstacle locations and AI tactical profiles live in the five production CSVs under [`balance/`](balance/). The browser loads them at runtime, so tweaking encounters does not require code edits. Test-only carried rosters live in a sixth CSV, `balance/player-presets.csv`. See [`docs/BALANCE.md`](docs/BALANCE.md) for validation rules.
 
 See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
@@ -106,3 +106,5 @@ Session schema `7` saves in-progress units (including facing, evolution and rese
 - [`docs/EVOLUTION.md`](docs/EVOLUTION.md) — evolution and carried-roster contract.
 - [`docs/FACTIONS_AND_BANDS.md`](docs/FACTIONS_AND_BANDS.md) — faction/band/facing/artwork contract.
 - [`docs/MECHANICS_LABS.md`](docs/MECHANICS_LABS.md) — mechanics-lab workflow.
+
+AI behavior is configured per campaign level with `ai_profile` in `balance/levels.csv`. Reusable `balanced`, `defensive`, `interceptor`, `hunter` and `aggressive` profiles are edited in `balance/ai-profiles.csv`; individual levels retain their `ai_depth`, `ai_randomness`, `ai_think_delay_ms` and `ai_aggression` controls. See `docs/BALANCE.md`.

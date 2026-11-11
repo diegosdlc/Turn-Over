@@ -180,3 +180,7 @@ In `capture-king`, player wins if enemy king is captured/destroyed; enemy wins o
 ## Survival rounds HUD and intentional disadvantage
 
 Survival (`tutorial-04`) has an asymmetric 20-point player budget against 30 enemy. Survive eight completed enemy turns (including skips) with at least one active band unit. No extra protected king. `src/core/survival.js` drives a fixed localized countdown; saved `roundsElapsed` restores progress. Legacy saves are migrated by discarding the obsolete free king. Elimination of all enemies remains an early victory alternative.
+
+## AI profile balance tables
+
+Six CSV files live under `balance/`: piece costs, campaign levels, enemy formations, obstacles, tactical `ai-profiles.csv` and test-only `player-presets.csv`. The runtime reads AI profiles at startup and levels refer to them by `ai_profile`. The shared minimax uses the profile's evaluation weights and tactical threat/chase/king safety scores; survival assault also reads the profile's elimination, attacker preservation and destruction bonuses. Levels still configure search depth, randomness, delay and aggression independently. Maintain level CSV + profile CSV foreign-key validation and do not hardcode profiles into game logic.
