@@ -173,6 +173,10 @@ button{font:inherit;letter-spacing:.02em}
   pointer-events:none;
   filter:drop-shadow(0 7px 5px rgba(0,0,0,.34));
 }
+.unit-image[src$="king-south.svg"],
+.unit-image[src$="queen-south.svg"]{
+  transform:translateX(-50%) scaleX(-1);
+}
 .unit.has-image{
   border-color:transparent;
   border-radius:0;
