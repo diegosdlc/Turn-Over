@@ -53,7 +53,7 @@ Detailed contracts:
 - `balance/*.csv` — runtime-editable piece costs, budgets/objectives, enemy formations and obstacle positions; `docs/BALANCE.md` documents the CSV contract.
 - `docs/EVOLUTION.md` — evolution and carried-roster rules.
 - `docs/MECHANICS_LABS.md` — reusable test-level workflow.
-- `docs/FACING_LAB.md` — facing-lab test procedure.
+- `docs/MECHANICS_LABS.md` — current campaign playtest picker and CSV roster contract.
 
 ## Established game/design decisions
 
@@ -150,7 +150,7 @@ At the end of a project change:
 
 ## Four-level production campaign
 
-The campaign consists of `tutorial-01` (elimination/destruction), `tutorial-02` (escort-king), `tutorial-03` (capture-king) and `tutorial-04` (survive), in that order. Debug scenarios and mechanics labs remain available but are not campaign progression. The game loads four CSVs in `balance/` at runtime: costs, level budgets/objectives, rival formations and obstacles. Keep CSV IDs stable to preserve progression and session compatibility. 
+The campaign consists of `tutorial-01` (elimination/destruction), `tutorial-02` (escort-king), `tutorial-03` (capture-king) and `tutorial-04` (survive), in that order. Independent `scenario-*` development fixtures remain available, but retired mechanics labs are no longer registered. The game loads four CSVs in `balance/` at runtime: costs, level budgets/objectives, rival formations and obstacles. Keep CSV IDs stable to preserve progression and session compatibility. 
 
 ## Mission king rules
 
