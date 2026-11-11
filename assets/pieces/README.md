@@ -1,18 +1,16 @@
 # Piece assets
 
-The green faction pawn uses facing-specific turquoise glass sprites:
+The **green** faction uses turquoise-glass sprites selected by piece type and explicit facing. This selection is independent of whether the unit belongs to the player or the enemy.
 
-- `assets/pieces/green/pawn-north.webp` — rear three-quarter view for north.
-- `assets/pieces/green/pawn-south.webp` — front three-quarter view for south.
+| In-game piece | North (rear view) | South (front view) | Original source images |
+| --- | --- | --- | --- |
+| Pawn | `green/pawn-north.webp` | `green/pawn-south.webp` | Existing pawn assets |
+| King (Archimago) | `green/king-north.svg` | `green/king-south.svg` | `9699.png` / `9698.png` |
+| Queen (Archimaga) | `green/queen-north.svg` | `green/queen-south.svg` | `9701.png` / `9700.png` |
+| Bishop (Monje) | `green/bishop-north.svg` | `green/bishop-south.svg` | `9702.png` / `9703.png` |
 
-Both are transparent WebP assets for the tabletop board and deployment roster. Remaining production pieces keep their CSS chess-token fallback.
+The six new sprites have transparent backgrounds and are downscaled to 768×768. Each self-contained SVG stores optimized WebP artwork as an embedded data image, so it works as a standalone browser image without additional requests or runtime canvas processing. Four original PNGs had an opaque black background; the packaged sprites have that background removed.
 
-If a future level needs faction-specific artwork, store it in subfolders, for example:
+The paths are registered in `src/content/factions.js` under `green.pieceAssets`. `AssetRegistry.pieceAsset()` handles the direction lookup and retains the CSS chess-token fallback for other factions and unillustrated pieces.
 
-- `assets/pieces/green/bishop.webp`
-- `assets/pieces/red/rook.webp`
-- `assets/pieces/yellow/knight.webp`
-
-Then register each file in `src/content/factions.js` under the faction's `pieceAssets` map.
-
-Transparent WebP or PNG works best. The renderer falls back to the current chess glyph automatically when no artwork is registered or an image fails to load.
+Future faction-specific artwork can live in directories like `assets/pieces/red/rook.webp` or `assets/pieces/yellow/knight.webp`. Prefer transparent WebP/PNG when adding new files.
