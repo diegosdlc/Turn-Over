@@ -1,6 +1,7 @@
 import { t, pieceName } from '../i18n/index.js';
 import { cellBox, insetBox, place } from '../core/geometry.js';
 import { movementVector, VISUAL_DURATION_MS } from './animationGeometry.js';
+import { escortGoalCells } from './escortGoals.js';
 import { optionsFor } from '../core/rules.js?v=20260821-evolution-3';
 import { evolutionCapabilitiesFor, isEvolved } from '../core/evolution.js?v=20260821-evolution-3';
 
@@ -96,6 +97,7 @@ export class BoardRenderer {
     const size = this.level.board.size ?? 8;
 
     this.renderSpecialTiles();
+    this.renderEscortGoals();
 
     for (let diagonal = 0; diagonal <= (size - 1) * 2; diagonal += 1) {
       for (let y = 0; y < size; y += 1) {
@@ -251,6 +253,18 @@ export class BoardRenderer {
       this.onCaptureAction(action);
     });
     return button;
+  }
+
+  renderEscortGoals() {
+    for (const cell of escortGoalCells(this.level, this.state.boardElements)) {
+      const marker = document.createElement('div');
+      marker.className = 'escort-goal-tile';
+      marker.setAttribute('role', 'img');
+      marker.setAttribute('aria-label', t('ui.escort.goal'));
+      marker.textContent = '⚑';
+      place(marker, cellBox(this.projection, cell.x, cell.y), this.projection);
+      this.board.append(marker);
+    }
   }
 
   renderSpecialTiles() {
