@@ -349,8 +349,7 @@ export function profileTacticalScore(state, level, aiTeam, ai) {
   const opponent = aiTeam === 'player' ? 'enemy' : 'player';
   let score = 0;
   if (tactics.pursuit) {
-    score += (proximityScore(state, aiTeam) - proximityScore(state, opponent)) *
-      tactics.pursuit;
+    score += proximityScore(state, aiTeam) * tactics.pursuit;
   }
   if (tactics.threat) {
     score += (threatenedUnits(state, level, aiTeam).size -

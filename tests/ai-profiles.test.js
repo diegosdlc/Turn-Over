@@ -71,11 +71,11 @@ test('defensive profile penalizes exposing its king, while balanced has no extra
   state.currentTurn='enemy';
   state.boardElements=[];
   const king=state.units.find(u => u.team === 'enemy' && u.pieceType === 'king');
-  const rook=state.units.find(u => u.team === 'player' && u.pieceType === 'rook');
-  assert.ok(king && rook);
+  const queen=state.units.find(u => u.team === 'player' && u.pieceType === 'queen');
+  assert.ok(king && queen);
   Object.assign(king, {x:4,y:4,inReserve:false,captured:false,destroyed:false});
-  Object.assign(rook, {x:4,y:2,inReserve:false,captured:false,destroyed:false});
-  state.units=[king,rook];
+  Object.assign(queen, {x:4,y:2,inReserve:false,captured:false,destroyed:false});
+  state.units=[king,queen];
   const balanced=new AIController({team:'enemy',...BALANCE.aiProfiles.balanced});
   const defensive=new AIController({team:'enemy',...BALANCE.aiProfiles.defensive});
   assert.equal(profileTacticalScore(state,level,'enemy',balanced),0);
