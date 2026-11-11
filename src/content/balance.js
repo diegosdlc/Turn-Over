@@ -6,13 +6,15 @@ const TABLE_URLS = Object.freeze({
   pieces: new URL('../../balance/pieces.csv', import.meta.url),
   levels: new URL('../../balance/levels.csv', import.meta.url),
   enemies: new URL('../../balance/enemy-formations.csv', import.meta.url),
-  obstacles: new URL('../../balance/obstacles.csv', import.meta.url)
+  obstacles: new URL('../../balance/obstacles.csv', import.meta.url),
+  playerPresets: new URL('../../balance/player-presets.csv', import.meta.url)
 });
 const HEADERS = Object.freeze({
   pieces: 'piece_type,base,evolved',
   levels: 'level_id,kind,name,name_key,victory,next_level_id,point_limit,target_row,survive_rounds,ai_depth,ai_randomness,ai_think_delay_ms,mission_king_x,mission_king_y,encroachment_start_action',
   enemies: 'level_id,unit_id,piece_type,faction,facing,evolution_stage,x,y',
-  obstacles: 'level_id,obstacle_id,x,y,type,blocking,asset,scale,y_offset'
+  obstacles: 'level_id,obstacle_id,x,y,type,blocking,asset,scale,y_offset',
+  playerPresets: 'level_id,unit_id,piece_type,faction,facing,evolution_stage'
 });
 const VICTORIES = new Set(['elimination', 'escort-king', 'capture-king', 'survive']);
 
@@ -50,8 +52,8 @@ function position(x, y, label) {
     y: numeric(y, label + '.y', { integer: true, max: 7 }) };
 }
 
-// Pure parser for CI and editor validation. The four CSVs are the only runtime sources.
-export function parseBalanceTables({ pieces, levels, enemies, obstacles }) {
+// Pure parser for CI and editor validation. An omitted preset table keeps legacy callers valid.
+export function parseBalanceTables({ pieces, levels, enemies, obstacles, playerPresets = null }) {
   const pieceCosts = {};
   for (const row of rowsFor(pieces, 'pieces')) {
     if (!PIECES[row.piece_type] || pieceCosts[row.piece_type]) throw new Error('Tipo de pieza inválido/repetido: ' + row.piece_type);
@@ -163,7 +165,36 @@ export function parseBalanceTables({ pieces, levels, enemies, obstacles }) {
     }
   }
 
-  return freezeDeep({ pieceCosts, levelPointLimits, levelDefinitions, enemyFormations, levelObstacles });
+  const playerPresetBands = Object.fromEntries(campaign.map(level => [level.id, []]));
+  for (const row of playerPresets === null ? [] : rowsFor(playerPresets, 'playerPresets')) {
+    const roster = playerPresetBands[row.level_id];
+    if (!roster || !row.unit_id || !(PIECES[row.piece_type] || row.piece_type === 'special') ||
+        !(['player'].includes(row.faction) || getFaction(row.faction)) ||
+        (row.piece_type === 'special' && row.faction !== 'player') ||
+        !['north', 'south'].includes(row.facing) ||
+        !['base', 'evolved'].includes(row.evolution_stage)) {
+      throw new Error('Pieza de prueba inválida en ' + row.level_id + ': ' + row.unit_id);
+    }
+    if (roster.some(unit => unit.id === row.unit_id)) {
+      throw new Error('Pieza de prueba duplicada en ' + row.level_id + ': ' + row.unit_id);
+    }
+    roster.push({
+      id: row.unit_id, pieceType: row.piece_type, faction: row.faction,
+      facing: row.facing, evolutionStage: row.evolution_stage
+    });
+  }
+  if (playerPresets !== null) {
+    for (const level of campaign) {
+      if (!playerPresetBands[level.id].length) throw new Error('Falta banda de prueba en ' + level.id);
+      const accessible = playerPresetBands[level.id].some(unit => {
+        const type = unit.pieceType === 'special' ? 'bishop' : unit.pieceType;
+        return pieceCosts[type][unit.evolutionStage] <= level.pointLimit;
+      });
+      if (!accessible) throw new Error('Ninguna pieza asequible en la banda de prueba de ' + level.id);
+    }
+  }
+
+  return freezeDeep({ pieceCosts, levelPointLimits, levelDefinitions, enemyFormations, levelObstacles, playerPresetBands });
 }
 
 async function loadBalance() {
@@ -221,4 +252,23 @@ export function levelPointLimit(levelId, enemyUnits = []) {
     console.warn('[balance] ' + levelId + ': límite ' + configured + ', banda rival ' + enemyValue + '.');
   }
   return configured;
+}
+
+/**
+ * A disposable, pre-evolved carried band used only by the campaign level picker.
+ * 'player' means the currently selected faction; 'special' means its original special piece.
+ * None of these test presets are persisted in campaign progress.
+ */
+export function playerPresetBandForLevel(levelId, playerFactionId = 'green') {
+  const faction = getFaction(playerFactionId);
+  const preset = BALANCE.playerPresetBands[levelId];
+  if (!faction || !preset?.length) throw new Error('Banda de prueba no disponible: ' + levelId);
+  return preset.map(unit => ({
+    id: unit.id,
+    team: 'player',
+    pieceType: unit.pieceType === 'special' ? faction.specialPieceType : unit.pieceType,
+    faction: unit.faction === 'player' ? playerFactionId : unit.faction,
+    facing: unit.facing,
+    evolutionStage: unit.evolutionStage
+  }));
 }
