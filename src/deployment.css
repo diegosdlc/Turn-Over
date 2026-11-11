@@ -140,6 +140,10 @@
   filter:drop-shadow(0 5px 4px rgba(0,0,0,.28));
 }
 
+.deployment-piece-image[src$="king-south.svg"],
+.deployment-piece-image[src$="queen-south.svg"]{
+  transform:translateX(-50%) scaleX(-1);
+}
 .deployment-piece.has-image{
   border-radius:0;
   background:transparent;
