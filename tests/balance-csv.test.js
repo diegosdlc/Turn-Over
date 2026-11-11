@@ -10,7 +10,8 @@ const sources = Object.fromEntries(Object.entries({
   pieces: '../balance/pieces.csv',
   levels: '../balance/levels.csv',
   enemies: '../balance/enemy-formations.csv',
-  obstacles: '../balance/obstacles.csv'
+  obstacles: '../balance/obstacles.csv',
+  playerPresets: '../balance/player-presets.csv'
 }).map(([key, path]) => [key, readFileSync(new URL(path, import.meta.url), 'utf8')]));
 const ids = ['tutorial-01', 'tutorial-02', 'tutorial-03', 'tutorial-04'];
 const victories = ['elimination', 'escort-king', 'capture-king', 'survive'];
@@ -32,7 +33,7 @@ test('four campaign levels use CSV budgets, objectives, enemy formations and obs
   }
   assert.equal(getLevel('tutorial-02').rules.targetRow, 0);
   assert.equal(getLevel('tutorial-04').rules.surviveRounds, 8);
-  assert.equal(BALANCE.levelPointLimits['deployment-budget-lab'], 50);
+  assert.ok(!Object.values(BALANCE.levelDefinitions).some(level => level.kind === 'lab'));
 });
 
 test('enemy wave deployment respects configured CSV formation squares', () => {
