@@ -93,6 +93,7 @@ export function createTutorialEncounter({
       team: 'enemy',
       depth: balance.aiDepth,
       randomness: balance.aiRandomness,
+      aggression: balance.aiAggression,
       thinkDelayMs: balance.aiThinkDelayMs
     },
     rules: {

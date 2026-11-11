@@ -11,7 +11,7 @@ const TABLE_URLS = Object.freeze({
 });
 const HEADERS = Object.freeze({
   pieces: 'piece_type,base,evolved',
-  levels: 'level_id,kind,name,name_key,victory,next_level_id,point_limit,target_row,survive_rounds,ai_depth,ai_randomness,ai_think_delay_ms,mission_king_x,mission_king_y,encroachment_start_action',
+  levels: 'level_id,kind,name,name_key,victory,next_level_id,point_limit,target_row,survive_rounds,ai_depth,ai_randomness,ai_think_delay_ms,mission_king_x,mission_king_y,encroachment_start_action,ai_aggression',
   enemies: 'level_id,unit_id,piece_type,faction,facing,evolution_stage,x,y',
   obstacles: 'level_id,obstacle_id,x,y,type,blocking,asset,scale,y_offset',
   playerPresets: 'level_id,unit_id,piece_type,faction,facing,evolution_stage'
@@ -80,6 +80,7 @@ export function parseBalanceTables({ pieces, levels, enemies, obstacles, playerP
     const missionX = optionalNumber(row.mission_king_x, id + '.mission_king_x', { integer: true, max: 7 });
     const missionY = optionalNumber(row.mission_king_y, id + '.mission_king_y', { integer: true, max: 7 });
     const encroachmentStartAction = optionalNumber(row.encroachment_start_action, id + '.encroachment_start_action', { integer: true, min: 1 });
+    const aiAggression = numeric(row.ai_aggression, id + '.ai_aggression', { min: 0, max: 5 });
     const requiresMissionKing = row.kind === 'campaign' && row.victory === 'escort-king';
     if ((missionX === null) !== (missionY === null) ||
         requiresMissionKing !== (missionX !== null) ||
@@ -93,6 +94,7 @@ export function parseBalanceTables({ pieces, levels, enemies, obstacles, playerP
       missionKingPosition: missionX === null ? null : { x: missionX, y: missionY },
       aiDepth: numeric(row.ai_depth, id + '.ai_depth', { integer: true, min: 1 }),
       aiRandomness: numeric(row.ai_randomness, id + '.ai_randomness', { min: 0, max: 1 }),
+      aiAggression,
       aiThinkDelayMs: numeric(row.ai_think_delay_ms, id + '.ai_think_delay_ms', { integer: true })
     };
     levelPointLimits[id] = limit;

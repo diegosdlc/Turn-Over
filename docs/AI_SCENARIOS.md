@@ -62,3 +62,9 @@ El contador `roundsElapsed` forma parte del estado en memoria y se guarda y rest
 ## Rey de misión en la campaña
 
 Solo `tutorial-02` (escolta) añade un rey especial, sin coste y ya desplegado. En `tutorial-04` (supervivencia) cualquier miembro activo de la banda cuenta para completar las 8 rondas; perder el rey ordinario no termina la partida. El jugador dispone de 20 puntos frente a 30 de la IA. La IA prioriza eliminar las piezas restantes en lugar de cazar un rey protegido. Los escenarios independientes conservan sus condiciones de victoria.
+
+## Presión ofensiva en supervivencia
+
+La IA del nivel `tutorial-04` emplea un perfil de **asalto**, distinto de la evaluación de material del resto de misiones. En vez de proteger su ventaja material, premia fuertemente reducir el **número de piezas activas del jugador**, incluso a cambio de perder piezas propias. Prefiere destruir piezas frente a capturarlas cuando la alternativa sea posible, ya que una pieza capturada puede ser rescatada. Cuando no hay un ataque inmediato, minimiza la distancia hasta las piezas supervivientes y recompensa amenazas de captura calculadas mediante las reglas reales de movimiento (incluidos muros dinámicos).
+
+La intensidad se controla con `ai_aggression` (0 a 5) en `balance/levels.csv`, con **4** para supervivencia y **0** para el resto. `ai_randomness=0` elimina decisiones aleatorias entre ataques de valor diferente en el nivel 4. El perfil mantiene una valoración residual de las piezas rivales para evitar suicidios sin beneficio: la eliminación completa de la IA sigue siendo victoria del jugador. La búsqueda minimax y las condiciones de victoria del modo permanecen intactas.
