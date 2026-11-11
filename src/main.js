@@ -12,6 +12,7 @@ import { BoardRenderer } from './render/BoardRenderer.js?v=20261111-campaign-pla
 import { AIController } from './ai/AIController.js?v=20261110-move-facing-1';
 import { legalActionsFor } from './core/rules.js?v=20260821-evolution-3';
 import { victoryResultFor } from './core/victory.js';
+import { survivalProgressFor, countSkippedSurvivalTurn } from './core/survival.js';
 import { applyEncroachment } from './core/encroachment.js';
 import { buildNextPlayerBand } from './core/campaign.js?v=20260821-budget-1';
 import { deployEnemyWave } from './ai/DeploymentAI.js';
@@ -31,6 +32,9 @@ class GameApp {
     this.deploymentStatus = document.querySelector('#deployment-status');
     this.enemyDeploymentPieces = document.querySelector('#enemy-deployment-pieces');
     this.deploymentRoundLabel = document.querySelector('#deployment-round-label');
+    this.survivalCounter = document.querySelector('#survival-counter');
+    this.survivalRemaining = document.querySelector('#survival-rounds-remaining');
+    this.survivalTotal = document.querySelector('#survival-rounds-total');
     this.deploymentStart = document.querySelector('#deployment-start');
     this.assets = new AssetRegistry(FACTIONS);
     this.audio = new AudioManager();
@@ -202,6 +206,7 @@ class GameApp {
   }
 
   render() {
+    this.renderSurvivalCounter();
     window.turnOverNotebookState = { units: this.state.units, assets: this.assets, level: this.level };
     window.dispatchEvent(new Event('game:rosters-updated'));
     this.renderer.render();
@@ -209,6 +214,16 @@ class GameApp {
     if (!this.state.isDeploying()) {
       this.tutorial.render(this.board, anchor => this.renderer.resolveTutorialAnchor(anchor));
     }
+  }
+
+  renderSurvivalCounter() {
+    if (!this.survivalCounter) return;
+    const progress = survivalProgressFor(this.state, this.level);
+    const visible = Boolean(progress && !this.state.isDeploying());
+    this.survivalCounter.hidden = !visible;
+    if (!visible) return;
+    if (this.survivalRemaining) this.survivalRemaining.textContent = String(progress.remaining);
+    if (this.survivalTotal) this.survivalTotal.textContent = '/ ' + progress.total;
   }
 
   renderDeployment() {
@@ -592,6 +607,7 @@ class GameApp {
     if (this.state.finished) return;
     const skippedTeam = this.state.currentTurn;
     this.state.clearSelection();
+    countSkippedSurvivalTurn(this.state, this.level, skippedTeam);
     this.state.changeTurn();
     this.checkEnd();
     if (this.state.finished) return;

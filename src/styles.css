@@ -570,3 +570,44 @@ button{font:inherit;letter-spacing:.02em}
 @media (prefers-reduced-motion:reduce){
   .escort-goal-tile{animation:none;opacity:1}
 }
+
+/* Accessible round countdown, independent of the scaled game board. */
+.survival-counter {
+  position:fixed;
+  z-index:26;
+  top:max(14px,env(safe-area-inset-top));
+  left:max(14px,env(safe-area-inset-left));
+  display:flex;
+  align-items:center;
+  gap:.45rem;
+  max-width:calc(100vw - 130px);
+  padding:.55rem .85rem;
+  background:#f6efd9;
+  color:#29312b;
+  border:2px solid #615c45;
+  border-radius:5px 13px 7px 11px;
+  box-shadow:3px 4px 0 rgba(49,42,30,.3);
+  font-family:"Segoe Print","Comic Sans MS",cursive;
+  font-size:clamp(.78rem,1.15vw,1.05rem);
+  line-height:1.2;
+  pointer-events:none;
+}
+.survival-counter-label { font-weight:700; }
+.survival-counter-value {
+  font-family:Arial,sans-serif;
+  font-size:clamp(1.25rem,2vw,1.8rem);
+  font-weight:900;
+  color:#a03e31;
+  font-variant-numeric:tabular-nums;
+}
+.survival-counter-total { font-family:Arial,sans-serif; font-variant-numeric:tabular-nums; }
+html.touch-ui .survival-counter {
+  top:calc(var(--app-vv-y,0px) + max(12px,env(safe-area-inset-top)));
+  left:calc(var(--app-vv-x,0px) + max(12px,env(safe-area-inset-left)));
+  padding:.42rem .58rem;
+  gap:.3rem;
+  font-size:.78rem;
+}
+@media (max-width:420px) {
+  .survival-counter { max-width:calc(100vw - 122px); font-size:.76rem; }
+}

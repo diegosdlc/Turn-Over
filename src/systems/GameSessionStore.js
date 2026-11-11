@@ -1,7 +1,11 @@
 export function restoreSessionState(state, savedState) {
   if (!Array.isArray(savedState?.units)) return;
 
-  state.units = savedState.units;
+  // Discard the free protected king from saves created before survival became
+  // an any-unit objective. Escort still has its own dedicated mission king.
+  state.units = state.level.rules?.victory === 'survive'
+    ? savedState.units.filter(unit => !unit.missionKing)
+    : savedState.units;
   state.boardElements = Array.isArray(savedState.boardElements)
     ? structuredClone(savedState.boardElements) : structuredClone(state.level.boardElements ?? []);
   const pending = savedState.pendingClosure;

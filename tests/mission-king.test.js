@@ -17,11 +17,11 @@ const files = Object.fromEntries(Object.entries({
   obstacles: '../balance/obstacles.csv'
 }).map(([key, path]) => [key, readFileSync(new URL(path, import.meta.url), 'utf8')]));
 
-test('mission king is added only to escort and survival, without replacing the carried king', () => {
+test('mission king is added to escort only, not to survival', () => {
   for (const id of levelIds) {
     const level = getLevel(id);
     const mission = level.units.filter(unit => unit.missionKing);
-    assert.equal(mission.length, ['tutorial-02','tutorial-04'].includes(id) ? 1 : 0);
+    assert.equal(mission.length, id === 'tutorial-02' ? 1 : 0);
     if (!mission.length) continue;
     assert.equal(mission[0].team, 'player');
     assert.equal(mission[0].pieceType, 'king');
@@ -32,7 +32,7 @@ test('mission king is added only to escort and survival, without replacing the c
 });
 
 test('protected king is placed, locked, free and excluded from deployment quotas', () => {
-  for (const id of ['tutorial-02', 'tutorial-04']) {
+  for (const id of ['tutorial-02']) {
     const level = getLevel(id);
     const state = new GameState(level);
     const king = state.units.find(unit => unit.missionKing);
@@ -58,7 +58,7 @@ test('protected king is placed, locked, free and excluded from deployment quotas
   }
 });
 
-test('escort and survival end on the special king, ignoring another player king', () => {
+test('escort ends on its special king, ignoring the carried king', () => {
   const escort = getLevel('tutorial-02');
   const escortState = new GameState(escort);
   escortState.phase = 'play';
@@ -72,22 +72,11 @@ test('escort and survival end on the special king, ignoring another player king'
   assert.equal(victoryResultFor(escortState, escort)?.winner, 'enemy');
   assert.equal(victoryResultFor(escortState, escort)?.reason, 'king-captured');
 
-  const survival = getLevel('tutorial-04');
-  const survivalState = new GameState(survival);
-  survivalState.phase = 'play';
-  survivalState.roundsElapsed = survival.rules.surviveRounds - 1;
-  const protectedUnit = survivalState.units.find(unit => unit.missionKing);
-  protectedUnit.captured = true;
-  protectedUnit.capturedBy = 'enemy';
-  assert.equal(victoryResultFor(survivalState, survival)?.winner, 'enemy');
-  survivalState.roundsElapsed = survival.rules.surviveRounds;
-  assert.equal(victoryResultFor(survivalState, survival)?.winner, 'enemy');
-  protectedUnit.captured = false;
-  assert.equal(victoryResultFor(survivalState, survival)?.winner, 'player');
+
 });
 
-test('mission king is excluded from campaign evolution, recruitment and reserve carry', () => {
-  for (const id of ['tutorial-02', 'tutorial-04']) {
+test('escort mission king is excluded from campaign evolution, recruitment and reserve carry', () => {
+  for (const id of ['tutorial-02']) {
     const level = getLevel(id);
     const state = new GameState(level);
     const king = state.units.find(unit => unit.missionKing);
@@ -125,14 +114,14 @@ test('invalid mission king coordinates are rejected by balance CSV validator', (
       'tutorial-02,campaign,Nivel 2 · Escolta,level.tutorial_02,escort-king,tutorial-03,22,0,,3,0.02,450,2,5')
   }), /Rey de misión inválido/);
   assert.throws(() => parseBalanceTables({
-    ...files, levels: files.levels.replace('tutorial-04,campaign,Nivel 4 · Supervivencia,level.tutorial_04,survive,,30,,8,2,0.03,450,2,7',
-      'tutorial-04,campaign,Nivel 4 · Supervivencia,level.tutorial_04,survive,,30,,8,2,0.03,450,2,3')
+    ...files, levels: files.levels.replace('tutorial-04,campaign,Nivel 4 · Supervivencia,level.tutorial_04,survive,,20,,8,2,0.03,450,,,10',
+      'tutorial-04,campaign,Nivel 4 · Supervivencia,level.tutorial_04,survive,,20,,8,2,0.03,450,2,7,10')
   }), /Rey de misión inválido/);
 });
 
 test('mission objective copy follows level rules and interpolates the parameters', () => {
   const translator = (key, params = {}) => key + JSON.stringify(params);
-  const expected = ['mission.elimination','mission.escort_king','mission.capture_king','mission.survive_king'];
+  const expected = ['mission.elimination','mission.escort_king','mission.capture_king','mission.survive_band'];
   for (const [i,id] of levelIds.entries()) {
     assert.ok(missionTextFor(getLevel(id), translator).startsWith(expected[i]));
   }
@@ -143,5 +132,5 @@ test('mission objective copy follows level rules and interpolates the parameters
 test('legacy scenarios without mission king retain their original objective descriptions', () => {
   const translator = key => key;
   assert.equal(missionTextFor(getLevel('scenario-escort-king'),translator), 'mission.escort_legacy');
-  assert.equal(missionTextFor(getLevel('scenario-survive'),translator), 'mission.survive_legacy');
+  assert.equal(missionTextFor(getLevel('scenario-survive'),translator), 'mission.survive_band');
 });

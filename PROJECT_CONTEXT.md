@@ -154,7 +154,7 @@ The campaign consists of `tutorial-01` (elimination/destruction), `tutorial-02` 
 
 ## Mission king rules
 
-Escort and survival campaign levels instantiate one extra `missionKing: true` unit, placed from `mission_king_x/y` in `balance/levels.csv`. It is player-controlled in combat but predeployed, locked, free, excluded from the three-wave quota, and never carried/evolved. Victory checking targets the special unit specifically, not any carried king. Notebook mission copy is derived from level victory rules and localized through `locales/texts.csv`.
+Only escort (`tutorial-02`) instantiates an extra `missionKing: true`, placed from `mission_king_x/y` in `balance/levels.csv`. It is player-controlled, predeployed, locked, free and never carried/evolved. Survival (`tutorial-04`) has no extra mission king and any active player unit can survive its configured rounds. Losing the ordinary king does not cause defeat. Notebook mission copy is derived from level victory rules and localized through `locales/texts.csv`.
 
 ## Arena encroachment
 After completed combat action #10 (configurable per campaign level in `balance/levels.csv`) each subsequent action causes one new permanent wall, unless standard victory has already occurred. Candidate walls must preserve legal actions for both sides, geometric connectivity between teams and an escort route. If none is valid the player loses and the current level restarts. Dynamic obstacles and RNG seed live in `GameState` and session saves; AI uses current obstacles and projects immediate closure at root. See `docs/BALANCE.md`.
@@ -176,3 +176,7 @@ In `capture-king`, player wins if enemy king is captured/destroyed; enemy wins o
 - The selected test roster remains in reserve for the standard budgeted three-wave deployment. Test results must not clear, overwrite or advance normal save/progression data.
 - Escort goal markers are generated from the exact `targetRow` victory rule and skip blocked cells; they are non-interactive visual feedback, not new game rules.
 - The previous mechanics-lab factories/behavior are no longer required for the application. Development `scenario-*` fixtures and engine-level mechanic tests remain independent.
+
+## Survival rounds HUD and intentional disadvantage
+
+Survival (`tutorial-04`) has an asymmetric 20-point player budget against 30 enemy. Survive eight completed enemy turns (including skips) with at least one active band unit. No extra protected king. `src/core/survival.js` drives a fixed localized countdown; saved `roundsElapsed` restores progress. Legacy saves are migrated by discarding the obsolete free king. Elimination of all enemies remains an early victory alternative.

@@ -61,4 +61,4 @@ El contador `roundsElapsed` forma parte del estado en memoria y se guarda y rest
 
 ## Rey de misión en la campaña
 
-Los niveles de campaña `tutorial-02` (escolta) y `tutorial-04` (supervivencia) añaden un rey especial, sin coste y ya desplegado. El evaluador terminal del nivel de escolta y supervivencia considera específicamente esta unidad; los laboratorios `scenario-escort-king` y `scenario-survive` conservan su lógica histórica sin rey adicional.
+Solo `tutorial-02` (escolta) añade un rey especial, sin coste y ya desplegado. En `tutorial-04` (supervivencia) cualquier miembro activo de la banda cuenta para completar las 8 rondas; perder el rey ordinario no termina la partida. El jugador dispone de 20 puntos frente a 30 de la IA. La IA prioriza eliminar las piezas restantes en lugar de cazar un rey protegido. Los escenarios independientes conservan sus condiciones de victoria.

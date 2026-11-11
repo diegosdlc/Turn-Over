@@ -51,9 +51,8 @@ export function victoryResultFor(state, level) {
   }
 
   if (victory === VICTORY_TYPES.SURVIVE) {
-    if (missionKingFor(state) && !protectedKingFor(state)) {
-      return { winner: 'enemy', reason: 'king-captured' };
-    }
+    // Survive with any remaining member of the player's band, regardless of
+    // whether the king has been captured or destroyed.
     if (!activeUnits(state, 'player').length) return { winner: 'enemy', reason: 'elimination' };
     if (!activeUnits(state, 'enemy').length) return { winner: 'player', reason: 'elimination' };
     const rounds = Math.max(1, Number(level?.rules?.surviveRounds) || 1);
@@ -86,7 +85,6 @@ export function objectiveScoreFor(state, level, aiTeam) {
   }
 
   if (victory === VICTORY_TYPES.SURVIVE) {
-    if (missionKingFor(state) && !protectedKingFor(state)) return 50000 * perspective;
     const rounds = Math.max(1, Number(level?.rules?.surviveRounds) || 1);
     const remaining = Math.max(0, rounds - (state.roundsElapsed ?? 0));
     // The attacking enemy becomes increasingly urgent as the survival clock expires.

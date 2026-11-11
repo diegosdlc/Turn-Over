@@ -80,7 +80,7 @@ export function parseBalanceTables({ pieces, levels, enemies, obstacles, playerP
     const missionX = optionalNumber(row.mission_king_x, id + '.mission_king_x', { integer: true, max: 7 });
     const missionY = optionalNumber(row.mission_king_y, id + '.mission_king_y', { integer: true, max: 7 });
     const encroachmentStartAction = optionalNumber(row.encroachment_start_action, id + '.encroachment_start_action', { integer: true, min: 1 });
-    const requiresMissionKing = row.kind === 'campaign' && ['escort-king', 'survive'].includes(row.victory);
+    const requiresMissionKing = row.kind === 'campaign' && row.victory === 'escort-king';
     if ((missionX === null) !== (missionY === null) ||
         requiresMissionKing !== (missionX !== null) ||
         (requiresMissionKing && ![6, 7].includes(missionY))) {
@@ -248,7 +248,10 @@ export function levelPointLimit(levelId, enemyUnits = []) {
   const configured = BALANCE.levelPointLimits?.[levelId];
   const enemyValue = bandPointValue(enemyUnits);
   if (configured == null) return enemyValue;
-  if (enemyUnits.length && configured !== enemyValue) {
+  // A smaller deployment budget is intentional in survival missions.
+  const survivalDisadvantage = BALANCE.levelDefinitions[levelId]?.victory === 'survive'
+    && configured < enemyValue;
+  if (enemyUnits.length && configured !== enemyValue && !survivalDisadvantage) {
     console.warn('[balance] ' + levelId + ': límite ' + configured + ', banda rival ' + enemyValue + '.');
   }
   return configured;

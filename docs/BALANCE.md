@@ -19,11 +19,11 @@ Los archivos están en UTF-8 con cabeceras exactas, comas y comillas CSV estánd
 | 1 | `tutorial-01` | Destrucción (eliminar toda la banda rival) | 18 |
 | 2 | `tutorial-02` | Escolta (llevar el rey propio a la fila objetivo) | 22 |
 | 3 | `tutorial-03` | Captura (capturar o destruir al rey rival) | 26 |
-| 4 | `tutorial-04` | Supervivencia (sobrevivir `survive_rounds` rondas) | 30 |
+| 4 | `tutorial-04` | Supervivencia (conservar al menos una pieza durante `survive_rounds` rondas) | 20 |
 
 Los cuatro niveles usan despliegue alterno de tres rondas, con el rey rival precolocado y las demás piezas rivales colocadas preferentemente en la casilla de su fila CSV. Si la casilla ya no es legal, la IA busca una posición legal alternativa. `x` e `y` van de **0 a 7**, con el enemigo desplegando en filas **0–1** y el jugador en **6–7**. El `target_row` del objetivo de escolta también se expresa en coordenadas de tablero.
 
-La formación enemiga se valida y se suma utilizando los mismos costes que el despliegue del jugador. Si el valor de la banda rival no coincide con `point_limit`, el juego avisa en consola, pero respeta el presupuesto fijado. Así es posible experimentar con asimetrías deliberadas. Los antiguos laboratorios de mecánicas se han retirado del selector y no constituyen niveles de campaña.
+La formación enemiga se valida y se suma utilizando los mismos costes que el despliegue del jugador. En supervivencia la asimetría es intencional: **20 puntos para el jugador frente a 30 puntos de banda enemiga**. En otros niveles, un desajuste sigue avisando en consola y se respeta el presupuesto configurado. Los antiguos laboratorios de mecánicas se han retirado del selector y no constituyen niveles de campaña.
 
 ## Validaciones
 
@@ -40,11 +40,11 @@ Los parámetros de IA `weights.material`, `weights.captured`, `weights.mobility`
 
 ## Rey protegido de misión
 
-Los niveles de **escolta** (`tutorial-02`) y **supervivencia** (`tutorial-04`) añaden automáticamente un Rey de misión. Su casilla inicial se edita en `balance/levels.csv` mediante las columnas `mission_king_x` y `mission_king_y` (coordenadas 0–7). Por defecto comienza en `2,7`. Debe estar en una fila de despliegue del jugador, 6 o 7, y no puede solaparse con obstáculos bloqueantes ni con la banda rival.
+Solo el nivel de **escolta** (`tutorial-02`) añade automáticamente un Rey de misión. Su casilla inicial se edita en `balance/levels.csv` mediante las columnas `mission_king_x` y `mission_king_y` (coordenadas 0–7). Por defecto comienza en `2,7`. Debe estar en una fila de despliegue del jugador, 6 o 7, y no puede solaparse con obstáculos bloqueantes ni con la banda rival.
 
-El Rey de misión es una pieza adicional al roster arrastrado; lo controla el jugador durante el combate, pero arranca colocado y bloqueado durante el despliegue. **Cuesta 0 puntos, no cuenta para las cuotas de las tres rondas, no se puede retirar ni cambiar de posición antes del combate, no evoluciona y no pasa al siguiente nivel.** Se distingue visualmente y en las tarjetas del cuaderno. La condición de victoria o derrota se evalúa sobre este rey específico, aunque el jugador tenga otro rey de campaña. Perderlo supone perder estos encuentros; llevarlo a la fila objetivo gana la escolta. La supervivencia requiere que este rey siga vivo tras las rondas establecidas.
+El Rey de misión es una pieza adicional al roster arrastrado; lo controla el jugador durante el combate, pero arranca colocado y bloqueado durante el despliegue. **Cuesta 0 puntos, no cuenta para las cuotas de las tres rondas, no se puede retirar ni cambiar de posición antes del combate, no evoluciona y no pasa al siguiente nivel.** Se distingue visualmente y en las tarjetas del cuaderno. La condición de victoria o derrota se evalúa sobre este rey específico, aunque el jugador tenga otro rey de campaña. Perderlo supone perder la escolta; llevarlo a la fila objetivo la gana. **Supervivencia no añade rey protegido ni termina al perder el rey ordinario de la banda.**
 
-En los otros dos niveles de campaña, las columnas de la posición del rey de misión permanecen vacías. La sección **Misión** del cuaderno describe automáticamente el objetivo según `victory`, `target_row` y `survive_rounds` del mismo CSV; los textos ES/EN viven en `locales/texts.csv`.
+En los otros tres niveles de campaña, incluida supervivencia, las columnas de la posición del rey de misión permanecen vacías. La sección **Misión** del cuaderno describe automáticamente el objetivo según `victory`, `target_row` y `survive_rounds` del mismo CSV; los textos ES/EN viven en `locales/texts.csv`.
 
 ## Cierre progresivo del tablero
 
@@ -75,3 +75,9 @@ El archivo `balance/player-presets.csv` tiene columnas `level_id,unit_id,piece_t
 El CSV incluido simula la banda original en nivel 1, cuatro piezas evolucionadas y un recluta en nivel 2, nuevas incorporaciones en nivel 3 y una banda de siete piezas en nivel 4. Los **límites de puntos siguen activos**: el usuario selecciona y despliega un subconjunto asequible del roster durante las oleadas normales. Tras cambiar el CSV, recarga el nivel de prueba.
 
 Las misiones de escolta destacan todas las casillas transitables de la fila objetivo `target_row` (0-indexada) con una bandera. Los bloqueos físicos y cierres dinámicos dejan de aparecer como destinos; el marcador no modifica la victoria.
+
+## Supervivencia asimétrica (nivel 4)
+
+El jugador entra con un presupuesto máximo de **20 puntos** frente a **30 puntos** de piezas rivales. El objetivo es mantener **al menos una pieza activa, de cualquier tipo**, hasta completar `survive_rounds` rondas (valor inicial: **8**). La captura o destrucción del rey del jugador **no** provoca derrota ni deshabilita las piezas restantes; solo se pierde si no queda ninguna pieza activa. Eliminar toda la banda enemiga supone victoria anticipada, ya que desaparece la amenaza.
+
+Una ronda se completa cuando la IA finaliza su acción (incluidos intercambios o ataques rechazados) o cuando salta un turno sin acciones legales. El contador «Rondas restantes» está visible durante el combate (oculto durante el despliegue), decrece hasta 0, se actualiza al cambiar de idioma y recupera su valor al continuar una sesión guardada. Los guardados antiguos del nivel 4 que contenían un `missionKing` gratuito se migran descartando esa pieza, sin modificar el resto de la banda.
