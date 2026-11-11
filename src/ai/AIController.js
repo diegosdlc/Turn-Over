@@ -11,6 +11,8 @@ export class AIController {
     // A tunable assault profile is active only in survival. Other objectives
     // retain their existing material-conscious minimax evaluation.
     this.aggression = Number.isFinite(config.aggression) ? Math.max(0, config.aggression) : 1;
+    this.profileId = config.profileId ?? null;
+    this.tactics = { ...(config.tactics ?? {}) };
     this.thinkDelayMs = config.thinkDelayMs ?? 450;
     this.values = {
       pawn: 100,
@@ -207,6 +209,7 @@ function evaluate(state, level, aiTeam, ai, result) {
   score += prisonerPositionScore(state, level, aiTeam, ai);
   score += (mobilityFor(state, level, aiTeam) - mobilityFor(state, level, opponent)) * ai.weights.mobility;
   score += objectiveScoreFor(state, level, aiTeam) * ai.weights.objective;
+  score += profileTacticalScore(state, level, aiTeam, ai);
   if (Number.isInteger(level.rules?.encroachmentStartAction)) {
     // Adjacent free cells give a team local options when the arena contracts.
     const approaching = Math.min(1, (state.combatActionsCompleted ?? 0) /
@@ -301,6 +304,7 @@ export function survivalAssaultScore(state, level, ai) {
   const totalRounds = Math.max(1, Number(level?.rules?.surviveRounds) || 1);
   const elapsed = Math.min(totalRounds, Math.max(0, state.roundsElapsed ?? 0));
   const urgency = aggression * (1 + 0.65 * elapsed / totalRounds);
+  const tactics = ai.tactics ?? {};
   const players = state.units.filter(unit => unit.team === 'player' && !unit.inReserve);
   const enemies = state.units.filter(unit => unit.team === 'enemy' && !unit.inReserve);
   const livingEnemies = enemies.filter(unit => state.active(unit));
@@ -310,17 +314,17 @@ export function survivalAssaultScore(state, level, ai) {
   // a piece matters drastically more than the value of any sacrificed attacker.
   for (const player of players) {
     if (state.active(player)) {
-      score -= 1350 * urgency;
+      score -= (tactics.survivalTarget ?? 1350) * urgency;
       if (livingEnemies.length) {
         // Pursue whichever player can be reached most quickly, rather than
         // maneuvering to preserve a large defensive formation.
         const distance = Math.min(...livingEnemies.map(enemy =>
           Math.max(Math.abs(enemy.x - player.x), Math.abs(enemy.y - player.y))
         ));
-        score -= 32 * urgency * distance;
+        score -= (tactics.pursuit ?? 32) * urgency * distance;
       }
     } else if (player.destroyed) {
-      score += 140 * urgency; // permanent elimination beats a rescuable capture
+      score += (tactics.destroyBonus ?? 140) * urgency; // permanent removal beats a rescue
     } else if (player.captured) {
       score += 25 * urgency;
     }
@@ -329,25 +333,66 @@ export function survivalAssaultScore(state, level, ai) {
   // Preserve a minimum attacking force so careless sacrifices do not wipe out
   // the enemy (which would grant the player an immediate victory).
   for (const enemy of livingEnemies) {
-    score += 95 + (ai.values[enemy.pieceType] ?? 250) * 0.12;
+    score += (tactics.ownForce ?? 95) + (ai.values[enemy.pieceType] ?? 250) * 0.12;
   }
 
   // Reward immediate threats that can force engagements on the following turn.
   // This is computed using the real movement rules (including dynamic walls).
-  const threatened = new Set();
-  const originalTurn = state.currentTurn;
-  state.currentTurn = 'enemy';
+  score += threatenedUnits(state, level, 'enemy').size *
+    (tactics.threat ?? 185) * urgency;
+  return score;
+}
+
+
+export function profileTacticalScore(state, level, aiTeam, ai) {
+  const tactics = ai.tactics ?? {};
+  const opponent = aiTeam === 'player' ? 'enemy' : 'player';
+  let score = 0;
+  if (tactics.pursuit) {
+    score += (proximityScore(state, aiTeam) - proximityScore(state, opponent)) *
+      tactics.pursuit;
+  }
+  if (tactics.threat) {
+    score += (threatenedUnits(state, level, aiTeam).size -
+      threatenedUnits(state, level, opponent).size) * tactics.threat;
+  }
+  if (tactics.kingSafety) {
+    const king = state.units.find(unit =>
+      unit.team === aiTeam && unit.pieceType === 'king' && state.active(unit));
+    if (king && canTeamReachSquare(state, level, opponent, king.x, king.y, ['capture'])) {
+      score -= tactics.kingSafety;
+    }
+  }
+  return score;
+}
+
+function proximityScore(state, team) {
+  const own = state.units.filter(unit => state.active(unit) && unit.team === team);
+  const opponents = state.units.filter(unit => state.active(unit) && unit.team !== team);
+  if (!own.length || !opponents.length) return 0;
+  let distance = 0;
+  for (const target of opponents) {
+    distance += Math.min(...own.map(unit =>
+      Math.max(Math.abs(unit.x - target.x), Math.abs(unit.y - target.y))));
+  }
+  return -distance;
+}
+
+function threatenedUnits(state, level, team) {
+  const targets = new Set();
+  const previousTurn = state.currentTurn;
+  state.currentTurn = team;
   try {
-    for (const enemy of livingEnemies) {
-      for (const move of optionsFor(state, level, enemy)) {
+    for (const unit of state.units) {
+      if (!state.active(unit) || unit.team !== team) continue;
+      for (const move of optionsFor(state, level, unit)) {
         if (move.kind !== 'capture') continue;
-        const target = state.activeAt(move.x, move.y);
-        if (target?.team === 'player') threatened.add(target.id);
+        const occupant = state.activeAt(move.x, move.y);
+        if (occupant && occupant.team !== team) targets.add(occupant.id);
       }
     }
   } finally {
-    state.currentTurn = originalTurn;
+    state.currentTurn = previousTurn;
   }
-  score += threatened.size * 185 * urgency;
-  return score;
+  return targets;
 }
