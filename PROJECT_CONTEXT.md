@@ -166,3 +166,13 @@ The arena warning begins at action `encroachment_start_action - 1`, and each sub
 ## Asymmetric capture mission
 
 In `capture-king`, player wins if enemy king is captured/destroyed; enemy wins only by eliminating all active player pieces. The player's king is ordinary material in this mission and its loss does not deactivate the remaining band. The AI protects its own king, and does not score a player-king assassination as terminal success.
+
+
+## Temporary campaign playtest selector (PR #22 extension, 2026-11-11)
+
+- The former mechanics labs are retired from the registry. The notebook settings dropdown lists the four real campaign levels.
+- `?level=tutorial-XX&lab=1` starts an isolated test run, using `balance/player-presets.csv` for the carried player band; normal campaign mode and `?level=tutorial-XX` still use real progression/session state.
+- `player` faction and `special` piece placeholders resolve dynamically to the selected playable faction, while recruit factions remain as configured.
+- The selected test roster remains in reserve for the standard budgeted three-wave deployment. Test results must not clear, overwrite or advance normal save/progression data.
+- Escort goal markers are generated from the exact `targetRow` victory rule and skip blocked cells; they are non-interactive visual feedback, not new game rules.
+- The previous mechanics-lab factories/behavior are no longer required for the application. Development `scenario-*` fixtures and engine-level mechanic tests remain independent.
