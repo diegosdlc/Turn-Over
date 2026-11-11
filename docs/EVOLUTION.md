@@ -86,4 +86,4 @@ In level 2:
 - keep one royal member in reserve and confirm the swap is unavailable;
 - select Peón+ away from an edge to inspect both moves and all available diagonals.
 
-The existing `pawn-evolution-lab` includes a base pawn one move from the opposite edge plus focused Peón+ movement and capture scenarios.
+The retired `pawn-evolution-lab` is no longer registered. Pawn evolution and capture cases remain covered by the unit tests in `tests/pawn-evolution.test.js`.
