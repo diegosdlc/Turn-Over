@@ -15,12 +15,15 @@ const sources = Object.fromEntries(Object.entries({
 }).map(([key, path]) => [key, readFileSync(new URL(path, import.meta.url), 'utf8')]));
 const ids = ['tutorial-01', 'tutorial-02', 'tutorial-03', 'tutorial-04'];
 const victories = ['elimination', 'escort-king', 'capture-king', 'survive'];
+const rivalFactions = ['red', 'yellow', 'red', 'yellow'];
 
 test('four campaign levels use CSV budgets, objectives, enemy formations and obstacle positions', () => {
   assert.deepEqual(Object.values(BALANCE.levelDefinitions).filter(level => level.kind === 'campaign').map(level => level.id), ids);
   for (const [index, id] of ids.entries()) {
     const level = getLevel(id);
     assert.equal(level.rules.victory, victories[index]);
+    assert.equal(level.teams.enemy, rivalFactions[index], id + ': faction');
+    assert.ok(level.units.filter(unit => unit.team === 'enemy').every(unit => unit.faction === rivalFactions[index]), id + ': rival unit origins');
     assert.equal(level.nextLevelId, ids[index + 1] ?? null);
     assert.equal(level.deployment.pointLimit, BALANCE.levelPointLimits[id]);
     if (id === 'tutorial-04') assert.ok(level.deployment.pointLimit < bandPointValue(enemyBandForLevel(id)));
@@ -63,7 +66,7 @@ test('editing a CSV cell changes parsed costs, budgets, formations and obstacles
     ...sources,
     pieces: sources.pieces.replace('pawn,2,3', 'pawn,3,5'),
     levels: sources.levels.replace('tutorial-01,campaign,Nivel 1 · Destrucción,level.tutorial_01,elimination,tutorial-02,18', 'tutorial-01,campaign,Nivel 1 · Destrucción,level.tutorial_01,elimination,tutorial-02,19'),
-    enemies: sources.enemies.replace('tutorial-01,enemy-queen,queen,green,south,base,4,0','tutorial-01,enemy-queen,queen,green,south,base,3,0'),
+    enemies: sources.enemies.replace('tutorial-01,enemy-queen,queen,red,south,base,4,0','tutorial-01,enemy-queen,queen,red,south,base,3,0'),
     obstacles: sources.obstacles.replace('tutorial-01,tutorial-blocker-c4,2,3', 'tutorial-01,tutorial-blocker-c4,1,3')
   });
   assert.equal(edited.pieceCosts.pawn.base, 3);
@@ -75,8 +78,8 @@ test('editing a CSV cell changes parsed costs, budgets, formations and obstacles
 test('invalid CSV headers, duplicated units and blocked formation squares are rejected', () => {
   assert.throws(() => parseBalanceTables({ ...sources, pieces: sources.pieces.replace('piece_type,base,evolved', 'type,base,evolved') }), /Cabecera/);
   assert.throws(() => parseBalanceTables({ ...sources, enemies: sources.enemies.replace(
-    'tutorial-01,enemy-bishop,bishop,green,south,base,6,0',
-    'tutorial-01,enemy-bishop,bishop,green,south,base,5,0'
+    'tutorial-01,enemy-bishop,bishop,red,south,base,6,0',
+    'tutorial-01,enemy-bishop,bishop,red,south,base,5,0'
   ) }), /duplicada/);
   assert.throws(() => parseBalanceTables({ ...sources, obstacles: sources.obstacles.replace('tutorial-01,tutorial-blocker-c4,2,3','tutorial-01,tutorial-blocker-c4,5,0') }), /encima de formación/);
 });
