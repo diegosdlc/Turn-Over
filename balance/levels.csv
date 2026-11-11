@@ -1,5 +1,5 @@
-level_id,kind,name,name_key,victory,next_level_id,point_limit,target_row,survive_rounds,ai_depth,ai_randomness,ai_think_delay_ms,mission_king_x,mission_king_y,encroachment_start_action
-tutorial-01,campaign,Nivel 1 · Destrucción,level.tutorial_01,elimination,tutorial-02,18,,,2,0.04,450,,,10
-tutorial-02,campaign,Nivel 2 · Escolta,level.tutorial_02,escort-king,tutorial-03,22,0,,3,0.02,450,2,7,10
-tutorial-03,campaign,Nivel 3 · Captura,level.tutorial_03,capture-king,tutorial-04,26,,,3,0.03,450,,,10
-tutorial-04,campaign,Nivel 4 · Supervivencia,level.tutorial_04,survive,,30,,8,2,0.03,450,2,7,10
+level_id,kind,name,name_key,victory,next_level_id,point_limit,target_row,survive_rounds,ai_depth,ai_randomness,ai_think_delay_ms,mission_king_x,mission_king_y,encroachment_start_action,ai_aggression,ai_profile
+tutorial-01,campaign,Nivel 1 · Destrucción,level.tutorial_01,elimination,tutorial-02,18,,,2,0.04,450,,,10,0,balanced
+tutorial-02,campaign,Nivel 2 · Escolta,level.tutorial_02,escort-king,tutorial-03,22,0,,3,0.02,450,2,7,10,0,interceptor
+tutorial-03,campaign,Nivel 3 · Captura,level.tutorial_03,capture-king,tutorial-04,26,,,3,0.03,450,,,10,0,defensive
+tutorial-04,campaign,Nivel 4 · Supervivencia,level.tutorial_04,survive,,20,,8,2,0,450,,,10,4,aggressive

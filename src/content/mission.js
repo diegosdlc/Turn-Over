@@ -8,7 +8,7 @@ export function missionTextFor(level, translate) {
     return translate(hasMissionKing ? 'mission.escort_king' : 'mission.escort_legacy', { row: (level.rules.targetRow ?? 0) + 1 });
   }
   if (victory === 'survive') {
-    return translate(hasMissionKing ? 'mission.survive_king' : 'mission.survive_legacy', { rounds: level.rules.surviveRounds ?? 1 });
+    return translate('mission.survive_band', { rounds: level.rules.surviveRounds ?? 1 });
   }
   return translate('notebook.mission.fallback');
 }

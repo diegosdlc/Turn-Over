@@ -23,7 +23,8 @@ test('four campaign levels use CSV budgets, objectives, enemy formations and obs
     assert.equal(level.rules.victory, victories[index]);
     assert.equal(level.nextLevelId, ids[index + 1] ?? null);
     assert.equal(level.deployment.pointLimit, BALANCE.levelPointLimits[id]);
-    assert.equal(level.deployment.pointLimit, bandPointValue(enemyBandForLevel(id)));
+    if (id === 'tutorial-04') assert.ok(level.deployment.pointLimit < bandPointValue(enemyBandForLevel(id)));
+    else assert.equal(level.deployment.pointLimit, bandPointValue(enemyBandForLevel(id)));
     assert.deepEqual(level.units.filter(unit => unit.team === 'enemy'), enemyBandForLevel(id));
     assert.deepEqual(level.boardElements, obstaclesForLevel(id));
     assert.equal(level.deployment.mode, 'alternating');
@@ -33,6 +34,9 @@ test('four campaign levels use CSV budgets, objectives, enemy formations and obs
   }
   assert.equal(getLevel('tutorial-02').rules.targetRow, 0);
   assert.equal(getLevel('tutorial-04').rules.surviveRounds, 8);
+  assert.equal(getLevel('tutorial-04').deployment.pointLimit, 20);
+  assert.equal(bandPointValue(enemyBandForLevel('tutorial-04')), 30);
+  assert.equal(getLevel('tutorial-04').units.filter(unit => unit.missionKing).length, 0);
   assert.ok(!Object.values(BALANCE.levelDefinitions).some(level => level.kind === 'lab'));
 });
 
