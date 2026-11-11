@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#efefeb" />
     <title>Turn Over</title>
-    <link rel="stylesheet" href="./src/styles.css?v=20261111-survival-hud-1" />
+    <link rel="stylesheet" href="./src/styles.css?v=20261111-level-welcome-merged-1" />
     <link rel="stylesheet" href="./src/home-screen.css?v=20260824-deploy-6" />
     <link rel="stylesheet" href="./src/audio-controls.css?v=20260814-1700" />
     <link rel="stylesheet" href="./src/level-ui.css?v=20260825-notebook-ui-1" />
@@ -125,6 +125,17 @@
       </section>
     </dialog>
 
+    <dialog id="welcome-dialog" class="welcome-dialog" aria-labelledby="welcome-title" aria-describedby="welcome-message">
+      <section class="modal-card welcome-card">
+        <p class="eyebrow" data-i18n="ui.welcome.eyebrow">Objetivo de la misión</p>
+        <h2 id="welcome-title"></h2>
+        <p id="welcome-message"></p>
+        <div class="welcome-actions">
+          <button id="welcome-start" class="primary-button" type="button" data-i18n="ui.welcome.start" autofocus>Preparar banda</button>
+        </div>
+      </section>
+    </dialog>
+
     <dialog id="result-dialog" class="result-dialog">
       <div id="result-content"></div>
     </dialog>
@@ -172,7 +183,7 @@
     </dialog>
 
     <script type="module" src="./src/viewport.js?v=20260825-landscape-1"></script>
-    <script type="module" src="./src/main.js?v=20261111-ai-profiles-1"></script>
+    <script type="module" src="./src/main.js?v=20261111-level-welcome-merged-1"></script>
     <script type="module" src="./src/level-ui.js?v=20261111-ai-profiles-1"></script>
   </body>
 </html>

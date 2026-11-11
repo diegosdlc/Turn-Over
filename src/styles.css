@@ -611,3 +611,13 @@ html.touch-ui .survival-counter {
 @media (max-width:420px) {
   .survival-counter { max-width:calc(100vw - 122px); font-size:.76rem; }
 }
+
+/* Briefing displayed at the beginning of every campaign mission. */
+.welcome-dialog{padding:0;border:0;background:transparent;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px)}
+.welcome-dialog::backdrop{background:rgba(53,47,34,.62)}
+.welcome-card{width:min(88vw,480px);max-height:calc(100dvh - 30px);overflow-y:auto;box-sizing:border-box;text-align:left}
+.welcome-card .eyebrow{margin:0 0 8px;color:var(--pencil)}
+.welcome-card h2{color:var(--ink)}
+.welcome-card #welcome-message{line-height:1.55;white-space:pre-line}
+.welcome-actions{margin-top:22px}
+.welcome-actions .primary-button{width:100%}

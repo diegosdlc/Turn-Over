@@ -1,5 +1,6 @@
 import { initI18n, t, pieceName, factionName, onLocaleChange, setLanguage, setGender, getLanguage, getGender, refreshStaticTranslations } from './i18n/index.js';
 import { GAME_CONFIG } from './config/gameConfig.js';
+import { welcomeTextFor } from './content/mission.js?v=20261111-level-welcome-merged-1';
 import { FACTIONS, PLAYER_FACTION_IDS } from './content/factions.js?v=20261110-green-pawn-merged-1';
 import { getLevel, getNextLevel, listMechanicLabs, playerPresetBandForLevel } from './content/levels/index.js?v=20261111-ai-profiles-1';
 import { GameState } from './core/GameState.js?v=20261111-ai-profiles-1';
@@ -24,6 +25,10 @@ class GameApp {
     this.homeScreen = document.querySelector('#home-screen');
     this.resultDialog = document.querySelector('#result-dialog');
     this.resultContent = document.querySelector('#result-content');
+    this.welcomeDialog = document.querySelector('#welcome-dialog');
+    this.welcomeTitle = document.querySelector('#welcome-title');
+    this.welcomeMessage = document.querySelector('#welcome-message');
+    this.welcomeStart = document.querySelector('#welcome-start');
     this.settingsDialog = document.querySelector('#settings-dialog');
     this.factionDialog = document.querySelector('#faction-dialog');
     this.notebook = document.querySelector('#notebook-ui');
@@ -79,7 +84,7 @@ class GameApp {
     else this.showHome();
 
     document.addEventListener('keydown', event => {
-      if (this.state && (event.key === 'r' || event.key === 'R') && !this.state.pendingCapture) this.resetLevel();
+      if (this.state && !this.welcomeDialog?.open && (event.key === 'r' || event.key === 'R') && !this.state.pendingCapture) this.resetLevel();
     });
 
     document.addEventListener('pointerdown', () => this.audio.unlock(), { passive: true });
@@ -96,6 +101,7 @@ class GameApp {
     document.querySelector('#faction-gender')?.addEventListener('change', event => setGender(event.target.value));
     document.querySelector('#close-faction-selection').addEventListener('click', () => this.factionDialog.close());
     this.deploymentStart?.addEventListener('click', () => this.startDeployedGame());
+    this.welcomeStart?.addEventListener('click', () => this.welcomeDialog?.close());
     document.querySelectorAll('[data-player-faction]').forEach(button => {
       button.addEventListener('click', () => this.startNewGame(button.dataset.playerFaction));
     });
@@ -103,6 +109,7 @@ class GameApp {
 
   refreshLanguage() {
     refreshStaticTranslations();
+    if (this.welcomeDialog?.open) this.showWelcome();
     if (this.renderer && this.state) this.render();
     if (this.resultDialog?.open && this.lastDialog) {
       const dialog = this.lastDialog;
@@ -127,6 +134,7 @@ class GameApp {
   showHome() {
     this.isTestMode = false;
     this.cancelAiTurn();
+    if (this.welcomeDialog?.open) this.welcomeDialog.close();
     this.renderer?.clearVisualEffects();
     if (this.factionDialog.open) this.factionDialog.close();
     this.gameShell.hidden = true;
@@ -157,6 +165,7 @@ class GameApp {
   loadLevel(level, { forceTutorial = false, savedState = null } = {}) {
     if (!level) throw new Error(t('ui.game.no_level'));
     this.cancelAiTurn();
+    if (this.welcomeDialog?.open) this.welcomeDialog.close();
     this.nextPlayerBand = null;
     this.level = level;
     window.turnOverNotebookLevel = { id: level.id, rules: level.rules, hasMissionKing: level.units.some(unit => unit.missionKing), playerFactionId: level.teams.player, playtest: this.isTestMode };
@@ -177,6 +186,16 @@ class GameApp {
     if (this.resultDialog.open) this.resultDialog.close();
     this.resolvePhase();
     this.saveSession();
+    if (!savedState) this.showWelcome();
+  }
+
+  showWelcome() {
+    const message = welcomeTextFor(this.level, t);
+    if (!message || !this.welcomeDialog) return;
+    this.welcomeTitle.textContent = this.level.nameKey ? t(this.level.nameKey) : this.level.name;
+    this.welcomeMessage.textContent = message;
+    this.welcomeStart.textContent = t('ui.welcome.start');
+    if (!this.welcomeDialog.open) this.welcomeDialog.showModal();
   }
 
   restoreSavedState(savedState) {
@@ -194,6 +213,7 @@ class GameApp {
     this.saveSession();
     if (this.resultDialog.open) this.resultDialog.close();
     this.resolvePhase();
+    this.showWelcome();
   }
 
   resolvePhase() {
