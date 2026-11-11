@@ -8,7 +8,7 @@ import { AudioManager } from './systems/AudioManager.js?v=20260814-1700';
 import { GameSessionStore, restoreSessionState } from './systems/GameSessionStore.js?v=20261103-merge-1';
 import { ProgressionStore } from './systems/ProgressionStore.js?v=20260821-evolution-3';
 import { TutorialSystem } from './systems/TutorialSystem.js';
-import { BoardRenderer } from './render/BoardRenderer.js?v=20261111-piece-effects-1';
+import { BoardRenderer } from './render/BoardRenderer.js?v=20261111-campaign-playtests-1';
 import { AIController } from './ai/AIController.js?v=20261110-move-facing-1';
 import { legalActionsFor } from './core/rules.js?v=20260821-evolution-3';
 import { victoryResultFor } from './core/victory.js';
