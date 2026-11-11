@@ -5,7 +5,7 @@ import {
   initialEvolutionState,
   normalizeEvolutionStage
 } from './evolution.js?v=20260821-evolution-3';
-import { pointCostForUnit } from '../content/balance.js?v=20260821-budget-1';
+import { pointCostForUnit } from '../content/balance.js?v=20261111-survival-aggression-1';
 import { facingForDisplacement } from './facing.js';
 
 const NEXT_TEAM = Object.freeze({ player: 'enemy', enemy: 'player' });

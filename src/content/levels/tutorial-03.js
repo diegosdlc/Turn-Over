@@ -1,5 +1,5 @@
-import { createTutorialEncounter } from './tutorial-01.js?v=20261111-campaign-picker-1';
-import { defaultEvolvedBand } from './tutorial-02.js?v=20261111-campaign-picker-1';
+import { createTutorialEncounter } from './tutorial-01.js?v=20261111-survival-aggression-1';
+import { defaultEvolvedBand } from './tutorial-02.js?v=20261111-survival-aggression-1';
 
 export function createTutorial03({ playerFactionId = 'green', playerBand = null } = {}) {
   return createTutorialEncounter({
