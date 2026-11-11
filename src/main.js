@@ -1,7 +1,7 @@
 import { initI18n, t, pieceName, factionName, onLocaleChange, setLanguage, setGender, getLanguage, getGender, refreshStaticTranslations } from './i18n/index.js';
 import { GAME_CONFIG } from './config/gameConfig.js';
 import { FACTIONS, PLAYER_FACTION_IDS } from './content/factions.js?v=20261110-green-pawn-merged-1';
-import { getLevel, getNextLevel } from './content/levels/index.js?v=20261104-csv-balance-1';
+import { getLevel, getNextLevel, listMechanicLabs, playerPresetBandForLevel } from './content/levels/index.js?v=20261111-campaign-picker-1';
 import { GameState } from './core/GameState.js?v=20261110-move-facing-1';
 import { AssetRegistry } from './systems/AssetRegistry.js';
 import { AudioManager } from './systems/AudioManager.js?v=20260814-1700';
@@ -46,6 +46,7 @@ class GameApp {
     this.renderer = null;
     this.ai = null;
     this.aiTimer = null;
+    this.isTestMode = false;
     this.nextPlayerBand = null;
     this.lastDialog = null;
   }
@@ -60,9 +61,14 @@ class GameApp {
     onLocaleChange(() => this.refreshLanguage());
     window.addEventListener('game:return-home', () => this.showHome());
     if (requestedLevelId) {
+      const playerFactionId = PLAYER_FACTION_IDS.includes(requestedFactionId) ? requestedFactionId : 'green';
+      this.isTestMode = params.get('lab') === '1' &&
+        listMechanicLabs().some(lab => lab.id === requestedLevelId);
       const requestedOptions = {
-        playerFactionId: PLAYER_FACTION_IDS.includes(requestedFactionId) ? requestedFactionId : undefined,
-        playerBand: this.progression.getPlayerBand()
+        playerFactionId,
+        playerBand: this.isTestMode
+          ? playerPresetBandForLevel(requestedLevelId, playerFactionId)
+          : this.progression.getPlayerBand()
       };
       this.startGame(getLevel(requestedLevelId, requestedOptions) ?? getLevel(GAME_CONFIG.defaultLevelId), { forceTutorial });
     }
@@ -108,12 +114,14 @@ class GameApp {
 
   startNewGame(playerFactionId) {
     if (!PLAYER_FACTION_IDS.includes(playerFactionId)) return;
+    this.isTestMode = false;
     this.session.clear();
     if (this.factionDialog.open) this.factionDialog.close();
     this.startGame(getLevel(GAME_CONFIG.defaultLevelId, { playerFactionId }));
   }
 
   showHome() {
+    this.isTestMode = false;
     this.cancelAiTurn();
     this.renderer?.clearVisualEffects();
     if (this.factionDialog.open) this.factionDialog.close();
@@ -129,6 +137,7 @@ class GameApp {
   }
 
   continueGame() {
+    this.isTestMode = false;
     const saved = this.session.load();
     const level = saved && getLevel(saved.levelId, {
       playerFactionId: saved.playerFactionId,
@@ -146,7 +155,7 @@ class GameApp {
     this.cancelAiTurn();
     this.nextPlayerBand = null;
     this.level = level;
-    window.turnOverNotebookLevel = { id: level.id, rules: level.rules, hasMissionKing: level.units.some(unit => unit.missionKing) };
+    window.turnOverNotebookLevel = { id: level.id, rules: level.rules, hasMissionKing: level.units.some(unit => unit.missionKing), playerFactionId: level.teams.player, playtest: this.isTestMode };
     window.dispatchEvent(new Event('game:mission-updated'));
     this.state = new GameState(level);
     if (savedState) this.restoreSavedState(savedState);
@@ -171,7 +180,7 @@ class GameApp {
   }
 
   saveSession() {
-    if (this.level && this.state && !this.state.finished) this.session.save(this.level, this.state);
+    if (!this.isTestMode && this.level && this.state && !this.state.finished) this.session.save(this.level, this.state);
   }
 
   resetLevel() {
@@ -697,7 +706,7 @@ class GameApp {
   finishEncroachmentLoss() {
     if (this.state.finished) return;
     this.state.finished = true;
-    this.session.clear();
+    if (!this.isTestMode) this.session.clear();
     this.cancelAiTurn();
     this.render();
     this.lastDialog = null;
@@ -720,7 +729,7 @@ class GameApp {
   finish(winner) {
     if (this.state.finished) return;
     this.state.finished = true;
-    this.session.clear();
+    if (!this.isTestMode) this.session.clear();
 
     const playerRecruits = this.state.unresolvedPrisoners().filter(unit => unit.capturedBy === 'player');
     const enemyRecruits = this.state.unresolvedPrisoners().filter(unit => unit.capturedBy === 'enemy');
@@ -728,7 +737,7 @@ class GameApp {
     enemyRecruits.forEach(unit => { unit.recruitedBy = 'enemy'; });
     this.nextPlayerBand = winner === 'player' ? buildNextPlayerBand(this.state.units, this.level.id) : null;
 
-    if (winner === 'player') {
+    if (winner === 'player' && !this.isTestMode) {
       this.progression.completeLevel(this.level.id, {
         nextLevelId: this.level.nextLevelId,
         recruitedUnitIds: playerRecruits.map(unit => unit.id),
@@ -743,7 +752,7 @@ class GameApp {
   finishDraw() {
     if (this.state.finished) return;
     this.state.finished = true;
-    this.session.clear();
+    if (!this.isTestMode) this.session.clear();
     this.cancelAiTurn();
     this.render();
 
@@ -809,7 +818,9 @@ class GameApp {
       next.className = 'primary-button';
       next.textContent = t('ui.result.next_level');
       next.addEventListener('click', () => {
-        const nextLevel = getNextLevel(this.level, { playerBand: this.nextPlayerBand });
+        const nextLevel = getNextLevel(this.level, { playerBand: this.isTestMode
+          ? playerPresetBandForLevel(this.level.nextLevelId, this.level.teams.player)
+          : this.nextPlayerBand });
         if (!nextLevel) return;
         if (this.resultDialog.open) this.resultDialog.close();
         this.loadLevel(nextLevel);
