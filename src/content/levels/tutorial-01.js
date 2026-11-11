@@ -133,10 +133,11 @@ const TUTORIAL_STEPS = Object.freeze([
   }
 ]);
 
-export function createTutorial01({ playerFactionId = 'green' } = {}) {
+export function createTutorial01({ playerFactionId = 'green', playerBand = null } = {}) {
   return createTutorialEncounter({
     id: 'tutorial-01',
     playerFactionId,
+    playerBand,
     tutorialSteps: TUTORIAL_STEPS
   });
 }
