@@ -1,7 +1,7 @@
 import { initI18n, t, pieceName, factionName, onLocaleChange, setLanguage, setGender, getLanguage, getGender, refreshStaticTranslations } from './i18n/index.js';
 import { GAME_CONFIG } from './config/gameConfig.js';
 import { welcomeTextFor } from './content/mission.js?v=20261111-level-welcome-merged-1';
-import { FACTIONS, PLAYER_FACTION_IDS } from './content/factions.js?v=20261110-green-pawn-merged-1';
+import { FACTIONS, PLAYER_FACTION_IDS } from './content/factions.js?v=20261111-green-characters-1';
 import { getLevel, getNextLevel, listMechanicLabs, playerPresetBandForLevel } from './content/levels/index.js?v=20261111-ai-profiles-1';
 import { GameState } from './core/GameState.js?v=20261111-ai-profiles-1';
 import { AssetRegistry } from './systems/AssetRegistry.js';
