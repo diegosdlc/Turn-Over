@@ -61,7 +61,7 @@ The current provisional values deliberately make a fully evolved four-piece star
 
 ## Level transition
 
-`tutorial-01` unlocks `tutorial-02`. Level 2 reuses the same board, obstacles, opponent, deployment phase, music and AI configuration as level 1. Its player roster comes from the carried campaign band rather than `createInitialBand()`:
+`tutorial-01` unlocks `tutorial-02`. Level 2 reuses the same board, obstacles, deployment phase and music, but faces the yellow faction after the red faction in level 1. Its player roster comes from the carried campaign band rather than `createInitialBand()`:
 
 1. participating active player pieces that survive are collected;
 2. reserve pieces are collected separately;
