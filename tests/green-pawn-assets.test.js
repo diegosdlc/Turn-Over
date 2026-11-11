@@ -58,3 +58,22 @@ test('other factions and unillustrated green piece types retain their fallback',
     assert.equal(assets.pieceAsset({ faction: 'green', pieceType, facing: 'north' }), null);
   }
 });
+
+
+test('south-facing royal sprites are mirrored on board and roster images', () => {
+  for (const [stylesheet, imageClass] of [
+    ['styles.css', 'unit-image'],
+    ['deployment.css', 'deployment-piece-image']
+  ]) {
+    const css = readFileSync(new URL('../src/' + stylesheet, import.meta.url), 'utf8');
+    const royalRule = [
+      `.${imageClass}[src$="king-south.svg"],`,
+      `.${imageClass}[src$="queen-south.svg"]{`,
+      '  transform:translateX(-50%) scaleX(-1);',
+      '}'
+    ].join('\n');
+    assert.ok(css.includes(royalRule), stylesheet + ': only south-facing royal artwork is mirrored');
+    assert.ok(!css.includes(`.${imageClass}[src$="bishop-south.svg"]`));
+    assert.ok(!css.includes(`.${imageClass}[src$="king-north.svg"]`));
+  }
+});
