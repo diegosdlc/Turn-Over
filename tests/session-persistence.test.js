@@ -91,3 +91,29 @@ test('invalid saved round counters safely fall back to zero', () => {
   restoreSessionState(zero, { units: zero.units, roundsElapsed: 0 });
   assert.equal(zero.roundsElapsed, 0);
 });
+
+
+test('saved campaign battles adopt their configured rival faction without losing piece state', () => {
+  for (const [levelId, expectedFaction] of [
+    ['tutorial-01', 'red'], ['tutorial-02', 'yellow'],
+    ['tutorial-03', 'red'], ['tutorial-04', 'yellow']
+  ]) {
+    const level = getLevel(levelId);
+    const savedUnits = new GameState(level).units.map(unit => ({
+      ...unit,
+      faction: unit.team === 'enemy' ? 'green' : unit.faction
+    }));
+    const savedQueen = savedUnits.find(unit => unit.id === 'enemy-queen');
+    savedQueen.x = 7;
+    savedQueen.y = 3;
+    savedQueen.evolutionStage = 'evolved';
+    const restored = new GameState(level);
+    restoreSessionState(restored, { units: savedUnits, currentTurn: 'enemy', phase: 'play' });
+    assert.equal(restored.currentTurn, 'enemy');
+    assert.ok(restored.units.filter(unit => unit.team === 'enemy')
+      .every(unit => unit.faction === expectedFaction), levelId);
+    const queen = restored.units.find(unit => unit.id === 'enemy-queen');
+    assert.deepEqual([queen.x, queen.y, queen.evolutionStage], [7, 3, 'evolved']);
+    assert.equal(savedQueen.faction, 'green', 'restoration does not mutate saved input');
+  }
+});
