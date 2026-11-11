@@ -19,6 +19,18 @@ export const FACTIONS = Object.freeze({
       pawn: {
         north: './assets/pieces/green/pawn-north.webp',
         south: './assets/pieces/green/pawn-south.webp'
+      },
+      king: {
+        north: './assets/pieces/green/king-north.svg',
+        south: './assets/pieces/green/king-south.svg'
+      },
+      queen: {
+        north: './assets/pieces/green/queen-north.svg',
+        south: './assets/pieces/green/queen-south.svg'
+      },
+      bishop: {
+        north: './assets/pieces/green/bishop-north.svg',
+        south: './assets/pieces/green/bishop-south.svg'
       }
     }
   },
