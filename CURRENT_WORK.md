@@ -136,3 +136,16 @@ A pending closure is previewed one combat action in advance. The warning and sma
 ## Capture-king objective correction
 
 Capture is deliberately asymmetric: only the defender's (enemy) king is a terminal target. The defending AI must eliminate the full player band to win. Removing the player's king does not disable remaining pieces or end the battle. Mission text is updated in Spanish/English and the AI objective evaluation now rewards defending its own king, without granting a royal-target bonus for killing the player's king.
+
+## Piece action animations (PR preview, 2026-11-11)
+
+The board presentation now plays visual-only CSS feedback without changing combat rules or serialized state:
+
+- A placed piece fades into view with a short glow/starburst; AI deployment waves receive the same cue.
+- A selected piece raises and gently floats until it is deselected or moved.
+- A completed movement floats across the projected board coordinates to its target, for both player and AI (including capture, destroy and deployment reposition).
+- Captured prisoners remain visibly bound with a chain graphic, and a short chain burst announces capture.
+- A crossed-swords burst announces destruction.
+- All effects are ignored when the user prefers reduced motion. They are not persisted or replayed when loading saved sessions. The AI waits for movement visuals before taking its next action.
+
+Animation geometry and timing live under `src/render/animationGeometry.js`, presentation under `src/render/BoardRenderer.js` and `src/styles.css`, and triggers under `src/main.js`. Run `npm test` and verify visually on mobile and desktop, including resumed battles and alternating enemy deployment.
