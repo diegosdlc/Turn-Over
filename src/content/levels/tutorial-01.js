@@ -1,5 +1,5 @@
 import { createInitialBand, FACINGS, PIECES } from '../bands.js?v=20260821-evolution-3';
-import { levelPointLimit, levelBalance, enemyBandForLevel, obstaclesForLevel } from '../balance.js?v=20261111-campaign-picker-1';
+import { levelPointLimit, levelBalance, aiProfileForLevel, enemyBandForLevel, obstaclesForLevel } from '../balance.js?v=20261111-ai-profiles-1';
 import { STANDARD_BOARD } from './shared.js';
 
 const PLAYER_POSITIONS = Object.freeze({
@@ -47,6 +47,7 @@ export function createTutorialEncounter({
   tutorialSteps = []
 }) {
   const balance = levelBalance(id);
+  const aiProfile = aiProfileForLevel(id);
   if (balance.kind !== 'campaign') throw new Error('Nivel de campaña inválido: ' + id);
   const playerUnits = cleanCarriedBand(playerBand, playerFactionId);
   const enemyUnits = enemyBandForLevel(id);
@@ -93,6 +94,10 @@ export function createTutorialEncounter({
       team: 'enemy',
       depth: balance.aiDepth,
       randomness: balance.aiRandomness,
+      aggression: balance.aiAggression,
+      profileId: aiProfile.id,
+      weights: { ...aiProfile.weights },
+      tactics: { ...aiProfile.tactics },
       thinkDelayMs: balance.aiThinkDelayMs
     },
     rules: {

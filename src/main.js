@@ -1,18 +1,19 @@
 import { initI18n, t, pieceName, factionName, onLocaleChange, setLanguage, setGender, getLanguage, getGender, refreshStaticTranslations } from './i18n/index.js';
 import { GAME_CONFIG } from './config/gameConfig.js';
-import { welcomeTextFor } from './content/mission.js?v=20261111-level-welcome-1';
+import { welcomeTextFor } from './content/mission.js?v=20261111-level-welcome-merged-1';
 import { FACTIONS, PLAYER_FACTION_IDS } from './content/factions.js?v=20261110-green-pawn-merged-1';
-import { getLevel, getNextLevel, listMechanicLabs, playerPresetBandForLevel } from './content/levels/index.js?v=20261111-campaign-picker-1';
-import { GameState } from './core/GameState.js?v=20261110-move-facing-1';
+import { getLevel, getNextLevel, listMechanicLabs, playerPresetBandForLevel } from './content/levels/index.js?v=20261111-ai-profiles-1';
+import { GameState } from './core/GameState.js?v=20261111-ai-profiles-1';
 import { AssetRegistry } from './systems/AssetRegistry.js';
 import { AudioManager } from './systems/AudioManager.js?v=20260814-1700';
 import { GameSessionStore, restoreSessionState } from './systems/GameSessionStore.js?v=20261103-merge-1';
 import { ProgressionStore } from './systems/ProgressionStore.js?v=20260821-evolution-3';
 import { TutorialSystem } from './systems/TutorialSystem.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20261111-campaign-playtests-1';
-import { AIController } from './ai/AIController.js?v=20261110-move-facing-1';
+import { AIController } from './ai/AIController.js?v=20261111-ai-profiles-1';
 import { legalActionsFor } from './core/rules.js?v=20260821-evolution-3';
 import { victoryResultFor } from './core/victory.js';
+import { survivalProgressFor, countSkippedSurvivalTurn } from './core/survival.js';
 import { applyEncroachment } from './core/encroachment.js';
 import { buildNextPlayerBand } from './core/campaign.js?v=20260821-budget-1';
 import { deployEnemyWave } from './ai/DeploymentAI.js';
@@ -36,6 +37,9 @@ class GameApp {
     this.deploymentStatus = document.querySelector('#deployment-status');
     this.enemyDeploymentPieces = document.querySelector('#enemy-deployment-pieces');
     this.deploymentRoundLabel = document.querySelector('#deployment-round-label');
+    this.survivalCounter = document.querySelector('#survival-counter');
+    this.survivalRemaining = document.querySelector('#survival-rounds-remaining');
+    this.survivalTotal = document.querySelector('#survival-rounds-total');
     this.deploymentStart = document.querySelector('#deployment-start');
     this.assets = new AssetRegistry(FACTIONS);
     this.audio = new AudioManager();
@@ -222,6 +226,7 @@ class GameApp {
   }
 
   render() {
+    this.renderSurvivalCounter();
     window.turnOverNotebookState = { units: this.state.units, assets: this.assets, level: this.level };
     window.dispatchEvent(new Event('game:rosters-updated'));
     this.renderer.render();
@@ -229,6 +234,16 @@ class GameApp {
     if (!this.state.isDeploying()) {
       this.tutorial.render(this.board, anchor => this.renderer.resolveTutorialAnchor(anchor));
     }
+  }
+
+  renderSurvivalCounter() {
+    if (!this.survivalCounter) return;
+    const progress = survivalProgressFor(this.state, this.level);
+    const visible = Boolean(progress && !this.state.isDeploying());
+    this.survivalCounter.hidden = !visible;
+    if (!visible) return;
+    if (this.survivalRemaining) this.survivalRemaining.textContent = String(progress.remaining);
+    if (this.survivalTotal) this.survivalTotal.textContent = '/ ' + progress.total;
   }
 
   renderDeployment() {
@@ -612,6 +627,7 @@ class GameApp {
     if (this.state.finished) return;
     const skippedTeam = this.state.currentTurn;
     this.state.clearSelection();
+    countSkippedSurvivalTurn(this.state, this.level, skippedTeam);
     this.state.changeTurn();
     this.checkEnd();
     if (this.state.finished) return;

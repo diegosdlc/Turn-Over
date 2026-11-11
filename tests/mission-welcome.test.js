@@ -14,7 +14,7 @@ function translateIn(language) {
   return (key, values = {}) => {
     const text = texts.get(key)?.[language];
     assert.ok(text, 'Missing welcome localization: ' + key);
-    return text.replace(/\\{(\\w+)\\}/g, (match, name) => {
+    return text.replace(/\{(\w+)\}/g, (match, name) => {
       assert.ok(Object.hasOwn(values, name), 'Missing welcome parameter: ' + name);
       return String(values[name]);
     });
@@ -29,7 +29,7 @@ test('all four campaign levels have editable ES/EN welcome messages', () => {
     for (const language of ['es', 'en']) {
       const content = welcomeTextFor(level, translateIn(language));
       assert.ok(content.length > 25, 'Missing briefing for ' + id + ' (' + language + ')');
-      assert.doesNotMatch(content, /\\{\\w+\\}/, 'Unresolved briefing variables');
+      assert.doesNotMatch(content, /\{\w+\}/, 'Unresolved briefing variables');
       assert.ok(texts.has(level.nameKey), 'Level title is not localized: ' + level.nameKey);
     }
   }
@@ -49,4 +49,18 @@ test('escort and survival briefing parameters reflect editable level rules', () 
 test('standalone scenarios do not receive a campaign welcome', () => {
   assert.equal(welcomeTextFor({ id: 'scenario-capture-king', rules: { victory: 'capture-king' } }, translateIn('es')), null);
   assert.equal(welcomeTextFor(null, translateIn('es')), null);
+});
+
+test('survival welcome preserves the merged PR #23 rules (band, not a mission king)', () => {
+  const level = getLevel('tutorial-04');
+  assert.equal(level.rules.victory, 'survive');
+  assert.equal(level.rules.surviveRounds, 8);
+  assert.equal(level.deployment.pointLimit, 20);
+  assert.equal(level.units.some(unit => unit.missionKing), false);
+  for (const language of ['es', 'en']) {
+    const briefing = welcomeTextFor(level, translateIn(language));
+    assert.match(briefing, language === 'es' ? /al menos una pieza/ : /at least one member/);
+    assert.doesNotMatch(briefing, /Rey de misión|Mission King/);
+    assert.match(briefing, language === 'es' ? /8 rondas/ : /8 complete rounds/);
+  }
 });

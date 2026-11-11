@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#efefeb" />
     <title>Turn Over</title>
-    <link rel="stylesheet" href="./src/styles.css?v=20261111-level-welcome-1" />
+    <link rel="stylesheet" href="./src/styles.css?v=20261111-level-welcome-merged-1" />
     <link rel="stylesheet" href="./src/home-screen.css?v=20260824-deploy-6" />
     <link rel="stylesheet" href="./src/audio-controls.css?v=20260814-1700" />
     <link rel="stylesheet" href="./src/level-ui.css?v=20260825-notebook-ui-1" />
@@ -16,6 +16,11 @@
   <body>
     <main id="game-shell" class="board-shell level-screen" aria-label="Juego de tablero" data-i18n-aria="ui.game.aria" hidden>
       <section class="level-stage" aria-label="Escenario de partida" data-i18n-aria="ui.stage.aria">
+        <div id="survival-counter" class="survival-counter" role="status" aria-live="polite" hidden>
+          <span class="survival-counter-label" data-i18n="ui.survival.remaining">Rondas restantes</span>
+          <strong id="survival-rounds-remaining" class="survival-counter-value">8</strong>
+          <span id="survival-rounds-total" class="survival-counter-total">/ 8</span>
+        </div>
         <div class="board-stage">
           <div id="board" class="board" role="grid" aria-label="Tablero de ocho por ocho" data-i18n-aria="ui.board.aria"></div>
         </div>
@@ -178,7 +183,7 @@
     </dialog>
 
     <script type="module" src="./src/viewport.js?v=20260825-landscape-1"></script>
-    <script type="module" src="./src/main.js?v=20261111-level-welcome-1"></script>
-    <script type="module" src="./src/level-ui.js?v=20261111-campaign-playtests-1"></script>
+    <script type="module" src="./src/main.js?v=20261111-level-welcome-merged-1"></script>
+    <script type="module" src="./src/level-ui.js?v=20261111-ai-profiles-1"></script>
   </body>
 </html>

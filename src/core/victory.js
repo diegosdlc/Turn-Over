@@ -55,9 +55,11 @@ export function victoryResultFor(state, level) {
       return { winner: 'enemy', reason: 'king-captured' };
     }
     if (!activeUnits(state, 'player').length) return { winner: 'enemy', reason: 'elimination' };
-    if (!activeUnits(state, 'enemy').length) return { winner: 'player', reason: 'elimination' };
     const rounds = Math.max(1, Number(level?.rules?.surviveRounds) || 1);
+    // At the deadline the enemy is disabled for further moves; count this as
+    // survival rather than falsely reporting that every enemy was eliminated.
     if ((state.roundsElapsed ?? 0) >= rounds) return { winner: 'player', reason: 'survived' };
+    if (!activeUnits(state, 'enemy').length) return { winner: 'player', reason: 'elimination' };
     return null;
   }
 
