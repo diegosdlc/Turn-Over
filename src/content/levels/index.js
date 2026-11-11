@@ -1,9 +1,9 @@
 import { t } from '../../i18n/index.js';
 import { listMechanicLabs } from './labs/index.js?v=20261111-campaign-picker-1';
-import { createTutorial01, tutorial01 } from './tutorial-01.js?v=20261104-csv-balance-1';
-import { createTutorial02, tutorial02 } from './tutorial-02.js?v=20261104-csv-balance-1';
-import { createTutorial03, tutorial03 } from './tutorial-03.js?v=20261104-csv-balance-1';
-import { createTutorial04, tutorial04 } from './tutorial-04.js?v=20261104-csv-balance-1';
+import { createTutorial01, tutorial01 } from './tutorial-01.js?v=20261111-campaign-picker-1';
+import { createTutorial02, tutorial02 } from './tutorial-02.js?v=20261111-campaign-picker-1';
+import { createTutorial03, tutorial03 } from './tutorial-03.js?v=20261111-campaign-picker-1';
+import { createTutorial04, tutorial04 } from './tutorial-04.js?v=20261111-campaign-picker-1';
 import {
   createCaptureKingScenario,
   createEscortKingScenario,
@@ -53,4 +53,4 @@ export function getNextLevel(level, options = {}) {
   }) : null;
 }
 
-export { playerPresetBandForLevel } from '../balance.js';
+export { playerPresetBandForLevel } from '../balance.js?v=20261111-campaign-picker-1';
