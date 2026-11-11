@@ -12,3 +12,20 @@ export function missionTextFor(level, translate) {
   }
   return translate('notebook.mission.fallback');
 }
+
+const CAMPAIGN_WELCOME_KEYS = Object.freeze({
+  'tutorial-01': 'welcome.tutorial_01',
+  'tutorial-02': 'welcome.tutorial_02',
+  'tutorial-03': 'welcome.tutorial_03',
+  'tutorial-04': 'welcome.tutorial_04'
+});
+
+// Briefing copy is editable in locales/texts.csv, with live level parameters.
+export function welcomeTextFor(level, translate) {
+  const key = CAMPAIGN_WELCOME_KEYS[level?.id];
+  if (!key) return null;
+  return translate(key, {
+    row: (level.rules?.targetRow ?? 0) + 1,
+    rounds: level.rules?.surviveRounds ?? 1
+  });
+}
