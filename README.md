@@ -38,10 +38,10 @@ Then open `http://localhost:8000/`.
 - `src/content/factions.js` — playable factions and art/palette metadata.
 - `src/content/bands.js` — chess-derived piece definitions and starting-band creation.
 - `src/content/balance.js` — runtime parser/accessor for editable point-balance data.
-- `src/content/levels/` — production encounters and mechanics labs.
+- `src/content/levels/` — production encounters and independent development scenarios.
 - `src/systems/ProgressionStore.js` — persistent campaign progression/carried band.
 - `src/systems/GameSessionStore.js` — resumable in-progress encounter snapshot.
-- `balance/` — four runtime CSV tables for piece costs, level budgets and objectives, enemy formations, and obstacles.
+- `balance/` — four production balancing CSV tables, plus a fifth editable playtest roster CSV.
 
 ## Current gameplay model
 
@@ -92,7 +92,7 @@ Session schema `7` saves in-progress units (including facing, evolution and rese
 ## Useful development URLs
 
 - `?level=tutorial-01&tutorial=1` — force tutorial tooltips.
-- `?level=<level-id>` — open a normal level or mechanics lab directly.
+- `?level=<level-id>` — open a normal campaign encounter or a development `scenario-*` directly.
 - `?level=tutorial-02&lab=1` — isolated campaign level 2 playtest using the CSV roster.
 - `?level=tutorial-02&faction=<green|red|yellow>` — direct evolved-band development shortcut when there is no saved carried roster.
 - `?level=tutorial-03` / `?level=tutorial-04` — directly test the capture/survival campaign encounters.
