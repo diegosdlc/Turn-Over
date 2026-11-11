@@ -6,6 +6,14 @@ export function restoreSessionState(state, savedState) {
   state.units = state.level.rules?.victory === 'survive'
     ? savedState.units.filter(unit => !unit.missionKing)
     : savedState.units;
+  // Preserve current rival faction when restoring battles saved before an opponent
+  // faction change. Match original enemy IDs, not captured/recruited player units.
+  const originalRivalFactions = new Map((state.level.units ?? [])
+    .filter(unit => unit.team === 'enemy')
+    .map(unit => [unit.id, unit.faction]));
+  state.units = state.units.map(unit => originalRivalFactions.has(unit.id)
+    ? { ...unit, faction: originalRivalFactions.get(unit.id) }
+    : unit);
   state.boardElements = Array.isArray(savedState.boardElements)
     ? structuredClone(savedState.boardElements) : structuredClone(state.level.boardElements ?? []);
   const pending = savedState.pendingClosure;
