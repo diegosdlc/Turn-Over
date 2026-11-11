@@ -44,11 +44,11 @@ Los niveles de **escolta** (`tutorial-02`) y **supervivencia** (`tutorial-04`) a
 
 El Rey de misión es una pieza adicional al roster arrastrado; lo controla el jugador durante el combate, pero arranca colocado y bloqueado durante el despliegue. **Cuesta 0 puntos, no cuenta para las cuotas de las tres rondas, no se puede retirar ni cambiar de posición antes del combate, no evoluciona y no pasa al siguiente nivel.** Se distingue visualmente y en las tarjetas del cuaderno. La condición de victoria o derrota se evalúa sobre este rey específico, aunque el jugador tenga otro rey de campaña. Perderlo supone perder estos encuentros; llevarlo a la fila objetivo gana la escolta. La supervivencia requiere que este rey siga vivo tras las rondas establecidas.
 
-En los demás niveles y laboratorios, las columnas de la posición del rey de misión permanecen vacías. La sección **Misión** del cuaderno describe automáticamente el objetivo según `victory`, `target_row` y `survive_rounds` del mismo CSV; los textos ES/EN viven en `locales/texts.csv`.
+En los otros dos niveles de campaña, las columnas de la posición del rey de misión permanecen vacías. La sección **Misión** del cuaderno describe automáticamente el objetivo según `victory`, `target_row` y `survive_rounds` del mismo CSV; los textos ES/EN viven en `locales/texts.csv`.
 
 ## Cierre progresivo del tablero
 
-La columna `encroachment_start_action` de `balance/levels.csv` indica la primera **acción completa de combate** (jugador o rival) tras la cual se añade una casilla bloqueada permanentemente. La campaña usa `10` de inicio; se deja vacía en el laboratorio. Los bloqueos se añaden **después** de resolver los objetivos normales, nunca en despliegue ni al saltar un turno, y afectan a las líneas de movimiento, peones, saltos y rescates mediante el motor de reglas común.
+La columna `encroachment_start_action` de `balance/levels.csv` indica la primera **acción completa de combate** (jugador o rival) tras la cual se añade una casilla bloqueada permanentemente. La campaña usa `10` de inicio; los escenarios independientes no tienen fila en este CSV. Los bloqueos se añaden **después** de resolver los objetivos normales, nunca en despliegue ni al saltar un turno, y afectan a las líneas de movimiento, peones, saltos y rescates mediante el motor de reglas común.
 
 Se elige una casilla libre que no tenga piezas activas ni prisioneros, sin obstáculos previos. La elección solo es válida si **ambos equipos** mantienen alguna acción legal al volverles a tocar, sus unidades conservan una región transitable compartida y, en escolta, el Rey de misión mantiene una ruta geométrica hasta la fila objetivo. La conectividad se evalúa en las ocho direcciones sin tratar como muros permanentes a otras piezas (pueden moverse); no garantiza que todas las jugadas futuras conserven la ruta.
 
@@ -64,7 +64,7 @@ El cierre se **anuncia con una acción completa de antelación**. Desde la acci�
 
 ## Captura asimétrica del rey (nivel 3)
 
-En `tutorial-03` y en el laboratorio `scenario-capture-king`, solo el **rey rival** es un objetivo especial. El jugador gana al capturarlo o destruirlo, aunque queden otras piezas enemigas. La IA rival gana al eliminar toda la banda del jugador, **no al capturar su rey**. Si el jugador pierde su propio rey, las piezas restantes siguen activas y pueden completar el objetivo. La IA puntúa especialmente la conservación de su rey, no la eliminación selectiva del rey jugador.
+En `tutorial-03` y en el escenario de desarrollo `scenario-capture-king`, solo el **rey rival** es un objetivo especial. El jugador gana al capturarlo o destruirlo, aunque queden otras piezas enemigas. La IA rival gana al eliminar toda la banda del jugador, **no al capturar su rey**. Si el jugador pierde su propio rey, las piezas restantes siguen activas y pueden completar el objetivo. La IA puntúa especialmente la conservación de su rey, no la eliminación selectiva del rey jugador.
 
 ## Pruebas temporales de niveles y bandas configurables
 
