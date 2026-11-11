@@ -115,6 +115,7 @@ class GameApp {
 
   showHome() {
     this.cancelAiTurn();
+    this.renderer?.clearVisualEffects();
     if (this.factionDialog.open) this.factionDialog.close();
     this.gameShell.hidden = true;
     this.homeScreen.hidden = false;
@@ -175,6 +176,7 @@ class GameApp {
 
   resetLevel() {
     this.cancelAiTurn();
+    this.renderer?.clearVisualEffects();
     this.state.reset();
     this.saveSession();
     if (this.resultDialog.open) this.resultDialog.close();
@@ -438,7 +440,10 @@ class GameApp {
     }
 
     const selected = this.state.selected();
+    const from = selected?.x == null ? null : { x: selected.x, y: selected.y };
     if (!selected || !this.state.placeDeploymentUnit(selected, x, y)) return;
+    if (from) this.renderer.queueMovement(selected, from);
+    else this.renderer.queueDeployment(selected);
     this.state.clearSelection();
     this.saveSession();
     this.render();
@@ -446,7 +451,13 @@ class GameApp {
 
   deployEnemy() {
     if (!this.state?.isAlternatingDeployment() || this.state.deploymentTurn !== 'enemy') return;
+    const previous = new Map(this.state.units.filter(unit => unit.team === 'enemy').map(unit => [unit.id, { x: unit.x, y: unit.y }]));
     deployEnemyWave(this.state, this.level);
+    for (const unit of this.state.units.filter(unit => unit.team === 'enemy' && unit.x != null && unit.y != null)) {
+      const from = previous.get(unit.id);
+      if (!from || from.x == null || from.y == null) this.renderer.queueDeployment(unit);
+      else this.renderer.queueMovement(unit, from);
+    }
     this.state.finishEnemyDeploymentRound();
     this.saveSession();
   }
@@ -482,8 +493,10 @@ class GameApp {
   }
 
   moveUnit(unit, option) {
+    const from = { x: unit.x, y: unit.y };
     this.state.leaveOrigin(unit);
     this.state.completeMove(unit, option);
+    this.renderer.queueMovement(unit, from);
     this.tutorial.notify('move-completed');
     this.finishMove();
   }
@@ -514,6 +527,7 @@ class GameApp {
       return;
     }
 
+    const from = { x: unit.x, y: unit.y };
     this.state.leaveOrigin(unit);
 
     if (action === 'capture') {
@@ -530,6 +544,8 @@ class GameApp {
     }
 
     this.state.completeMove(unit, { ...pending, kind: action });
+    this.renderer.queueMovement(unit, from);
+    this.renderer.queueImpact(action, pending.x, pending.y);
     this.tutorial.notify('capture-resolved');
     this.finishMove();
   }
@@ -614,7 +630,7 @@ class GameApp {
     this.aiTimer = window.setTimeout(() => {
       this.aiTimer = null;
       this.playAiTurn();
-    }, this.ai.thinkDelayMs);
+    }, Math.max(this.ai.thinkDelayMs, this.renderer?.remainingAnimationMs() ?? 0));
   }
 
   cancelAiTurn() {
@@ -650,6 +666,7 @@ class GameApp {
       this.finishMove();
       return;
     }
+    const from = { x: unit.x, y: unit.y };
     this.state.leaveOrigin(unit);
 
     if (action.kind === 'capture') {
@@ -667,6 +684,8 @@ class GameApp {
     }
 
     this.state.completeMove(unit, action);
+    this.renderer.queueMovement(unit, from);
+    this.renderer.queueImpact(action.kind, action.x, action.y);
     this.finishMove();
   }
 
