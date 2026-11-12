@@ -493,19 +493,34 @@ export class LevelEditor {
 
   async createBranch(name) {
     if (!this.client || !this.branch) throw new Error('Conecta GitHub primero.');
-    if (editedFiles(this.draft).length &&
-        !window.confirm('Al crear la rama se cargarán sus CSV. ¿Descartar los cambios locales?')) {
-      return;
-    }
     this.busy = true;
-    this.message('Creando rama ' + name + '…');
+    const source = this.branch;
+    this.message('Comprobando rama ' + source + '…');
     try {
-      await this.client.createBranch(this.branch, name);
+      const remote = await this.client.readCsv(source, BALANCE_FILES);
+      if (this.branchHead && remote.head !== this.branchHead) {
+        throw new Error('La rama de origen ha cambiado. Recárgala antes de crear otra.');
+      }
+      const pending = editedFiles(this.draft);
+      if (pending.length && Object.keys(BALANCE_FILES).some(key =>
+        this.draft.original[key] !== remote.csv[key])) {
+        throw new Error('Los CSV locales no coinciden con la rama de origen. Carga esa rama antes de crear una nueva.');
+      }
+      this.message('Creando rama ' + name + '…');
+      await this.client.createBranch(source, name);
+      const newHead = await this.client.head(name);
+      if (newHead !== remote.head) {
+        throw new Error('La nueva rama se creó con una versión diferente. Cárgala antes de editar.');
+      }
       this.branches = await this.client.branches();
       if (!this.branches.includes(name)) this.branches.push(name);
-      // The user already confirmed discarding changes before branch creation.
-      await this.loadBranch(name, { discardConfirmed: true });
-      this.message('Nueva rama creada: ' + name);
+      this.branch = name;
+      this.branchHead = newHead;
+      if (!pending.length) {
+        this.draft = createEditorDraft(remote.csv, this.baseLevel.id);
+      }
+      this.render();
+      this.message('Nueva rama creada: ' + name + '. Se conservan los cambios pendientes.');
     } finally {
       this.busy = false;
     }
