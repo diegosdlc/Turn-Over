@@ -1,5 +1,5 @@
 import { PIECES } from '../content/bands.js';
-import { t } from '../i18n/index.js';
+import { t, onLocaleChange } from '../i18n/index.js';
 import { cellBox, place } from '../core/geometry.js';
 import {
   BALANCE_FILES, AI_FIELDS, createEditorDraft, editorCsv, editedFiles,
@@ -130,6 +130,7 @@ export class LevelEditor {
     this.panel.addEventListener('click', event => this.onPanelClick(event));
     this.panel.addEventListener('change', event => this.onPanelChange(event));
     this.panel.addEventListener('submit', event => event.preventDefault());
+    onLocaleChange(() => { if (this.active) this.render(); });
   }
 
   setLevel(level) {
@@ -219,7 +220,7 @@ export class LevelEditor {
     const advancedOpen = this.panel.querySelector('.level-editor-advanced')?.open ?? false;
     this.panel.innerHTML =
       '<div class="level-editor-heading"><div><strong>Editor de nivel</strong><small>' +
-      esc(level.name) + '</small></div><button type="button" data-action="close" aria-label="Cerrar editor">✕</button></div>' +
+      esc(level.name_key ? t(level.name_key) : level.name) + '</small></div><button type="button" data-action="close" aria-label="Cerrar editor">✕</button></div>' +
       '<div class="level-editor-scroll">' +
       '<p class="level-editor-help">Selecciona una pieza u obstáculo y pulsa su destino en el tablero. También puedes arrastrarlos.</p>' +
       '<div class="level-editor-toolbar">' +
