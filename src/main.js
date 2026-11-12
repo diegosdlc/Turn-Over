@@ -114,6 +114,16 @@ class GameApp {
     document.querySelector('#home-settings').addEventListener('click', () => this.openSettings());
     document.querySelector('#game-settings').addEventListener('click', () => this.openSettings());
     document.querySelector('#close-settings').addEventListener('click', () => this.settingsDialog.close());
+    const editorSettings = document.querySelector('#settings-level-editor');
+    editorSettings?.addEventListener('change', () => {
+      this.settingsDialog.close();
+      window.dispatchEvent(new CustomEvent('game:toggle-level-editor', {
+        detail: { enabled: editorSettings.checked }
+      }));
+    });
+    window.addEventListener('game:level-editor-state', () => {
+      if (editorSettings) editorSettings.checked = this.levelEditor.active;
+    });
     document.querySelector('#settings-language')?.addEventListener('change', event => setLanguage(event.target.value));
     document.querySelector('#settings-gender')?.addEventListener('change', event => setGender(event.target.value));
     document.querySelector('#faction-gender')?.addEventListener('change', event => setGender(event.target.value));
@@ -180,6 +190,11 @@ class GameApp {
   }
 
   openSettings() {
+    const toggle = document.querySelector('#settings-level-editor');
+    if (toggle) {
+      toggle.disabled = this.homeScreen.hidden === false || !/^tutorial-0[1-4]$/.test(this.level?.id ?? '');
+      toggle.checked = this.levelEditor.active;
+    }
     if (!this.settingsDialog.open) this.settingsDialog.showModal();
   }
 
