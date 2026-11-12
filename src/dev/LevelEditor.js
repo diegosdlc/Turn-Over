@@ -468,6 +468,7 @@ export class LevelEditor {
     const files = editedFiles(this.draft);
     if (!files.length) throw new Error('No hay cambios pendientes.');
     const branch = this.branch;
+    if (branch === 'main' && !window.confirm('Vas a guardar directamente en main. ¿Continuar?')) return;
     this.busy = true;
     this.message('Guardando ' + files.length + ' CSV en ' + branch + '…');
     try {
