@@ -1,5 +1,5 @@
 import { parseCSV } from '../i18n/index.js';
-import { parseBalanceTables } from '../content/balance.js';
+import { parseBalanceTables } from '../content/balance.js?v=20261111-ai-profiles-1';
 import { PIECES } from '../content/bands.js';
 
 export const BALANCE_FILES = Object.freeze({
