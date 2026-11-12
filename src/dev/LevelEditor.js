@@ -1,4 +1,5 @@
 import { PIECES } from '../content/bands.js';
+import { t } from '../i18n/index.js';
 import { cellBox, place } from '../core/geometry.js';
 import {
   BALANCE_FILES, AI_FIELDS, createEditorDraft, editorCsv, editedFiles,
@@ -9,10 +10,56 @@ import {
 import { createGitHubEditorClient, EDITOR_REPOSITORY } from './github-editor-api.js';
 
 const PIECE_TYPES = Object.keys(PIECES);
-const PROFILE_NAMES = {
-  balanced: 'Equilibrada', defensive: 'Defensiva', interceptor: 'Interceptora',
-  hunter: 'Cazadora', aggressive: 'Agresiva'
-};
+const PANEL_TRANSLATIONS = Object.freeze({
+  'Editor de nivel': 'title', 'Rivales': 'enemies', 'Obstáculos': 'obstacles',
+  '+ Obstáculo': 'add_obstacle', 'Borrar': 'erase',
+  'Despliegue rival': 'enemy_deployment', 'Pieza seleccionada': 'selected_unit',
+  'Tipo': 'type', 'Evolución': 'evolution', 'Base': 'base',
+  'Evolucionada': 'evolved', 'Orientación': 'facing',
+  'Sur': 'south', 'Norte': 'north', 'Retirar pieza rival': 'remove_enemy',
+  'Añadir pieza': 'add_piece', 'Obstáculo seleccionado': 'selected_obstacle',
+  'Retirar obstáculo': 'remove_obstacle', 'Balance del nivel': 'level_balance',
+  'Presupuesto': 'budget', 'Profundidad IA': 'ai_depth',
+  'Aleatoriedad IA': 'ai_randomness', 'Retardo IA (ms)': 'ai_delay',
+  'Agresividad IA': 'ai_aggression', 'Primer cierre': 'first_closure',
+  'Rondas de supervivencia': 'survive_rounds', 'Fila objetivo': 'target_row',
+  'Rey misión X': 'mission_king_x', 'Rey misión Y': 'mission_king_y',
+  'Perfil de IA': 'ai_profile', 'Comportamiento': 'behavior',
+  'Los pesos son compartidos por todos los niveles que usan este perfil.': 'shared_profile',
+  'Editar pesos tácticos': 'edit_weights', 'Guardar en GitHub': 'github',
+  'Conectar': 'connect', 'Rama de destino': 'target_branch',
+  'Crear rama': 'create_branch', 'Guardar commit en rama': 'save',
+  'Probar cambios': 'preview', 'Salir del editor': 'exit'
+});
+
+function localizePanel(panel) {
+  const walker = document.createTreeWalker(panel, NodeFilter.SHOW_TEXT);
+  let node;
+  while ((node = walker.nextNode())) {
+    const source = node.nodeValue;
+    const trimmed = source.trim();
+    const key = PANEL_TRANSLATIONS[trimmed];
+    if (key) {
+      node.nodeValue = source.replace(trimmed, t('ui.editor.' + key));
+    } else if (trimmed.startsWith('CSV modificados:')) {
+      node.nodeValue = source.replace('CSV modificados:', t('ui.editor.modified_csv') + ':')
+        .replace('ninguno', t('ui.editor.none'));
+    } else if (trimmed.startsWith('Posición:')) {
+      node.nodeValue = source.replace('Posición:', t('ui.editor.position') + ':');
+    } else if (trimmed.startsWith('Selecciona una pieza u obstáculo')) {
+      node.nodeValue = t('ui.editor.hint');
+    } else if (trimmed.startsWith('Repositorio:')) {
+      node.nodeValue = t('ui.editor.repository') + ': ' + EDITOR_REPOSITORY +
+        '. ' + t('ui.editor.token_help');
+    }
+  }
+  const token = panel.querySelector('#editor-token');
+  if (token) {
+    token.placeholder = t('ui.editor.token');
+    token.setAttribute('aria-label', t('ui.editor.token'));
+  }
+}
+
 
 function esc(value) {
   return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -217,7 +264,7 @@ export class LevelEditor {
       '</div></section>' +
       '<section class="level-editor-section"><h3>Perfil de IA</h3>' +
         fieldSelect('editor-profile', 'Comportamiento', level.ai_profile,
-          profileIds.map(id => [id, PROFILE_NAMES[id] || id])) +
+          profileIds.map(id => [id, t('ui.editor.' + id)])) +
         '<p class="level-editor-help">Los pesos son compartidos por todos los niveles que usan este perfil.</p>' +
         '<details class="level-editor-advanced"' + (advancedOpen ? ' open' : '') + '><summary>Editar pesos tácticos</summary>' +
           '<div class="level-editor-fields">' +
@@ -250,6 +297,7 @@ export class LevelEditor {
       '</div><div class="level-editor-footer">' +
       '<button type="button" data-action="preview">Probar cambios</button>' +
       '<button type="button" data-action="close">Salir del editor</button></div>';
+    localizePanel(this.panel);
   }
 
   renderOverlay() {
