@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="./src/deployment.css?v=20261111-south-royals-1" />
     <link rel="stylesheet" href="./src/level-ui-mobile.css?v=20260825-notebook-ui-1" />
     <link rel="stylesheet" href="./src/localization.css" />
+    <link rel="stylesheet" href="./src/dev/level-editor.css?v=20261112-editor-1" />
   </head>
   <body>
     <main id="game-shell" class="board-shell level-screen" aria-label="Juego de tablero" data-i18n-aria="ui.game.aria" hidden>
@@ -175,6 +176,8 @@
           <div class="settings-preference"><label for="settings-gender" data-i18n="ui.settings.gender">Género del jugador</label><select id="settings-gender" data-i18n-gender><option value="masculine" data-i18n="ui.gender.masculine">Masculino</option><option value="feminine" data-i18n="ui.gender.feminine">Femenino</option><option value="neutral" data-i18n="ui.gender.neutral">Neutro</option></select></div>
           <p class="settings-preference-help" data-i18n="ui.gender.help">Se usa para adaptar los textos dirigidos a ti.</p>
           <p class="settings-preference-help" data-i18n-player="player.greeting">Te damos la bienvenida.</p>
+          <div class="settings-preference"><label for="settings-level-editor" data-i18n="ui.editor.toggle">Modo edición (pruebas)</label><input id="settings-level-editor" type="checkbox"></div>
+          <p class="settings-preference-help" data-i18n="ui.editor.help">Solo disponible dentro de un nivel. No afecta al progreso de campaña.</p>
           <div><span data-i18n="ui.music">Música</span><strong data-i18n="ui.settings.soon">Próximamente</strong></div>
           <div><span data-i18n="ui.settings.difficulty">Dificultad</span><strong data-i18n="ui.settings.soon">Próximamente</strong></div>
           <div><span data-i18n="ui.settings.controls">Controles</span><strong data-i18n="ui.settings.soon">Próximamente</strong></div>
@@ -183,7 +186,7 @@
     </dialog>
 
     <script type="module" src="./src/viewport.js?v=20260825-landscape-1"></script>
-    <script type="module" src="./src/main.js?v=20261111-rival-factions-1"></script>
-    <script type="module" src="./src/level-ui.js?v=20261111-ai-profiles-1"></script>
+    <script type="module" src="./src/main.js?v=20261112-editor-1"></script>
+    <script type="module" src="./src/level-ui.js?v=20261112-editor-1"></script>
   </body>
 </html>

@@ -17,6 +17,7 @@ import { survivalProgressFor, countSkippedSurvivalTurn } from './core/survival.j
 import { applyEncroachment } from './core/encroachment.js';
 import { buildNextPlayerBand } from './core/campaign.js?v=20260821-budget-1';
 import { deployEnemyWave } from './ai/DeploymentAI.js';
+import { LevelEditor } from './dev/LevelEditor.js';
 
 class GameApp {
   constructor() {
@@ -51,6 +52,17 @@ class GameApp {
     );
     this.tutorial = new TutorialSystem({ storagePrefix: GAME_CONFIG.tutorialStoragePrefix });
     this.level = null;
+    this.levelEditor = new LevelEditor({
+      board: this.board,
+      shell: this.gameShell,
+      onPreview: level => {
+        this.isTestMode = true;
+        this.loadLevel(level);
+      },
+      onClose: () => {
+        if (this.state && !this.homeScreen.hidden) this.resolvePhase();
+      }
+    });
     this.state = null;
     this.renderer = null;
     this.ai = null;
@@ -69,6 +81,9 @@ class GameApp {
     this.bindMenu();
     onLocaleChange(() => this.refreshLanguage());
     window.addEventListener('game:return-home', () => this.showHome());
+    window.addEventListener('game:toggle-level-editor', event => {
+      void this.toggleLevelEditor(Boolean(event.detail?.enabled));
+    });
     if (requestedLevelId) {
       const playerFactionId = PLAYER_FACTION_IDS.includes(requestedFactionId) ? requestedFactionId : 'green';
       this.isTestMode = params.get('lab') === '1' &&
@@ -80,11 +95,14 @@ class GameApp {
           : this.progression.getPlayerBand()
       };
       this.startGame(getLevel(requestedLevelId, requestedOptions) ?? getLevel(GAME_CONFIG.defaultLevelId), { forceTutorial });
+      if (this.isTestMode && params.get('editor') === '1') {
+        void this.toggleLevelEditor(true);
+      }
     }
     else this.showHome();
 
     document.addEventListener('keydown', event => {
-      if (this.state && !this.welcomeDialog?.open && (event.key === 'r' || event.key === 'R') && !this.state.pendingCapture) this.resetLevel();
+      if (this.state && !this.levelEditor.active && !this.welcomeDialog?.open && (event.key === 'r' || event.key === 'R') && !this.state.pendingCapture) this.resetLevel();
     });
 
     document.addEventListener('pointerdown', () => this.audio.unlock(), { passive: true });
@@ -96,6 +114,16 @@ class GameApp {
     document.querySelector('#home-settings').addEventListener('click', () => this.openSettings());
     document.querySelector('#game-settings').addEventListener('click', () => this.openSettings());
     document.querySelector('#close-settings').addEventListener('click', () => this.settingsDialog.close());
+    const editorSettings = document.querySelector('#settings-level-editor');
+    editorSettings?.addEventListener('change', () => {
+      this.settingsDialog.close();
+      window.dispatchEvent(new CustomEvent('game:toggle-level-editor', {
+        detail: { enabled: editorSettings.checked }
+      }));
+    });
+    window.addEventListener('game:level-editor-state', () => {
+      if (editorSettings) editorSettings.checked = this.levelEditor.active;
+    });
     document.querySelector('#settings-language')?.addEventListener('change', event => setLanguage(event.target.value));
     document.querySelector('#settings-gender')?.addEventListener('change', event => setGender(event.target.value));
     document.querySelector('#faction-gender')?.addEventListener('change', event => setGender(event.target.value));
@@ -132,6 +160,8 @@ class GameApp {
   }
 
   showHome() {
+    this.levelEditor.disable();
+    this.levelEditor.setLevel(null);
     this.isTestMode = false;
     this.cancelAiTurn();
     if (this.welcomeDialog?.open) this.welcomeDialog.close();
@@ -160,14 +190,53 @@ class GameApp {
   }
 
   openSettings() {
+    const toggle = document.querySelector('#settings-level-editor');
+    if (toggle) {
+      toggle.disabled = this.homeScreen.hidden === false || !/^tutorial-0[1-4]$/.test(this.level?.id ?? '');
+      toggle.checked = this.levelEditor.active;
+    }
     if (!this.settingsDialog.open) this.settingsDialog.showModal();
   }
+
+  async toggleLevelEditor(enabled) {
+    if (!this.level) return;
+    if (!enabled) {
+      this.levelEditor.disable();
+      this.resolvePhase();
+      return;
+    }
+    if (!this.isTestMode) {
+      if (!window.confirm('El editor usa una partida de prueba aislada. ¿Abrir este nivel en modo pruebas?')) {
+        window.dispatchEvent(new Event('game:level-editor-state'));
+        return;
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.set('level', this.level.id);
+      url.searchParams.set('lab', '1');
+      url.searchParams.set('editor', '1');
+      url.searchParams.set('faction', this.level.teams.player);
+      window.location.href = url.href;
+      return;
+    }
+    this.cancelAiTurn();
+    try {
+      if (this.welcomeDialog?.open) this.welcomeDialog.close();
+      if (this.resultDialog?.open) this.resultDialog.close();
+      await this.levelEditor.enable(this.level);
+    } catch (error) {
+      window.alert(error.message);
+      window.dispatchEvent(new Event('game:level-editor-state'));
+      this.resolvePhase();
+    }
+  }
+
   loadLevel(level, { forceTutorial = false, savedState = null } = {}) {
     if (!level) throw new Error(t('ui.game.no_level'));
     this.cancelAiTurn();
     if (this.welcomeDialog?.open) this.welcomeDialog.close();
     this.nextPlayerBand = null;
     this.level = level;
+    this.levelEditor.setLevel(level);
     window.turnOverNotebookLevel = { id: level.id, rules: level.rules, hasMissionKing: level.units.some(unit => unit.missionKing), playerFactionId: level.teams.player, playtest: this.isTestMode };
     window.dispatchEvent(new Event('game:mission-updated'));
     this.state = new GameState(level);
@@ -217,6 +286,7 @@ class GameApp {
   }
 
   resolvePhase() {
+    if (this.levelEditor.active) return;
     if (this.state.isDeploying()) {
       if (this.state.isAlternatingDeployment() && this.state.deploymentTurn === 'enemy') this.deployEnemy();
       this.render();
@@ -453,6 +523,7 @@ class GameApp {
   }
 
   cellClick(option, unit, x, y) {
+    if (this.levelEditor.active) return;
     if (this.state.finished || this.state.pendingCapture) return;
     if (this.state.isDeploying()) {
       this.deploymentCellClick(unit, x, y);
@@ -670,6 +741,7 @@ class GameApp {
 
   scheduleAiTurn() {
     this.cancelAiTurn();
+    if (this.levelEditor.active) return;
     if (!this.ai?.isTurn(this.state)) return;
 
     this.aiTimer = window.setTimeout(() => {
@@ -684,6 +756,7 @@ class GameApp {
   }
 
   playAiTurn() {
+    if (this.levelEditor.active) return;
     if (!this.ai?.isTurn(this.state)) return;
     const action = this.ai.chooseAction(this.state, this.level);
     if (!action) {

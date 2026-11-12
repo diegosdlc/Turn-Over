@@ -31,6 +31,7 @@ function notebookSections() {
         <div class="notebook-settings-row"><label for="notebook-volume">${t('ui.music')}</label><input id="notebook-volume" type="range" min="0" max="100" step="1" value="45" aria-label="${t('ui.music.volume')}"></div>
         <div class="notebook-settings-row"><label for="notebook-language">${t('ui.settings.language')}</label><select id="notebook-language"><option value="es">${t('ui.language.es')}</option><option value="en">${t('ui.language.en')}</option></select></div>
         <div class="notebook-settings-row"><label for="notebook-gender">${t('ui.settings.gender')}</label><select id="notebook-gender"><option value="masculine">${t('ui.gender.masculine')}</option><option value="feminine">${t('ui.gender.feminine')}</option><option value="neutral">${t('ui.gender.neutral')}</option></select></div>
+        <div class="notebook-settings-row"><label for="notebook-level-editor">${t('ui.editor.toggle')}</label><input id="notebook-level-editor" type="checkbox" ${window.turnOverLevelEditorActive ? 'checked' : ''}></div>
         <p>${playerText('player.greeting')}</p><p>${t('notebook.settings.audio_help')}</p><h3>${t('notebook.settings.labs')}</h3>
         <div class="notebook-lab-list"><label class="notebook-lab-label" for="notebook-mechanics-lab">${t('notebook.settings.scenario')}</label>
         <select id="notebook-mechanics-lab" class="notebook-lab-select"><option value="">${t('notebook.settings.select_lab')}</option>${mechanicsLabOptions()}</select></div>` }
@@ -58,6 +59,7 @@ class NotebookUI {
     this.previous?.addEventListener('click', () => this.turn(-1));
     this.next?.addEventListener('click', () => this.turn(1));
     onLocaleChange(() => this.render());
+    window.addEventListener('game:level-editor-state', () => this.render());
     this.render();
   }
 
@@ -176,6 +178,13 @@ class NotebookUI {
   }
 
   bindSettingsControls() {
+    const editorToggle = this.root.querySelector('#notebook-level-editor');
+    if (editorToggle) {
+      editorToggle.checked = Boolean(window.turnOverLevelEditorActive);
+      editorToggle.addEventListener('change', () => window.dispatchEvent(new CustomEvent(
+        'game:toggle-level-editor', { detail: { enabled: editorToggle.checked } }
+      )));
+    }
     const language = this.root.querySelector('#notebook-language');
     const gender = this.root.querySelector('#notebook-gender');
     if (language) { language.value = getLanguage(); language.addEventListener('change', () => setLanguage(language.value)); }
