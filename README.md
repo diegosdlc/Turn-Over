@@ -106,5 +106,10 @@ Session schema `7` saves in-progress units (including facing, evolution and rese
 - [`docs/EVOLUTION.md`](docs/EVOLUTION.md) — evolution and carried-roster contract.
 - [`docs/FACTIONS_AND_BANDS.md`](docs/FACTIONS_AND_BANDS.md) — faction/band/facing/artwork contract.
 - [`docs/MECHANICS_LABS.md`](docs/MECHANICS_LABS.md) — mechanics-lab workflow.
+- [`docs/LEVEL_EDITOR.md`](docs/LEVEL_EDITOR.md) — visual playtest editor, GitHub branch selection and CSV commits.
 
 AI behavior is configured per campaign level with `ai_profile` in `balance/levels.csv`. Reusable `balanced`, `defensive`, `interceptor`, `hunter` and `aggressive` profiles are edited in `balance/ai-profiles.csv`; individual levels retain their `ai_depth`, `ai_randomness`, `ai_think_delay_ms` and `ai_aggression` controls. See `docs/BALANCE.md`.
+
+## In-game level editor
+
+Open a campaign level, then use **Settings → Level editor (playtest)** to edit enemy positions, obstacles, AI profiles and level parameters directly on the board. The editor runs in isolated playtest mode; it never writes campaign progression. Connect GitHub with a temporary fine-grained personal access token (Contents read/write), select or create a branch, and save the changed balance CSVs in one commit. Credentials are not persisted. See [docs/LEVEL_EDITOR.md](docs/LEVEL_EDITOR.md).
