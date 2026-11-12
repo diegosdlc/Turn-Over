@@ -116,6 +116,7 @@ export class LevelEditor {
     this.active = true;
     this.overlay.hidden = false;
     this.panel.hidden = false;
+    window.turnOverLevelEditorActive = true;
     this.board.classList.add('level-editor-board');
     this.shell.classList.add('level-editor-active');
     this.render();
@@ -126,6 +127,7 @@ export class LevelEditor {
     this.active = false;
     this.overlay.hidden = true;
     this.panel.hidden = true;
+    window.turnOverLevelEditorActive = false;
     this.board.classList.remove('level-editor-board');
     this.shell.classList.remove('level-editor-active');
     window.dispatchEvent(new Event('game:level-editor-state'));
@@ -167,6 +169,7 @@ export class LevelEditor {
     const obstacleOptions = obstacles.map(item => option(item.obstacle_id,
       item.obstacle_id + ' · (' + item.x + ',' + item.y + ')', this.selectedObstacle)).join('');
 
+    const advancedOpen = this.panel.querySelector('.level-editor-advanced')?.open ?? false;
     this.panel.innerHTML =
       '<div class="level-editor-heading"><div><strong>Editor de nivel</strong><small>' +
       esc(level.name) + '</small></div><button type="button" data-action="close" aria-label="Cerrar editor">✕</button></div>' +
@@ -216,7 +219,7 @@ export class LevelEditor {
         fieldSelect('editor-profile', 'Comportamiento', level.ai_profile,
           profileIds.map(id => [id, PROFILE_NAMES[id] || id])) +
         '<p class="level-editor-help">Los pesos son compartidos por todos los niveles que usan este perfil.</p>' +
-        '<details class="level-editor-advanced"><summary>Editar pesos tácticos</summary>' +
+        '<details class="level-editor-advanced"' + (advancedOpen ? ' open' : '') + '><summary>Editar pesos tácticos</summary>' +
           '<div class="level-editor-fields">' +
           (profile ? AI_FIELDS.map(key =>
             '<label class="level-editor-field"><span>' + esc(key) + '</span>' +
@@ -348,7 +351,7 @@ export class LevelEditor {
           : element.id === 'editor-enemy-stage' ? 'evolution_stage' : 'facing';
         updateEnemyField(this.draft, this.selectedEnemy, field, element.value);
       } else if (element.id === 'editor-branch') {
-        void this.loadBranch(element.value);
+        void this.loadBranch(element.value).catch(error => { this.fail(error); this.render(); });
         return;
       } else {
         return;
@@ -414,9 +417,9 @@ export class LevelEditor {
     }
   }
 
-  async loadBranch(branch) {
+  async loadBranch(branch, { discardConfirmed = false } = {}) {
     if (!this.client || !branch) return;
-    if (editedFiles(this.draft).length &&
+    if (!discardConfirmed && editedFiles(this.draft).length &&
         !window.confirm('Hay cambios locales. ¿Descartarlos y cargar los CSV de ' + branch + '?')) {
       this.render();
       return;
@@ -451,9 +454,8 @@ export class LevelEditor {
       await this.client.createBranch(this.branch, name);
       this.branches = await this.client.branches();
       if (!this.branches.includes(name)) this.branches.push(name);
-      // loadBranch checks dirty state; discarded changes were already confirmed above.
-      this.draft.touched.clear();
-      await this.loadBranch(name);
+      // The user already confirmed discarding changes before branch creation.
+      await this.loadBranch(name, { discardConfirmed: true });
       this.message('Nueva rama creada: ' + name);
     } finally {
       this.busy = false;
