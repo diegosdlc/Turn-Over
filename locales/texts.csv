@@ -251,3 +251,4 @@
 "ui.editor.interceptor","Texto del editor visual: interceptor","Interceptora","Interceptor","Editor de nivel"
 "ui.editor.hunter","Texto del editor visual: hunter","Cazadora","Hunter","Editor de nivel"
 "ui.editor.aggressive","Texto del editor visual: aggressive","Agresiva","Aggressive","Editor de nivel"
+"ui.editor.repository","Etiqueta del repositorio GitHub.","Repositorio","Repository","Editor de nivel"
