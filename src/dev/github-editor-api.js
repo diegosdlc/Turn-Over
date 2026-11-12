@@ -4,7 +4,7 @@ const API = 'https://api.github.com/repos/' + EDITOR_REPOSITORY;
 
 export function validBranchName(name) {
   return typeof name === 'string' && name.length > 0 && name.length <= 160 &&
-    /^(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+$/.test(name);
+    !name.startsWith('refs/') && /^(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+$/.test(name);
 }
 
 function refPath(branch) {
@@ -59,6 +59,7 @@ export function createGitHubEditorClient(token, request = fetch) {
     },
     head,
     async readCsv(branch, files) {
+      const initialHead = await head(branch);
       const ref = encodeURIComponent(branch);
       const values = await Promise.all(Object.entries(files).map(async ([name, path]) => {
         const data = await api('/contents/' + path + '?ref=' + ref);
@@ -67,7 +68,11 @@ export function createGitHubEditorClient(token, request = fetch) {
         }
         return [name, decodeContent(data.content)];
       }));
-      return { head: await head(branch), csv: Object.fromEntries(values) };
+      const currentHead = await head(branch);
+      if (initialHead !== currentHead) {
+        throw new Error('La rama cambió durante la descarga. Vuelve a cargarla.');
+      }
+      return { head: currentHead, csv: Object.fromEntries(values) };
     },
     async createBranch(base, name) {
       if (!validBranchName(name)) {
