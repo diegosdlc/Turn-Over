@@ -19,7 +19,7 @@ Los cambios se mantienen localmente durante esta sesión de página hasta guarda
 1. Crea en GitHub un **fine-grained personal access token** limitado al repositorio diegosdlc/Turn-Over, con permiso **Contents: Read and write**. Úsalo únicamente desde una copia del juego servida desde un origen de confianza.
 2. Pega el token en el editor y pulsa **Conectar**. Se conserva **solo en memoria**, no en localStorage, cookies ni CSV; se descarta al recargar la página. No compartas ni incluyas el token en incidencias.
 3. Selecciona una rama existente. Al seleccionarla, se cargan sus CSV reales como punto de partida; si tienes cambios locales, se pedirá confirmación antes de descartarlos.
-4. Para crear otra rama, elige su **rama de origen**, introduce el nombre (ejemplo: balance/prueba-01) y pulsa **Crear rama**. Se crea en GitHub y pasa a seleccionarse.
+4. Para crear otra rama, elige su **rama de origen**, introduce el nombre (ejemplo: balance/prueba-01) y pulsa **Crear rama**. Se crea en GitHub y pasa a seleccionarse **sin perder los cambios locales pendientes**, siempre que los CSV del origen coincidan con la versión cargada. Si no coinciden, el editor exige volver a cargar la rama.
 5. Edita y pulsa **Guardar commit en rama**. Antes de guardar se usa el mismo validador CSV que la campaña. Solo se escriben los CSV modificados, en **un único commit** dirigido a la rama escogida.
 
 Si la rama cambió en GitHub desde que se cargó, el editor **rechaza** el guardado. Vuelve a cargar la rama para evitar sobrescribir cambios ajenos. Una rama protegida o un token sin permisos también puede rechazar el commit.
