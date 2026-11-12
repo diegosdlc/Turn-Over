@@ -1,0 +1,145 @@
+/* Development-only editor. Does not alter the board projection. */
+.level-editor-panel[hidden],
+.level-editor-overlay[hidden] { display:none!important; }
+.level-editor-overlay {
+  position:absolute;
+  inset:0;
+  z-index:50;
+  pointer-events:none;
+  user-select:none;
+}
+.level-editor-cell {
+  position:absolute;
+  z-index:1;
+  border:0;
+  padding:0;
+  background:rgba(250,236,184,.08);
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
+  cursor:crosshair;
+  color:#fff7d3;
+  font-size:clamp(13px,2vw,26px);
+  font-weight:800;
+  text-shadow:0 1px 3px #241d17,0 0 8px #241d17;
+  pointer-events:auto;
+}
+.level-editor-cell:hover,
+.level-editor-cell:focus-visible {
+  outline:0;
+  background:rgba(255,222,91,.46);
+}
+.level-editor-cell.has-enemy { background:rgba(142,34,28,.44); }
+.level-editor-cell.has-obstacle { background:rgba(44,48,55,.6); }
+.level-editor-cell.is-selected { background:rgba(225,160,25,.8); }
+.level-editor-board .unit,
+.level-editor-board .prisoner,
+.level-editor-board .board-element,
+.level-editor-board .piece-capture-actions,
+.level-editor-board .special-tile { visibility:hidden; }
+.level-editor-active #board,
+.level-editor-active #deployment-panel,
+.level-editor-active .game-control-button { pointer-events:none!important; }
+
+.level-editor-panel {
+  position:fixed;
+  z-index:5000;
+  box-sizing:border-box;
+  top:12px;
+  left:12px;
+  width:min(370px,42vw);
+  max-height:calc(100dvh - 24px);
+  display:flex;
+  flex-direction:column;
+  background:#fbf5e6;
+  color:#332b21;
+  border:2px solid #584333;
+  border-radius:10px;
+  box-shadow:4px 7px 0 rgba(34,24,18,.28),0 10px 50px rgba(0,0,0,.22);
+  font:14px/1.4 system-ui,sans-serif;
+}
+.level-editor-panel * { box-sizing:border-box; }
+.level-editor-panel button,
+.level-editor-panel input,
+.level-editor-panel select {
+  font:inherit;
+}
+.level-editor-panel button {
+  cursor:pointer;
+  background:#e7d6b6;
+  color:#342b22;
+  border:1px solid #8f7759;
+  border-radius:5px;
+  padding:6px 9px;
+}
+.level-editor-panel button:hover:not(:disabled) { background:#f8e2aa; }
+.level-editor-panel button:disabled { opacity:.45; cursor:not-allowed; }
+.level-editor-heading {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:11px 14px;
+  border-bottom:1px solid #d1bb95;
+}
+.level-editor-heading strong { display:block; font-size:17px; }
+.level-editor-heading small { display:block; font-size:12px; opacity:.7; }
+.level-editor-heading button { font-size:18px; }
+.level-editor-scroll { overflow-y:auto; overscroll-behavior:contain; padding:10px 14px 14px; }
+.level-editor-help { margin:5px 0 9px; font-size:12px; color:#655747; }
+.level-editor-toolbar { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; }
+.level-editor-toolbar button[aria-pressed=true] {
+  background:#a44e3b;
+  color:white;
+  border-color:#74392c;
+}
+.level-editor-section { border-top:1px dashed #bfa888; padding:10px 0 5px; margin-top:10px; }
+.level-editor-section h3 { margin:0 0 9px; font-size:14px; }
+.level-editor-field {
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  font-size:12px;
+  margin-bottom:7px;
+  min-width:0;
+}
+.level-editor-field input,
+.level-editor-field select,
+.level-editor-inline input,
+.level-editor-inline select {
+  width:100%;
+  min-width:0;
+  border:1px solid #ad9573;
+  border-radius:4px;
+  background:#fffdf4;
+  padding:6px;
+  color:#302920;
+}
+.level-editor-fields { display:grid; grid-template-columns:1fr 1fr; gap:5px 10px; }
+.level-editor-inline { display:flex; gap:6px; margin:7px 0; }
+.level-editor-inline > button { flex:0 0 auto; }
+.level-editor-advanced summary { cursor:pointer; margin-bottom:8px; }
+.level-editor-primary {
+  width:100%;
+  background:#aa593e!important;
+  color:#fff!important;
+  padding:9px!important;
+}
+.level-editor-status { font-size:12px; overflow-wrap:anywhere; border-top:1px solid #c4ac86; padding:8px 0; }
+.level-editor-status.is-error { color:#a01717; font-weight:700; }
+.level-editor-footer { display:flex; gap:8px; border-top:1px solid #d1bb95; padding:10px 14px; }
+.level-editor-footer button { flex:1; }
+.level-editor-footer button:first-child { background:#58744b; color:#fff; }
+
+@media (max-width:900px) {
+  .level-editor-panel {
+    width:min(580px,96vw);
+    left:2vw;
+    top:auto;
+    bottom:2vh;
+    max-height:46dvh;
+    font-size:13px;
+  }
+  .level-editor-heading { padding:6px 12px; }
+  .level-editor-footer { padding:7px 12px; }
+  .level-editor-scroll { padding:5px 12px; }
+  .level-editor-cell { font-size:16px; }
+}
