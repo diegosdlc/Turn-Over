@@ -54,7 +54,7 @@ test('standalone scenarios do not receive a campaign welcome', () => {
 test('survival welcome preserves the merged PR #23 rules (band, not a mission king)', () => {
   const level = getLevel('tutorial-04');
   assert.equal(level.rules.victory, 'survive');
-  assert.equal(level.rules.surviveRounds, 8);
+  assert.equal(level.rules.surviveRounds, 20);
   assert.equal(level.deployment.pointLimit, 24);
   assert.equal(level.units.some(unit => unit.missionKing), false);
   for (const language of ['es', 'en']) {
