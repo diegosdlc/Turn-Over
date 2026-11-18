@@ -167,7 +167,7 @@
 "ui.deployment.status_pending","Estado visible debajo de una pieza que todavía no se ha desplegado.","Pendiente","Pending","Despliegue alterno"
 "ui.deployment.status_board","Estado visible debajo de una pieza que ya está colocada en el tablero.","En tablero","On board","Despliegue alterno"
 "ui.deployment.enemy_piece_aria","Etiqueta accesible de la pieza enemiga con nombre y estado de despliegue.","{name}: {status}","{name}: {status}","Despliegue alterno"
-"ui.deployment.round_progress","Mensaje de progreso durante las tres rondas que restringe mover piezas confirmadas.","Ronda {round}/3 · {used}/{quota} piezas nuevas · {budget}. Las piezas confirmadas no se pueden mover.","Round {round}/3 · {used}/{quota} new pieces · {budget}. Confirmed pieces cannot be moved.","Despliegue alterno"
+"ui.deployment.round_progress","Progreso de puntos gastados en la ronda actual (máximo un tercio del presupuesto), sin límite de cantidad de piezas.","Ronda {round}/3 · {used}/{quota} pts esta ronda · {budget} total. Las piezas confirmadas no se pueden mover.","Round {round}/3 · {used}/{quota} pts this round · {budget} total. Confirmed pieces cannot be moved.","Despliegue alterno"
 "ui.deployment.confirm_round","Botón que confirma la colocación de piezas en la ronda de despliegue actual.","Confirmar ronda","Confirm round","Despliegue alterno"
 "ui.deployment.remove_title","Título emergente del botón que retira una pieza de la alineación.","Retirar {name}","Remove {name}","Despliegue alterno"
 "ui.roster.destroyed","Estado mostrado en el cuaderno cuando una pieza ha sido destruida.","Destruida","Destroyed","Cuaderno de bandas"
