@@ -127,7 +127,7 @@ test('mission objective copy follows level rules and interpolates the parameters
     assert.ok(missionTextFor(getLevel(id), translator).startsWith(expected[i]));
   }
   assert.ok(missionTextFor(getLevel('tutorial-02'),translator).includes('"row":1'));
-  assert.ok(missionTextFor(getLevel('tutorial-04'),translator).includes('"rounds":8'));
+  assert.ok(missionTextFor(getLevel('tutorial-04'),translator).includes('"rounds":20'));
 });
 
 test('legacy scenarios without mission king retain their original objective descriptions', () => {
