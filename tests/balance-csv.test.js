@@ -40,7 +40,7 @@ test('four campaign levels use CSV budgets, objectives, enemy formations and obs
     assert.ok(level.boardElements.every(item => !item.blocking || !occupied.has(item.x + ',' + item.y)));
   }
   assert.equal(getLevel('tutorial-02').rules.targetRow, 0);
-  assert.equal(getLevel('tutorial-04').rules.surviveRounds, 8);
+  assert.equal(getLevel('tutorial-04').rules.surviveRounds, 20);
   assert.equal(getLevel('tutorial-04').deployment.pointLimit, 24);
   assert.equal(bandPointValue(enemyBandForLevel('tutorial-04')), 30);
   assert.equal(getLevel('tutorial-04').units.filter(unit => unit.missionKing).length, 0);
@@ -90,8 +90,8 @@ test('CSV rejects budgets that are not divisible by three', () => {
 test('invalid CSV headers, duplicated units and blocked formation squares are rejected', () => {
   assert.throws(() => parseBalanceTables({ ...sources, pieces: sources.pieces.replace('piece_type,base,evolved', 'type,base,evolved') }), /Cabecera/);
   assert.throws(() => parseBalanceTables({ ...sources, enemies: sources.enemies.replace(
-    'tutorial-01,enemy-bishop,bishop,red,south,base,6,0',
-    'tutorial-01,enemy-bishop,bishop,red,south,base,5,0'
+    'tutorial-03,enemy-bishop,bishop,red,south,base,6,0',
+    'tutorial-03,enemy-bishop,bishop,red,south,base,5,0'
   ) }), /duplicada/);
   assert.throws(() => parseBalanceTables({ ...sources, obstacles: sources.obstacles.replace('tutorial-01,tutorial-blocker-c4,2,3','tutorial-01,tutorial-blocker-c4,5,0') }), /encima de formación/);
 });
