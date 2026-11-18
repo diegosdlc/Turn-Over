@@ -633,3 +633,40 @@ html.touch-ui .notebook-roster-card .deployment-piece-name{
   background:#f5dea0;
   color:#3c2916;
 }
+
+/* Keep names legible outside the sprite on deployment and Band notebook cards.
+   The artwork and its badges remain confined to the tile; the label is a
+   separate sibling with its own high-contrast surface. */
+.deployment-panel .deployment-piece-image,
+.notebook-roster-card .deployment-piece-image{
+  top:0;
+  width:100%;
+  height:100%;
+}
+.deployment-panel .deployment-piece-name,
+.notebook-roster-card .deployment-piece-name{
+  position:static;
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  padding:2px 3px;
+  border-radius:3px;
+  background:rgba(249,241,214,.96);
+  color:#38423b;
+  font:700 10px/1.2 Arial,sans-serif;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  text-shadow:none;
+}
+.deployment-panel .deployment-piece-card,
+.notebook-roster-card{
+  gap:2px;
+}
+.notebook-ui.is-deploying .deployment-pieces,
+.notebook-ui.is-deploying .enemy-deployment-pieces{
+  grid-template-rows:repeat(var(--roster-rows,1),minmax(72px,1fr));
+  grid-auto-rows:minmax(72px,1fr);
+}
