@@ -55,7 +55,7 @@ test('survival welcome preserves the merged PR #23 rules (band, not a mission ki
   const level = getLevel('tutorial-04');
   assert.equal(level.rules.victory, 'survive');
   assert.equal(level.rules.surviveRounds, 8);
-  assert.equal(level.deployment.pointLimit, 20);
+  assert.equal(level.deployment.pointLimit, 24);
   assert.equal(level.units.some(unit => unit.missionKing), false);
   for (const language of ['es', 'en']) {
     const briefing = welcomeTextFor(level, translateIn(language));
