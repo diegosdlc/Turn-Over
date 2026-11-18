@@ -16,7 +16,7 @@ function stored(key, accepted, fallback) {
 }
 
 let language = stored(STORAGE_LANGUAGE, LANGUAGES, 'es');
-let gender = stored(STORAGE_GENDER, GENDERS, 'neutral');
+let gender = stored(STORAGE_GENDER, GENDERS, 'masculine');
 
 export function parseCSV(source) {
   const records = [];
@@ -44,8 +44,22 @@ export function parseCSV(source) {
   return records;
 }
 
+// A unique revision avoids stale CDN copies; no-store keeps CSV edits visible after reload.
+const TEXTS_REVISION = '20261118-faction-copy-fix-1';
+const FACTION_COPY_KEYS = [
+  'ui.faction.greeting.masculine',
+  'ui.faction.greeting.feminine',
+  'ui.faction.greeting.neutral',
+  'ui.faction.greeting.end',
+  'ui.faction.green.option',
+  'ui.faction.yellow.option',
+  'ui.faction.red.option'
+];
+
 export async function initI18n() {
-  const response = await fetch(new URL('../../locales/texts.csv', import.meta.url));
+  const url = new URL('../../locales/texts.csv', import.meta.url);
+  url.searchParams.set('revision', TEXTS_REVISION);
+  const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) throw new Error('Unable to load translations: ' + response.status);
   const [header, ...rows] = parseCSV(await response.text());
   if (!header || header.join(',') !== 'key,description,es,en,context') throw new Error('Invalid localization CSV header');
@@ -115,11 +129,27 @@ export function factionName(factionId) {
 
 export function refreshStaticTranslations(root = document) {
   document.documentElement.lang = language;
-  root.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); });
-  root.querySelectorAll('[data-i18n-aria]').forEach(node => { node.setAttribute('aria-label', t(node.dataset.i18nAria)); });
-  root.querySelectorAll('[data-i18n-title]').forEach(node => { node.title = t(node.dataset.i18nTitle); });
-  root.querySelectorAll('[data-i18n-player]').forEach(node => { node.textContent = playerText(node.dataset.i18nPlayer); });
-  root.querySelectorAll('[data-i18n-html]').forEach(node => { node.innerHTML = t(node.dataset.i18nHtml); });
+  // An older cached catalog must not overwrite the new faction copy with old
+  // descriptions or raw key names. The HTML contains the exact Spanish fallback.
+  const factionCopyReady = FACTION_COPY_KEYS.every(key => catalog.has(key));
+  root.querySelectorAll('[data-i18n]').forEach(node => {
+    if (!catalog.has(node.dataset.i18n)) return;
+    if (!factionCopyReady && node.closest?.('#faction-dialog')) return;
+    node.textContent = t(node.dataset.i18n);
+  });
+  root.querySelectorAll('[data-i18n-aria]').forEach(node => {
+    if (catalog.has(node.dataset.i18nAria)) node.setAttribute('aria-label', t(node.dataset.i18nAria));
+  });
+  root.querySelectorAll('[data-i18n-title]').forEach(node => {
+    if (catalog.has(node.dataset.i18nTitle)) node.title = t(node.dataset.i18nTitle);
+  });
+  root.querySelectorAll('[data-i18n-player]').forEach(node => {
+    const key = node.dataset.i18nPlayer + '.' + gender;
+    if (catalog.has(key)) node.textContent = t(key);
+  });
+  root.querySelectorAll('[data-i18n-html]').forEach(node => {
+    if (catalog.has(node.dataset.i18nHtml)) node.innerHTML = t(node.dataset.i18nHtml);
+  });
   root.querySelectorAll('[data-i18n-language]').forEach(node => { node.value = language; });
   root.querySelectorAll('[data-i18n-gender]').forEach(node => { node.value = gender; });
 }
