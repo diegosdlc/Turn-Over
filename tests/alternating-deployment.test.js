@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { GameState } from '../src/core/GameState.js';
 import { getLevel } from '../src/content/levels/index.js';
 import { deployEnemyWave } from '../src/ai/DeploymentAI.js';
+import { playerPresetBandForLevel } from '../src/content/balance.js';
 import { GameSessionStore, restoreSessionState } from '../src/systems/GameSessionStore.js';
 
 function withLocalStorage(run) {
@@ -147,6 +148,21 @@ test('enemy uses three affordable point-budgeted waves without leaving reserve u
       }
     }
     assert.equal(state.deploymentRoster('enemy').some(unit => unit.inReserve), false);
+  }
+});
+
+test('all four CSV playtest bands have an affordable player piece in every wave', () => {
+  for (const id of ['tutorial-01', 'tutorial-02', 'tutorial-03', 'tutorial-04']) {
+    const level = getLevel(id, { playerBand: playerPresetBandForLevel(id, 'green') });
+    const state = new GameState(level);
+    for (let round = 1; round <= 3; round++) {
+      deployEnemyWave(state, level);
+      assert.equal(state.finishEnemyDeploymentRound(), true, id + ': enemy wave ' + round);
+      assert.equal(placePlayers(state, 1), 1, id + ': player wave ' + round);
+      assert.ok(state.deploymentRoundPlaced('player') <= state.deploymentRoundQuota('player'));
+      if (round < 3) assert.equal(state.advanceDeploymentRound(), true);
+    }
+    assert.equal(state.beginPlay(), true, id + ': combat starts');
   }
 });
 
