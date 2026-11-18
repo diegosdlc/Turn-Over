@@ -72,3 +72,28 @@ test('faction selection uses the requested editable text and inline gender greet
   assert.ok(html.indexOf('id="faction-gender"') < html.indexOf('id="faction-title"'));
   assert.ok(html.indexOf('id="faction-tutorials"') > html.indexOf('data-player-faction="yellow"'));
 });
+
+test('faction selection has visible Spanish fallbacks even before its CSV is loaded', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  for (const phrase of [
+    'Bienvenido', 'Bienvenida', 'Bienvenide', 'Comandante a Turn Over.',
+    'Selecciona a tu banda, supera los obstáculos en tu camino y diseña tu estrategia hacia la victoria.',
+    'Elige tu facción:', 'Tolias Sol:', 'Gwol Tsung:', 'Kuntdora:',
+    'sus Alfiles pueden atacar las diagonales e impulsarse en los bordes del tablero.',
+    'su veloz Caballería es capaz de saltar obstáculos y desplegarse en la vanguardia de tu territorio.',
+    'sus altas Torres dominan el campo y cuentan con una resistencia superior.'
+  ]) {
+    assert.ok(html.includes(phrase), 'Missing fallback: ' + phrase);
+  }
+  const options = [...html.matchAll(/<option value="(masculine|feminine|neutral)" data-i18n="ui\\.faction\\.greeting\\.[^"]+">/g)].map(match => match[1]);
+  assert.deepEqual(options, ['masculine', 'feminine', 'neutral']);
+});
+
+test('faction UI cannot be overwritten with stale CSV or translation key names', () => {
+  const source = readFileSync(new URL('../src/i18n/index.js', import.meta.url), 'utf8');
+  assert.match(source, /fetch\(url, \{ cache: 'no-store' \}\)/);
+  assert.match(source, /url\.searchParams\.set\('revision', TEXTS_REVISION\)/);
+  assert.match(source, /FACTION_COPY_KEYS\.every\(key => catalog\.has\(key\)\)/);
+  assert.match(source, /if \(!catalog\.has\(node\.dataset\.i18n\)\) return/);
+  assert.match(source, /!factionCopyReady && node\.closest\?\.\('#faction-dialog'\)/);
+});
