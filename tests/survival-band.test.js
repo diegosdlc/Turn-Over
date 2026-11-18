@@ -55,7 +55,7 @@ test('survival retains early victory if all threats are eliminated', () => {
 
 test('survival starts at a deliberate budget disadvantage with no free protected king', () => {
   const {level,state} = ready();
-  assert.equal(level.deployment.pointLimit,20);
+  assert.equal(level.deployment.pointLimit,24);
   assert.equal(bandPointValue(level.units.filter(u => u.team === 'enemy')),30);
   assert.ok(state.units.every(unit => !unit.missionKing));
   assert.equal(level.rules.surviveRounds,8);
