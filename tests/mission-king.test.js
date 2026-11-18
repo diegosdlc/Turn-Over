@@ -46,7 +46,8 @@ test('protected king is placed, locked, free and excluded from deployment quotas
     assert.equal(state.deploymentRoundPlaced('player'), 0);
     const roster = state.deploymentRoster('player').filter(unit => !unit.missionKing);
     const quota = [1, 2, 3].map(round => { state.deploymentRound = round; return state.deploymentRoundQuota('player'); });
-    assert.equal(quota.reduce((a,b)=>a+b,0), roster.length);
+    assert.deepEqual(quota, [8, 8, 8]);
+    assert.ok(roster.some(unit => state.deploymentUnitCost(unit) <= quota[0]));
     state.deploymentRound = 3;
     assert.equal(state.deploymentComplete(), false, 'Mission king alone cannot finish deployment');
     state.deploymentTurn = 'player';
