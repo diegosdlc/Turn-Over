@@ -42,3 +42,33 @@ test('faction checkbox is below the options and has editable ES/EN localization'
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   assert.match(main, /forceEnabled: forceTutorial \|\| this\.tutorialsEnabled/);
 });
+
+test('faction selection uses the requested editable text and inline gender greeting', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const csv = parseCSV(readFileSync(new URL('../locales/texts.csv', import.meta.url), 'utf8'));
+  const textByKey = new Map(csv.slice(1).map(row => [row[0], row]));
+  const expected = new Map([
+    ['ui.faction.greeting.feminine', 'Bienvenida'],
+    ['ui.faction.greeting.masculine', 'Bienvenido'],
+    ['ui.faction.greeting.neutral', 'Bienvenide'],
+    ['ui.faction.greeting.end', 'Comandante a Turn Over.'],
+    ['ui.faction.intro', 'Selecciona a tu banda, supera los obstáculos en tu camino y diseña tu estrategia hacia la victoria.'],
+    ['ui.faction.select', 'Elige tu facción:'],
+    ['ui.faction.green.option', 'Tolias Sol:'],
+    ['ui.faction.green.special', 'sus Alfiles pueden atacar las diagonales e impulsarse en los bordes del tablero.'],
+    ['ui.faction.yellow.option', 'Gwol Tsung:'],
+    ['ui.faction.yellow.special', 'su veloz Caballería es capaz de saltar obstáculos y desplegarse en la vanguardia de tu territorio.'],
+    ['ui.faction.red.option', 'Kuntdora:'],
+    ['ui.faction.red.special', 'sus altas Torres dominan el campo y cuentan con una resistencia superior.']
+  ]);
+
+  for (const [key, value] of expected) {
+    assert.equal(textByKey.get(key)?.[2], value, key);
+    assert.ok(textByKey.get(key)?.[3], 'Missing English translation: ' + key);
+    assert.ok(html.includes('data-i18n="' + key + '"'), 'UI does not use: ' + key);
+  }
+  const genderOptions = [...html.matchAll(/<option value="(feminine|masculine|neutral)" data-i18n="ui\.faction\.greeting\.[^"]+">/g)];
+  assert.equal(genderOptions.length, 3);
+  assert.ok(html.indexOf('id="faction-gender"') < html.indexOf('id="faction-title"'));
+  assert.ok(html.indexOf('id="faction-tutorials"') > html.indexOf('data-player-faction="yellow"'));
+});
