@@ -45,7 +45,7 @@ test('Word headings and body text are editable and translated through CSV', () =
     assert.ok(texts.get(key)?.es.includes(excerpt), key + ': Spanish text');
     assert.ok(texts.get(key)?.en, key + ': English text');
   }
-  for (const key of [...expected, 'notebook.rules.deploy.budget.alt', 'notebook.rules.deploy.area.alt', 'notebook.rules.movement.alt', 'notebook.rules.capture.alt']) {
+  for (const key of [...Object.keys(expected), 'notebook.rules.deploy.budget.alt', 'notebook.rules.deploy.area.alt', 'notebook.rules.movement.alt', 'notebook.rules.capture.alt']) {
     assert.ok(texts.has(key), 'Missing key: ' + key);
   }
 });
