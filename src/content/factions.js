@@ -1,7 +1,7 @@
 export const FACTIONS = Object.freeze({
   green: {
     id: 'green',
-    name: 'Verde',
+    name: 'Tolias Sol',
     specialPieceType: 'bishop',
     palettes: {
       player: {
@@ -36,7 +36,7 @@ export const FACTIONS = Object.freeze({
   },
   red: {
     id: 'red',
-    name: 'Roja',
+    name: 'Kuntdora',
     specialPieceType: 'rook',
     palette: {
       primary: '#d47268',
@@ -47,7 +47,7 @@ export const FACTIONS = Object.freeze({
   },
   yellow: {
     id: 'yellow',
-    name: 'Amarilla',
+    name: 'Gwol Tsung',
     specialPieceType: 'knight',
     palette: {
       primary: '#e1bd50',
