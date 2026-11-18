@@ -85,7 +85,7 @@ test('faction selection has visible Spanish fallbacks even before its CSV is loa
   ]) {
     assert.ok(html.includes(phrase), 'Missing fallback: ' + phrase);
   }
-  const options = [...html.matchAll(/<option value="(masculine|feminine|neutral)" data-i18n="ui\\.faction\\.greeting\\.[^"]+">/g)].map(match => match[1]);
+  const options = [...html.matchAll(/<option value="(masculine|feminine|neutral)" data-i18n="ui\.faction\.greeting\.[^"]+">/g)].map(match => match[1]);
   assert.deepEqual(options, ['masculine', 'feminine', 'neutral']);
 });
 
