@@ -18,7 +18,7 @@ A level opts into deployment with a `deployment` block:
 deployment: {
   team: 'player',
   rows: [6, 7],
-  pointLimit: 18
+  pointLimit: 21
 }
 ```
 
@@ -28,7 +28,7 @@ deployment: {
 
 Production level limits are resolved through `src/content/balance.js` from `balance/levels.csv`. A level not listed there falls back to the calculated value of its enemy band. Explicit configured limits are compared with the enemy value and produce a console warning when they diverge.
 
-The four campaign levels deploy the player on rows `6` and `7`, nearest the player; budgets are configured in `balance/levels.csv`. Their enemy formations and blocking cells are also CSV-driven.
+The four campaign levels deploy the player on rows `6` and `7`, nearest the player; budgets are configured in `balance/levels.csv`. Alternating deployment uses three waves, each limited to one third of the total budget in **points**, not a fixed number of pieces. Unspent points do not carry between waves. The opponent uses its own calculated budget, large enough to distribute the reserve across three point-limited waves. Their enemy formations and blocking cells are also CSV-driven.
 
 ## Point costs and lineup selection
 
@@ -68,7 +68,7 @@ A deployment cell is legal only when:
 2. `y` belongs to the configured deployment rows or to rows granted by that unit's evolution capabilities;
 3. no other active unit occupies the cell;
 4. no blocking `boardElement` occupies the cell;
-5. adding a reserve unit would not exceed `pointLimit`.
+5. adding a reserve unit would not exceed `pointLimit`, or the active wave's `pointLimit / 3` in alternating deployment.
 
 The UI may highlight valid/invalid placement zones, but it must not implement a separate interpretation of these rules.
 
@@ -97,7 +97,7 @@ During deployment:
 - **Banda** shows the complete carried roster, not only participating pieces;
 - every card shows its point cost and evolved pieces display a `+` badge;
 - reserve pieces are visually de-emphasized;
-- pieces that do not fit in the remaining budget are disabled;
+- pieces that do not fit in the remaining total or per-round point budget are disabled;
 - placed pieces expose **Retirar** so points can be refunded;
 - the status line shows spent/maximum points and remaining points;
 - the selected piece can come either from the notebook panel or from a piece already placed on the board;
@@ -197,4 +197,4 @@ The enemy lineup and exact placement preferences are configured in `balance/enem
 
 ## Rey de misión predesplegado
 
-Para los objetivos de escolta y supervivencia de la campaña hay un Rey de misión independiente, creado desde la posición del nivel en `balance/levels.csv`. Su `missionKing: true` lo identifica en estado, UI y guardados. Se mantiene activo y fijo durante las tres rondas de despliegue: no consume presupuesto, no entra en las cuotas, no puede seleccionarse para recolocarlo ni retirarse. Al comenzar el combate es una unidad normal controlada por el jugador. Se excluye de la evolución y del roster persistido tras la victoria. La misión solo se considera cumplida si sobrevive o alcanza el objetivo **ese rey**, no otro rey de la banda.
+Para el objetivo de escolta de la campaña hay un Rey de misión independiente, creado desde la posición del nivel en `balance/levels.csv`. Su `missionKing: true` lo identifica en estado, UI y guardados. Se mantiene activo y fijo durante las tres rondas de despliegue: no consume presupuesto, no entra en las cuotas, no puede seleccionarse para recolocarlo ni retirarse. Al comenzar el combate es una unidad normal controlada por el jugador. Se excluye de la evolución y del roster persistido tras la victoria. La misión solo se considera cumplida si sobrevive o alcanza el objetivo **ese rey**, no otro rey de la banda.
