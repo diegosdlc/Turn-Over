@@ -303,11 +303,10 @@ class GameApp {
         const name = document.createElement('span');
         name.className = 'deployment-piece-name';
         name.textContent = pieceName(enemy);
-        tile.append(name);
         const status = document.createElement('span');
         status.className = 'deployment-piece-meta';
         status.textContent = t(enemy.inReserve ? 'ui.deployment.status_pending' : 'ui.deployment.status_board');
-        card.append(tile, status);
+        card.append(tile, name, status);
         this.enemyDeploymentPieces.append(card);
       }
     }
@@ -367,7 +366,6 @@ class GameApp {
       const name = document.createElement('span');
       name.className = 'deployment-piece-name';
       name.textContent = pieceName(unit);
-      button.append(name);
 
       button.addEventListener('click', () => {
         if (!playerTurn || unit.missionKing || (alternating && this.state.isDeploymentCommitted(unit))) return;
@@ -395,7 +393,7 @@ class GameApp {
         });
         status.append(remove);
       }
-      card.append(button, status);
+      card.append(button, name, status);
 
       this.deploymentPieces.append(card);
     }

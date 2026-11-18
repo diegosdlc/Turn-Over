@@ -23,6 +23,7 @@ function notebookSections() {
     ],
     rules: [
       { title: t('notebook.rules.title'), html: t('notebook.rules.body') },
+      { title: t('notebook.deployment.title'), html: t('notebook.deployment.body') },
       { title: t('notebook.turn.title'), html: t('notebook.turn.body') },
       { title: t('notebook.evolution.title'), html: t('notebook.evolution.body') }
     ],
@@ -150,14 +151,13 @@ class NotebookUI {
         const name = document.createElement('span');
         name.className = 'deployment-piece-name';
         name.textContent = unit.missionKing ? t('ui.mission.king_tag') : pieceName(unit);
-        tile.append(name);
         const meta = document.createElement('small');
         meta.className = 'deployment-piece-meta';
         meta.textContent = unit.missionKing && !unit.destroyed && !unit.captured
           ? t('ui.mission.king_status')
           : t(unit.destroyed ? 'ui.roster.destroyed' : unit.captured ? 'ui.roster.captured' :
             unit.inReserve ? 'ui.roster.reserve' : 'ui.deployment.status_board');
-        card.append(tile, meta);
+        card.append(tile, name, meta);
         grid.append(card);
       }
       section.append(grid);
