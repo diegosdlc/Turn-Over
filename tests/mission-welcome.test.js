@@ -61,6 +61,6 @@ test('survival welcome preserves the merged PR #23 rules (band, not a mission ki
     const briefing = welcomeTextFor(level, translateIn(language));
     assert.match(briefing, language === 'es' ? /al menos una pieza/ : /at least one member/);
     assert.doesNotMatch(briefing, /Rey de misión|Mission King/);
-    assert.match(briefing, language === 'es' ? /8 rondas/ : /8 complete rounds/);
+    assert.match(briefing, language === 'es' ? /20 rondas/ : /20 complete rounds/);
   }
 });
