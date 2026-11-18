@@ -16,6 +16,7 @@ const sources = Object.fromEntries(Object.entries({
 const ids = ['tutorial-01', 'tutorial-02', 'tutorial-03', 'tutorial-04'];
 const victories = ['elimination', 'escort-king', 'capture-king', 'survive'];
 const rivalFactions = ['red', 'yellow', 'red', 'yellow'];
+const statefulRoundCap = level => new GameState(level).deploymentRoundQuota('player');
 
 test('four campaign levels use CSV budgets, objectives, enemy formations and obstacle positions', () => {
   assert.deepEqual(Object.values(BALANCE.levelDefinitions).filter(level => level.kind === 'campaign').map(level => level.id), ids);
@@ -26,8 +27,11 @@ test('four campaign levels use CSV budgets, objectives, enemy formations and obs
     assert.ok(level.units.filter(unit => unit.team === 'enemy').every(unit => unit.faction === rivalFactions[index]), id + ': rival unit origins');
     assert.equal(level.nextLevelId, ids[index + 1] ?? null);
     assert.equal(level.deployment.pointLimit, BALANCE.levelPointLimits[id]);
+    assert.equal(level.deployment.pointLimit, [21, 24, 27, 24][index]);
+    assert.equal(level.deployment.pointLimit % 3, 0);
+    assert.equal(statefulRoundCap(level), level.deployment.pointLimit / 3);
     if (id === 'tutorial-04') assert.ok(level.deployment.pointLimit < bandPointValue(enemyBandForLevel(id)));
-    else assert.equal(level.deployment.pointLimit, bandPointValue(enemyBandForLevel(id)));
+    else assert.ok(level.deployment.pointLimit >= bandPointValue(enemyBandForLevel(id)));
     assert.deepEqual(level.units.filter(unit => unit.team === 'enemy'), enemyBandForLevel(id));
     assert.deepEqual(level.boardElements, obstaclesForLevel(id));
     assert.equal(level.deployment.mode, 'alternating');
@@ -37,7 +41,7 @@ test('four campaign levels use CSV budgets, objectives, enemy formations and obs
   }
   assert.equal(getLevel('tutorial-02').rules.targetRow, 0);
   assert.equal(getLevel('tutorial-04').rules.surviveRounds, 8);
-  assert.equal(getLevel('tutorial-04').deployment.pointLimit, 20);
+  assert.equal(getLevel('tutorial-04').deployment.pointLimit, 24);
   assert.equal(bandPointValue(enemyBandForLevel('tutorial-04')), 30);
   assert.equal(getLevel('tutorial-04').units.filter(unit => unit.missionKing).length, 0);
   assert.ok(!Object.values(BALANCE.levelDefinitions).some(level => level.kind === 'lab'));
@@ -65,14 +69,22 @@ test('editing a CSV cell changes parsed costs, budgets, formations and obstacles
   const edited = parseBalanceTables({
     ...sources,
     pieces: sources.pieces.replace('pawn,2,3', 'pawn,3,5'),
-    levels: sources.levels.replace('tutorial-01,campaign,Nivel 1 · Destrucción,level.tutorial_01,elimination,tutorial-02,18', 'tutorial-01,campaign,Nivel 1 · Destrucción,level.tutorial_01,elimination,tutorial-02,19'),
+    levels: sources.levels.replace('tutorial-01,campaign,Nivel 1 · Destrucción,level.tutorial_01,elimination,tutorial-02,21', 'tutorial-01,campaign,Nivel 1 · Destrucción,level.tutorial_01,elimination,tutorial-02,24'),
     enemies: sources.enemies.replace('tutorial-01,enemy-queen,queen,red,south,base,4,0','tutorial-01,enemy-queen,queen,red,south,base,3,0'),
     obstacles: sources.obstacles.replace('tutorial-01,tutorial-blocker-c4,2,3', 'tutorial-01,tutorial-blocker-c4,1,3')
   });
   assert.equal(edited.pieceCosts.pawn.base, 3);
-  assert.equal(edited.levelPointLimits['tutorial-01'], 19);
+  assert.equal(edited.levelPointLimits['tutorial-01'], 24);
   assert.equal(edited.enemyFormations['tutorial-01'].find(unit => unit.id === 'enemy-queen').x, 3);
   assert.equal(edited.levelObstacles['tutorial-01'][0].x, 1);
+});
+
+test('CSV rejects budgets that are not divisible by three', () => {
+  assert.throws(() => parseBalanceTables({
+    ...sources,
+    levels: sources.levels.replace('tutorial-01,campaign,Nivel 1 · Destrucción,level.tutorial_01,elimination,tutorial-02,21',
+      'tutorial-01,campaign,Nivel 1 · Destrucción,level.tutorial_01,elimination,tutorial-02,22')
+  }), /divisible por 3/);
 });
 
 test('invalid CSV headers, duplicated units and blocked formation squares are rejected', () => {
