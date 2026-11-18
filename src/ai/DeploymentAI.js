@@ -1,18 +1,14 @@
 // Simple objective-aware, deterministic setup heuristics. Does not use combat turns.
 export function deployEnemyWave(state, level) {
   if (!state.isAlternatingDeployment() || state.deploymentTurn !== 'enemy') return;
-  const roster = state.deploymentRoster('enemy');
-  const available = roster.filter(unit => unit.inReserve);
-  const quota = state.deploymentRoundQuota('enemy');
-  // Prioritize pieces that can hold an approach while protecting the royal pieces.
+  const plannedIds = new Set(state.enemyDeploymentPlan().waves[state.deploymentRound - 1]);
+  const available = state.deploymentRoster('enemy').filter(unit => unit.inReserve && plannedIds.has(unit.id));
+  // Each planned wave fits its points cap; the AI keeps the CSV formation when possible.
   available.sort((a, b) => priority(b, level) - priority(a, level));
-  let placed = 0;
   for (const unit of available) {
-    if (placed >= quota) break;
     const preferred = level.units.find(piece => piece.id === unit.id && piece.team === 'enemy');
     // CSV coordinates define the rival formation; heuristics are a fallback only.
     if (preferred && state.placeDeploymentUnit(unit, preferred.x, preferred.y)) {
-      placed += 1;
       continue;
     }
     const size = level.board.size ?? 8;
@@ -21,7 +17,7 @@ export function deployEnemyWave(state, level) {
       if (state.canDeployAt(unit, x, y)) cells.push({ x, y, score: scoreCell(state, level, unit, x, y, size) });
     }
     cells.sort((a, b) => b.score - a.score || a.y - b.y || a.x - b.x);
-    if (cells.length && state.placeDeploymentUnit(unit, cells[0].x, cells[0].y)) placed += 1;
+    if (cells.length) state.placeDeploymentUnit(unit, cells[0].x, cells[0].y);
   }
 }
 function priority(unit, level) {
