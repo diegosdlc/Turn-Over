@@ -57,3 +57,25 @@ test('piece names are outside sprite tiles in deployment and the Band notebook',
   assert.match(notebook, /card\.append\(tile, name, meta\)/);
   assert.match(styles, /\.deployment-panel \.deployment-piece-name,\s*\.notebook-roster-card \.deployment-piece-name\s*\{\s*position:static/);
 });
+
+test('new faction strings in CSV match the requested UI copy', () => {
+  const translations = new Map(rows.map(([key, , es, en]) => [key, { es, en }]));
+  const expected = {
+    'ui.faction.greeting.masculine': 'Bienvenido',
+    'ui.faction.greeting.feminine': 'Bienvenida',
+    'ui.faction.greeting.neutral': 'Bienvenide',
+    'ui.faction.greeting.end': 'Comandante a Turn Over.',
+    'ui.faction.intro': 'Selecciona a tu banda, supera los obstáculos en tu camino y diseña tu estrategia hacia la victoria.',
+    'ui.faction.select': 'Elige tu facción:',
+    'ui.faction.green.option': 'Tolias Sol:',
+    'ui.faction.green.special': 'sus Alfiles pueden atacar las diagonales e impulsarse en los bordes del tablero.',
+    'ui.faction.yellow.option': 'Gwol Tsung:',
+    'ui.faction.yellow.special': 'su veloz Caballería es capaz de saltar obstáculos y desplegarse en la vanguardia de tu territorio.',
+    'ui.faction.red.option': 'Kuntdora:',
+    'ui.faction.red.special': 'sus altas Torres dominan el campo y cuentan con una resistencia superior.'
+  };
+  for (const [key, es] of Object.entries(expected)) {
+    assert.equal(translations.get(key)?.es, es, key);
+    assert.ok(translations.get(key)?.en, 'Missing English text: ' + key);
+  }
+});

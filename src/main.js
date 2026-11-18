@@ -9,6 +9,7 @@ import { AudioManager } from './systems/AudioManager.js?v=20260814-1700';
 import { GameSessionStore, restoreSessionState } from './systems/GameSessionStore.js?v=20261111-rival-factions-1';
 import { ProgressionStore } from './systems/ProgressionStore.js?v=20260821-evolution-3';
 import { TutorialSystem } from './systems/TutorialSystem.js';
+import { loadTutorialPreference, saveTutorialPreference } from './systems/TutorialPreference.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20261111-campaign-playtests-1';
 import { AIController } from './ai/AIController.js?v=20261111-ai-profiles-1';
 import { legalActionsFor } from './core/rules.js?v=20260821-evolution-3';
@@ -31,6 +32,8 @@ class GameApp {
     this.welcomeStart = document.querySelector('#welcome-start');
     this.settingsDialog = document.querySelector('#settings-dialog');
     this.factionDialog = document.querySelector('#faction-dialog');
+    this.tutorialCheckbox = document.querySelector('#faction-tutorials');
+    this.tutorialsEnabled = loadTutorialPreference();
     this.notebook = document.querySelector('#notebook-ui');
     this.deploymentPanel = document.querySelector('#deployment-panel');
     this.deploymentPieces = document.querySelector('#deployment-pieces');
@@ -99,6 +102,9 @@ class GameApp {
     document.querySelector('#settings-language')?.addEventListener('change', event => setLanguage(event.target.value));
     document.querySelector('#settings-gender')?.addEventListener('change', event => setGender(event.target.value));
     document.querySelector('#faction-gender')?.addEventListener('change', event => setGender(event.target.value));
+    this.tutorialCheckbox?.addEventListener('change', event => {
+      this.tutorialsEnabled = saveTutorialPreference(event.target.checked);
+    });
     document.querySelector('#close-faction-selection').addEventListener('click', () => this.factionDialog.close());
     this.deploymentStart?.addEventListener('click', () => this.startDeployedGame());
     this.welcomeStart?.addEventListener('click', () => this.welcomeDialog?.close());
@@ -120,11 +126,13 @@ class GameApp {
   }
 
   openFactionSelection() {
+    if (this.tutorialCheckbox) this.tutorialCheckbox.checked = this.tutorialsEnabled;
     if (!this.factionDialog.open) this.factionDialog.showModal();
   }
 
   startNewGame(playerFactionId) {
     if (!PLAYER_FACTION_IDS.includes(playerFactionId)) return;
+    if (this.tutorialCheckbox) this.tutorialsEnabled = saveTutorialPreference(this.tutorialCheckbox.checked);
     this.isTestMode = false;
     this.session.clear();
     if (this.factionDialog.open) this.factionDialog.close();
@@ -182,7 +190,7 @@ class GameApp {
       onCaptureAction: action => this.resolveCapture(action)
     });
     this.audio.configure(level.music);
-    this.tutorial.configure(level.id, level.tutorial, { forceEnabled: forceTutorial });
+    this.tutorial.configure(level.id, level.tutorial, { forceEnabled: forceTutorial || this.tutorialsEnabled });
     if (this.resultDialog.open) this.resultDialog.close();
     this.resolvePhase();
     this.saveSession();
