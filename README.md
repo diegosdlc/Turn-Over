@@ -67,7 +67,7 @@ See [`docs/EVOLUTION.md`](docs/EVOLUTION.md).
 
 ## Deployment and balance
 
-Budgeted deployment is declarative per level. `GameState` owns reserve participation, affordability, placement legality, refunds and the transition into play. Spending the entire allowance is optional, but at least one piece must participate.
+Budgeted deployment is declarative per level. In alternating deployment, each of the three rounds allows any number of pieces up to one third of the level's total point budget; unused points do not carry over. `GameState` owns reserve participation, affordability, placement legality, refunds and the transition into play. Spending the entire allowance is optional, but at least one piece must participate.
 
 Costs, budgets, enemy formations, victory objectives, obstacle locations and AI tactical profiles live in the five production CSVs under [`balance/`](balance/). The browser loads them at runtime, so tweaking encounters does not require code edits. Test-only carried rosters live in a sixth CSV, `balance/player-presets.csv`. See [`docs/BALANCE.md`](docs/BALANCE.md) for validation rules.
 
