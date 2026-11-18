@@ -46,7 +46,7 @@ test('special placeholder follows the selected faction, recruited pieces retain 
   assert.equal(red.find(unit => unit.id === 'player-special').pieceType, 'rook');
   assert.equal(yellow.find(unit => unit.id === 'player-special').pieceType, 'knight');
   assert.equal(red.find(unit => unit.id === 'player-special').faction, 'red');
-  assert.equal(red.find(unit => unit.id === 'player-recruit-pawn').faction, 'green');
+  assert.equal(red.find(unit => unit.id === 'player-recruit-pawn').faction, 'red');
   assert.throws(() => playerPresetBandForLevel('tutorial-01', 'unknown'), /Banda de prueba/);
 });
 
@@ -54,8 +54,8 @@ test('editing a preset CSV row changes the parsed test roster without changing t
   const edited = parseBalanceTables({
     ...sources,
     playerPresets: sources.playerPresets.replace(
-      'tutorial-02,player-recruit-pawn,pawn,green,north,base',
-      'tutorial-02,player-recruit-pawn,knight,green,north,evolved'
+      'tutorial-02,player-recruit-pawn,pawn,player,north,base',
+      'tutorial-02,player-recruit-pawn,knight,player,north,evolved'
     )
   });
   assert.equal(edited.playerPresetBands['tutorial-02'].at(-1).pieceType, 'knight');
@@ -65,7 +65,7 @@ test('editing a preset CSV row changes the parsed test roster without changing t
 
 test('bad test rosters fail validation instead of starting corrupt levels', () => {
   assert.throws(() => parseBalanceTables({ ...sources, playerPresets: sources.playerPresets.replace(
-    'tutorial-02,player-recruit-pawn,pawn,green,north,base',
+    'tutorial-02,player-recruit-pawn,pawn,player,north,base',
     'tutorial-02,player-king,pawn,green,north,base'
   ) }), /duplicada/);
   assert.throws(() => parseBalanceTables({ ...sources, playerPresets: sources.playerPresets.replace(

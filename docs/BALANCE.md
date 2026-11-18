@@ -17,19 +17,22 @@ Los archivos están en UTF-8 con cabeceras exactas, comas y comillas CSV estánd
 
 | Nivel | ID | Victoria | Presupuesto inicial |
 | --- | --- | --- | ---: |
-| 1 | `tutorial-01` | Destrucción (eliminar toda la banda rival) | 18 |
-| 2 | `tutorial-02` | Escolta (llevar el rey propio a la fila objetivo) | 22 |
-| 3 | `tutorial-03` | Captura (capturar o destruir al rey rival) | 26 |
-| 4 | `tutorial-04` | Supervivencia (conservar al menos una pieza durante `survive_rounds` rondas) | 20 |
+| 1 | `tutorial-01` | Destrucción (eliminar toda la banda rival) | 21 |
+| 2 | `tutorial-02` | Escolta (llevar el rey propio a la fila objetivo) | 24 |
+| 3 | `tutorial-03` | Captura (capturar o destruir al rey rival) | 27 |
+| 4 | `tutorial-04` | Supervivencia (conservar al menos una pieza durante `survive_rounds` rondas) | 24 |
 
-Los cuatro niveles usan despliegue alterno de tres rondas, con el rey rival precolocado y las demás piezas rivales colocadas preferentemente en la casilla de su fila CSV. Si la casilla ya no es legal, la IA busca una posición legal alternativa. `x` e `y` van de **0 a 7**, con el enemigo desplegando en filas **0–1** y el jugador en **6–7**. El `target_row` del objetivo de escolta también se expresa en coordenadas de tablero.
+Los cuatro niveles usan despliegue alterno de tres rondas. En cada ronda el jugador puede desplegar **cualquier cantidad de piezas** mientras su coste combinado no supere un tercio del presupuesto total (7, 8, 9 y 8 puntos, respectivamente). Los puntos sobrantes de una ronda no se trasladan a la siguiente; las piezas confirmadas quedan fijas. La banda rival también utiliza un tercio de su propio presupuesto por ronda, calculado a partir de sus unidades pendientes (el rey rival precolocado queda excluido), y la IA distribuye las unidades para que quepan en tres rondas. El coste de la Reina+ se ajusta de 9 a **8** puntos, permitiendo su uso en los niveles con un cupo de 8.
 
-La formación enemiga se valida y se suma utilizando los mismos costes que el despliegue del jugador. En supervivencia la asimetría es intencional: **20 puntos para el jugador frente a 30 puntos de banda enemiga**. En otros niveles, un desajuste sigue avisando en consola y se respeta el presupuesto configurado. Los antiguos laboratorios de mecánicas se han retirado del selector y no constituyen niveles de campaña.
+El rey rival comienza precolocado, y las demás piezas rivales se despliegan preferentemente en las casillas indicadas por el CSV. Si la casilla ya no es legal, la IA busca una posición legal alternativa. `x` e `y` van de **0 a 7**, con el enemigo desplegando en filas **0–1** y el jugador en **6–7**. El `target_row` del objetivo de escolta también se expresa en coordenadas de tablero.
+
+La formación enemiga se valida y se suma utilizando los mismos costes que el despliegue del jugador. En supervivencia la asimetría es intencional: **24 puntos para el jugador frente a 30 puntos de banda enemiga**. En otros niveles, un desajuste sigue avisando en consola y se respeta el presupuesto configurado. Los antiguos laboratorios de mecánicas se han retirado del selector y no constituyen niveles de campaña.
 
 ## Validaciones
 
 - Los costes de piezas son finitos y no negativos; el evolucionado debe costar más que el base.
-- Los presupuestos son enteros positivos; la IA recibe parámetros numéricos válidos.
+- Los presupuestos son enteros positivos y **divisibles por 3**; la IA recibe parámetros numéricos válidos.
+- Las bandas de prueba han de contener al menos tres piezas asequibles (coste ≤ presupuesto/3), para poder colocar una en cada ronda.
 - Cada nivel de campaña requiere una formación rival con rey; no puede haber IDs de pieza ni casillas repetidas.
 - Los obstáculos no pueden solaparse ni ocupar una casilla inicial rival si bloquean.
 - Un error estructural en cualquiera de los seis CSV impide cargar el balance y lo muestra como error, para evitar partidas mal configuradas.
@@ -79,7 +82,7 @@ Las misiones de escolta destacan todas las casillas transitables de la fila obje
 
 ## Supervivencia asimétrica (nivel 4)
 
-El jugador entra con un presupuesto máximo de **20 puntos** frente a **30 puntos** de piezas rivales. El objetivo es mantener **al menos una pieza activa, de cualquier tipo**, hasta completar `survive_rounds` rondas (valor inicial: **8**). La captura o destrucción del rey del jugador **no** provoca derrota ni deshabilita las piezas restantes; solo se pierde si no queda ninguna pieza activa. Eliminar toda la banda enemiga supone victoria anticipada, ya que desaparece la amenaza.
+El jugador entra con un presupuesto máximo de **24 puntos** frente a **30 puntos** de piezas rivales. El objetivo es mantener **al menos una pieza activa, de cualquier tipo**, hasta completar `survive_rounds` rondas (valor inicial: **20**). La captura o destrucción del rey del jugador **no** provoca derrota ni deshabilita las piezas restantes; solo se pierde si no queda ninguna pieza activa. Eliminar toda la banda enemiga supone victoria anticipada, ya que desaparece la amenaza.
 
 Una ronda se completa cuando la IA finaliza su acción (incluidos intercambios o ataques rechazados) o cuando salta un turno sin acciones legales. El contador «Rondas restantes» está visible durante el combate (oculto durante el despliegue), decrece hasta 0, se actualiza al cambiar de idioma y recupera su valor al continuar una sesión guardada. Los guardados antiguos del nivel 4 que contenían un `missionKing` gratuito se migran descartando esa pieza, sin modificar el resto de la banda.
 

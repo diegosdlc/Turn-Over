@@ -30,11 +30,11 @@ for (const condition of ['capture', 'destroy']) {
     } else {
       king.destroyed = true;
     }
-    state.roundsElapsed = 7;
+    state.roundsElapsed = level.rules.surviveRounds - 1;
     assert.equal(state.active(survivor), true);
     assert.equal(victoryResultFor(state,level),null);
     assert.ok(Number.isFinite(objectiveScoreFor(state,level,'enemy')));
-    state.roundsElapsed = 8;
+    state.roundsElapsed = level.rules.surviveRounds;
     assert.deepEqual(victoryResultFor(state,level),{winner:'player',reason:'survived'});
   });
 }
@@ -55,23 +55,23 @@ test('survival retains early victory if all threats are eliminated', () => {
 
 test('survival starts at a deliberate budget disadvantage with no free protected king', () => {
   const {level,state} = ready();
-  assert.equal(level.deployment.pointLimit,20);
+  assert.equal(level.deployment.pointLimit,24);
   assert.equal(bandPointValue(level.units.filter(u => u.team === 'enemy')),30);
   assert.ok(state.units.every(unit => !unit.missionKing));
-  assert.equal(level.rules.surviveRounds,8);
+  assert.equal(level.rules.surviveRounds,20);
   assert.equal(level.rules.victory,'survive');
 });
 
 test('the remaining-round counter clamps, resumes, and does not appear on other missions', () => {
   const {level,state} = ready();
-  assert.deepEqual(survivalProgressFor(state,level),{total:8,completed:0,remaining:8});
+  assert.deepEqual(survivalProgressFor(state,level),{total:20,completed:0,remaining:20});
   state.roundsElapsed = 3;
-  assert.deepEqual(survivalProgressFor(state,level),{total:8,completed:3,remaining:5});
+  assert.deepEqual(survivalProgressFor(state,level),{total:20,completed:3,remaining:17});
   const resumed = new GameState(level);
   restoreSessionState(resumed,{units:structuredClone(state.units),phase:'play',roundsElapsed:3});
-  assert.equal(survivalProgressFor(resumed,level).remaining,5);
+  assert.equal(survivalProgressFor(resumed,level).remaining,17);
   state.roundsElapsed = 20;
-  assert.deepEqual(survivalProgressFor(state,level),{total:8,completed:8,remaining:0});
+  assert.deepEqual(survivalProgressFor(state,level),{total:20,completed:20,remaining:0});
   assert.equal(survivalProgressFor(state,getLevel('tutorial-02')),null);
 });
 
@@ -97,7 +97,7 @@ test('old survival saves drop the obsolete mission king but preserve the band an
   assert.equal(restored.units.length,state.units.length);
   assert.ok(restored.units.every(unit => !unit.missionKing));
   assert.ok(!restored.deploymentCommittedIds.includes(oldKing.id));
-  assert.equal(survivalProgressFor(restored,level).remaining,3);
+  assert.equal(survivalProgressFor(restored,level).remaining,15);
 });
 
 test('the round counter is always visible during survival combat and localized', () => {

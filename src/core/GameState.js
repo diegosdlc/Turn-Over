@@ -115,6 +115,39 @@ export function applyRoyalSwap(state, first, second) {
   return true;
 }
 
+// Plan three enemy waves by points instead of counting pieces. The enemy
+// budget is derived from its reserve (the initial garrison is already placed).
+// Find the smallest per-round cap that can fit every reserve piece.
+export function planDeploymentWaves(units, costOf) {
+  const pieces = units.map(unit => ({ id: unit.id, cost: costOf(unit) }))
+    .sort((a, b) => b.cost - a.cost || a.id.localeCompare(b.id));
+  if (!pieces.length) return { quota: 0, waves: [[], [], []] };
+  const total = pieces.reduce((sum, piece) => sum + piece.cost, 0);
+  const minimum = Math.max(Math.ceil(total / 3), ...pieces.map(piece => piece.cost));
+  for (let quota = minimum; quota <= total; quota++) {
+    const waves = [[], [], []];
+    const spent = [0, 0, 0];
+    const search = index => {
+      if (index === pieces.length) return pieces.length < 3 || waves.every(wave => wave.length);
+      if (waves.filter(wave => !wave.length).length > pieces.length - index) return false;
+      const piece = pieces[index];
+      const tried = new Set();
+      for (let round = 0; round < 3; round++) {
+        if (spent[round] + piece.cost > quota || tried.has(spent[round])) continue;
+        tried.add(spent[round]);
+        waves[round].push(piece.id);
+        spent[round] += piece.cost;
+        if (search(index + 1)) return true;
+        spent[round] -= piece.cost;
+        waves[round].pop();
+      }
+      return false;
+    };
+    if (search(0)) return { quota, waves };
+  }
+  throw new Error('No se pueden distribuir las piezas rivales en tres rondas.');
+}
+
 export class GameState {
   constructor(level) {
     this.level = level;
@@ -146,6 +179,7 @@ export class GameState {
     this.deploymentRound = 1;
     this.deploymentTurn = this.isAlternatingDeployment() ? 'enemy' : 'player';
     this.deploymentCommittedIds = [];
+    this.initialEnemyDeploymentIds = [];
 
     if (this.isDeploying()) {
       const team = this.deploymentTeam();
@@ -167,6 +201,7 @@ export class GameState {
         const fixed = enemies.filter(unit => types.includes(unit.pieceType));
         const initial = fixed.length ? fixed : enemies.slice(0, 1);
         const fixedIds = new Set(initial.map(unit => unit.id));
+        this.initialEnemyDeploymentIds = [...fixedIds];
         for (const enemy of enemies) {
           if (fixedIds.has(enemy.id)) {
             this.deploymentCommittedIds.push(enemy.id);
@@ -257,20 +292,23 @@ export class GameState {
     return this.deploymentCommittedIds.includes(unit?.id);
   }
 
+  enemyDeploymentPlan() {
+    const reserve = this.deploymentRoster('enemy')
+      .filter(unit => !this.initialEnemyDeploymentIds.includes(unit.id));
+    return planDeploymentWaves(reserve, unit => this.deploymentUnitCost(unit));
+  }
+
   deploymentRoundQuota(team) {
     if (!this.isAlternatingDeployment()) return Infinity;
-    const roster = this.deploymentRoster(team).filter(unit => !unit.missionKing);
-    // The initial enemy garrison is not part of the three deployment waves.
-    const predeployed = team === 'enemy'
-      ? (roster.filter(unit => (this.level.deployment.initialEnemyPieceTypes ?? ['king']).includes(unit.pieceType)).length || Math.min(1, roster.length))
-      : 0;
-    const total = Math.max(0, roster.length - predeployed);
-    // Spread committed slots across exactly three waves: e.g. 4 -> 2/1/1.
-    return Math.floor(total / 3) + (this.deploymentRound <= total % 3 ? 1 : 0);
+    if (team === 'enemy') return this.enemyDeploymentPlan().quota;
+    const budget = this.deploymentPointLimit();
+    return budget == null ? Infinity : budget / 3;
   }
 
   deploymentRoundPlaced(team) {
-    return this.deploymentUnits(team).filter(unit => !this.isDeploymentCommitted(unit)).length;
+    return this.deploymentUnits(team)
+      .filter(unit => !this.isDeploymentCommitted(unit))
+      .reduce((points, unit) => points + this.deploymentUnitCost(unit), 0);
   }
 
   advanceDeploymentRound() {
@@ -321,10 +359,15 @@ export class GameState {
   }
 
   canAffordDeploymentUnit(unit) {
-    if (!unit || unit.team !== this.deploymentTeam()) return false;
+    if (!unit || (unit.team !== this.deploymentTeam() && !this.isAlternatingDeployment())) return false;
     if (!unit.inReserve) return true;
-    const limit = this.deploymentPointLimit();
-    return limit == null || this.deploymentPointsSpent() + this.deploymentUnitCost(unit) <= limit;
+    const cost = this.deploymentUnitCost(unit);
+    if (unit.team === this.deploymentTeam()) {
+      const limit = this.deploymentPointLimit();
+      if (limit != null && this.deploymentPointsSpent() + cost > limit) return false;
+    }
+    return !this.isAlternatingDeployment() ||
+      this.deploymentRoundPlaced(unit.team) + cost <= this.deploymentRoundQuota(unit.team);
   }
 
   deploymentRows(unit = null) {
@@ -362,9 +405,9 @@ export class GameState {
     if (!this.isDeploying() || !unit || unit.missionKing) return false;
     if (this.isAlternatingDeployment()) {
       if (unit.team !== this.deploymentTurn || this.isDeploymentCommitted(unit)) return false;
-      if (unit.inReserve && this.deploymentRoundPlaced(unit.team) >= this.deploymentRoundQuota(unit.team)) return false;
+
     } else if (unit.team !== this.deploymentTeam()) return false;
-    if (unit.team === 'player' && unit.inReserve && !this.canAffordDeploymentUnit(unit)) return false;
+    if (unit.inReserve && !this.canAffordDeploymentUnit(unit)) return false;
     if (!this.isDeploymentCell(x, y, unit)) return false;
     return !this.deploymentCellBlocked(x, y, unit.id);
   }

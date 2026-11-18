@@ -30,10 +30,11 @@ The deployment system supports lineup selection by point budget.
 - Placed pieces can be repositioned or **Retirar** to refund their cost.
 - `GameState` validates affordability, board bounds, normal/evolution-expanded deployment rows, occupied cells and blocking `boardElements`.
 - **Iniciar partida** appears when at least one participating piece is validly placed and the lineup is within budget. Spending the full budget is optional.
+- Alternating deployment uses 3 rounds with a point cap of exactly one third of the level budget, without a piece-count quota or carry-over. The enemy uses an independent three-round point budget derived from its reserve formation.
 - Session schema `7` persists alternating deployment rounds and commitments; schema-6 saves remain loadable.
 - Reset returns the deployment roster to reserve and spent points to zero.
 - `balance/` CSV files are the runtime source of truth for costs, level limits, rival formations and obstacle positions.
-- Four campaign levels are linked in order: destruction (18), escort (22), capture of king (26) and survival (20 player vs 30 enemy points). The survival disadvantage is intentional.
+- Four campaign levels are linked in order: destruction (21), escort (24), capture of king (27) and survival (24 player vs 30 enemy points). The survival disadvantage is intentional.
 
 See `docs/DEPLOYMENT.md`, `balance/` and the four files in `balance/`.
 
@@ -161,7 +162,7 @@ The former facing, pawn, budget and victory labs have been unregistered/retired.
 
 ## Survival objective and visible HUD (2026-11-11)
 
-The fourth campaign level has an intentionally smaller player deployment budget (20 points against 30 enemy). It no longer adds the free protected king; any active player unit surviving eight completed enemy turns (or enemy skips) earns victory. Losing the regular king does not end the encounter. A fixed localized countdown is displayed during combat and restored from saved sessions. Old survival saves drop the obsolete mission king automatically. See `docs/BALANCE.md`.
+The fourth campaign level has an intentionally smaller player deployment budget (24 points against 30 enemy). It no longer adds the free protected king; any active player unit surviving eight completed enemy turns (or enemy skips) earns victory. Losing the regular king does not end the encounter. A fixed localized countdown is displayed during combat and restored from saved sessions. Old survival saves drop the obsolete mission king automatically. See `docs/BALANCE.md`.
 
 ## AI profiles from CSV (2026-11-11)
 

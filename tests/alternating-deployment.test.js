@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { GameState } from '../src/core/GameState.js';
 import { getLevel } from '../src/content/levels/index.js';
 import { deployEnemyWave } from '../src/ai/DeploymentAI.js';
+import { playerPresetBandForLevel } from '../src/content/balance.js';
 import { GameSessionStore, restoreSessionState } from '../src/systems/GameSessionStore.js';
 
 function withLocalStorage(run) {
@@ -48,10 +49,13 @@ test('three alternating rounds: enemy first, quotas, locked pieces, then combat'
   for (let round = 1; round <= 3; round++) {
     assert.equal(state.deploymentRound, round);
     deployEnemyWave(state, level);
-    assert.equal(state.deploymentRoundPlaced('enemy'), state.deploymentRoundQuota('enemy'));
+    assert.ok(state.deploymentRoundPlaced('enemy') > 0);
+    assert.ok(state.deploymentRoundPlaced('enemy') <= state.deploymentRoundQuota('enemy'));
     assert.equal(state.finishEnemyDeploymentRound(), true);
     assert.equal(state.deploymentTurn, 'player');
-    assert.equal(placePlayers(state, state.deploymentRoundQuota('player')), state.deploymentRoundQuota('player'));
+    assert.equal(placePlayers(state, 1), 1);
+    assert.ok(state.deploymentRoundPlaced('player') > 0);
+    assert.ok(state.deploymentRoundPlaced('player') <= state.deploymentRoundQuota('player'));
     assert.equal(state.canFinishDeploymentRound(), true);
     if (round < 3) {
       const previous = [...state.deploymentUnits('player')];
@@ -83,16 +87,83 @@ test('round quotas cover roster sizes and missing configured garrison', () => {
       state.deploymentRound = round;
       return state.deploymentRoundQuota('player');
     });
-    assert.equal(quotas.reduce((a, b) => a + b, 0), count);
+    assert.deepEqual(quotas, [7, 7, 7], 'point cap does not depend on roster size');
   }
   const noKing = { ...level, deployment: { ...level.deployment, initialEnemyPieceTypes: ['missing'] } };
   const state = new GameState(noKing);
   assert.equal(state.deploymentRoster('enemy').filter(unit => !unit.inReserve).length, 1);
-  const quotas = [1, 2, 3].map(round => {
-    state.deploymentRound = round;
-    return state.deploymentRoundQuota('enemy');
-  });
-  assert.equal(quotas.reduce((a, b) => a + b, 0), state.deploymentRoster('enemy').length - 1);
+  const plan = state.enemyDeploymentPlan();
+  assert.equal(plan.waves.flat().length, state.deploymentRoster('enemy').length - 1);
+  assert.ok(plan.waves.every(wave => wave.length > 0));
+  assert.equal(state.deploymentRoundQuota('enemy'), plan.quota);
+});
+
+test('player can place multiple cheap pieces, limited only by points per round', () => {
+  const base = getLevel('tutorial-01');
+  const pawn = base.units.find(unit => unit.team === 'player' && unit.pieceType === 'pawn');
+  const players = Array.from({ length: 6 }, (_, i) => ({ ...pawn, id: 'pawn-' + i }));
+  const state = new GameState({ ...base, units: [...players, ...base.units.filter(unit => unit.team === 'enemy')] });
+  deployEnemyWave(state, base);
+  state.finishEnemyDeploymentRound();
+  assert.equal(state.deploymentRoundQuota('player'), 7);
+  assert.equal(placePlayers(state, 3), 3);
+  assert.equal(state.deploymentRoundPlaced('player'), 6);
+  const next = state.deploymentRoster('player').find(unit => unit.inReserve);
+  assert.equal(state.canAffordDeploymentUnit(next), false, 'no fourth pawn despite remaining overall budget');
+  const placed = state.deploymentUnits('player')[0];
+  assert.equal(state.reserveDeploymentUnit(placed), true);
+  assert.equal(state.deploymentRoundPlaced('player'), 4);
+  assert.equal(state.canAffordDeploymentUnit(next), true, 'removing a piece refunds this wave');
+  assert.equal(placePlayers(state, 1), 1);
+  assert.equal(state.advanceDeploymentRound(), true);
+  deployEnemyWave(state, base);
+  state.finishEnemyDeploymentRound();
+  assert.equal(state.deploymentRoundPlaced('player'), 0, 'round spend resets, previous placements stay locked');
+  assert.equal(placePlayers(state, 2), 2);
+  assert.equal(state.deploymentRoundPlaced('player'), 4);
+  assert.equal(state.advanceDeploymentRound(), true);
+  deployEnemyWave(state, base);
+  state.finishEnemyDeploymentRound();
+  assert.equal(placePlayers(state, 1), 1);
+  assert.equal(state.deploymentRoundPlaced('player'), 2);
+  assert.equal(state.beginPlay(), true);
+});
+
+test('enemy uses three affordable point-budgeted waves without leaving reserve units', () => {
+  for (const id of ['tutorial-01', 'tutorial-02', 'tutorial-03', 'tutorial-04']) {
+    const level = getLevel(id);
+    const state = new GameState(level);
+    const plan = state.enemyDeploymentPlan();
+    assert.ok(plan.waves.every(wave => wave.length > 0), id);
+    for (let round = 1; round <= 3; round++) {
+      assert.equal(state.deploymentTurn, 'enemy');
+      deployEnemyWave(state, level);
+      const placed = state.deploymentUnits('enemy')
+        .filter(unit => !state.isDeploymentCommitted(unit));
+      assert.deepEqual(placed.map(unit => unit.id).sort(), [...plan.waves[round - 1]].sort(), id + ': wave ' + round);
+      assert.ok(state.deploymentRoundPlaced('enemy') <= state.deploymentRoundQuota('enemy'));
+      assert.equal(state.finishEnemyDeploymentRound(), true);
+      if (round < 3) {
+        assert.equal(state.advanceDeploymentRound(), true);
+      }
+    }
+    assert.equal(state.deploymentRoster('enemy').some(unit => unit.inReserve), false);
+  }
+});
+
+test('all four CSV playtest bands have an affordable player piece in every wave', () => {
+  for (const id of ['tutorial-01', 'tutorial-02', 'tutorial-03', 'tutorial-04']) {
+    const level = getLevel(id, { playerBand: playerPresetBandForLevel(id, 'green') });
+    const state = new GameState(level);
+    for (let round = 1; round <= 3; round++) {
+      deployEnemyWave(state, level);
+      assert.equal(state.finishEnemyDeploymentRound(), true, id + ': enemy wave ' + round);
+      assert.equal(placePlayers(state, 1), 1, id + ': player wave ' + round);
+      assert.ok(state.deploymentRoundPlaced('player') <= state.deploymentRoundQuota('player'));
+      if (round < 3) assert.equal(state.advanceDeploymentRound(), true);
+    }
+    assert.equal(state.beginPlay(), true, id + ': combat starts');
+  }
 });
 
 test('schema-7 saves resume deployment and preserve locked pieces', () => withLocalStorage(() => {
@@ -101,7 +172,7 @@ test('schema-7 saves resume deployment and preserve locked pieces', () => withLo
   const state = new GameState(level);
   deployEnemyWave(state, level);
   state.finishEnemyDeploymentRound();
-  assert.equal(placePlayers(state, state.deploymentRoundQuota('player')), state.deploymentRoundQuota('player'));
+  assert.equal(placePlayers(state, 1), 1);
   assert.equal(state.advanceDeploymentRound(), true);
   store.save(level, state);
   const saved = store.load();

@@ -42,8 +42,8 @@ test('survival AI has configurable extreme aggression without changing other mis
   assert.equal(survival.rules.victory,'survive');
   assert.equal(survival.ai.aggression,4);
   assert.equal(survival.ai.randomness,0);
-  for (const id of ['tutorial-01','tutorial-02','tutorial-03']) {
-    assert.equal(getLevel(id).ai.aggression,0,id);
+  for (const [id, expected] of [['tutorial-01', 2], ['tutorial-02', 3], ['tutorial-03', 0]]) {
+    assert.equal(getLevel(id).ai.aggression, expected, id);
   }
   const ai = new AIController({...survival.ai,team:'enemy'});
   assert.equal(ai.aggression,4);
@@ -101,6 +101,6 @@ test('CSV validates aggression intensity to keep tactical tuning safe', () => {
   }).map(([name,file]) => [name,readFileSync(new URL('../balance/'+file,import.meta.url),'utf8')]));
   assert.equal(parseBalanceTables(sources).levelDefinitions['tutorial-04'].aiAggression,4);
   assert.throws(() => parseBalanceTables({
-    ...sources,levels:sources.levels.replace('450,,,10,4','450,,,10,6')
+    ...sources,levels:sources.levels.replace('2000,,,10,4,aggressive','2000,,,10,6,aggressive')
   }),/ai_aggression/);
 });
