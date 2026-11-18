@@ -3,7 +3,7 @@ import { GAME_CONFIG } from './config/gameConfig.js';
 import { welcomeTextFor } from './content/mission.js?v=20261111-level-welcome-merged-1';
 import { FACTIONS, PLAYER_FACTION_IDS } from './content/factions.js?v=20261111-green-characters-1';
 import { getLevel, getNextLevel, listMechanicLabs, playerPresetBandForLevel } from './content/levels/index.js?v=20261111-ai-profiles-1';
-import { GameState } from './core/GameState.js?v=20261111-ai-profiles-1';
+import { GameState } from './core/GameState.js?v=20261118-deployment-points-1';
 import { AssetRegistry } from './systems/AssetRegistry.js';
 import { AudioManager } from './systems/AudioManager.js?v=20260814-1700';
 import { GameSessionStore, restoreSessionState } from './systems/GameSessionStore.js?v=20261111-rival-factions-1';
@@ -16,7 +16,7 @@ import { victoryResultFor } from './core/victory.js';
 import { survivalProgressFor, countSkippedSurvivalTurn } from './core/survival.js';
 import { applyEncroachment } from './core/encroachment.js';
 import { buildNextPlayerBand } from './core/campaign.js?v=20260821-budget-1';
-import { deployEnemyWave } from './ai/DeploymentAI.js';
+import { deployEnemyWave } from './ai/DeploymentAI.js?v=20261118-deployment-points-1';
 
 class GameApp {
   constructor() {
@@ -325,8 +325,7 @@ class GameApp {
       button.className = `deployment-piece ${unit.id === this.state.selectedId ? 'selected' : ''} ${unit.inReserve ? 'in-reserve' : 'in-lineup'}${unit.missionKing ? ' mission-king' : ''}`;
       const cost = this.state.deploymentUnitCost(unit);
       const affordable = this.state.canAffordDeploymentUnit(unit);
-      const locked = unit.missionKing || (alternating && (this.state.isDeploymentCommitted(unit) || !playerTurn ||
-        (unit.inReserve && this.state.deploymentRoundPlaced('player') >= this.state.deploymentRoundQuota('player'))));
+      const locked = unit.missionKing || (alternating && (this.state.isDeploymentCommitted(unit) || !playerTurn));
       button.disabled = Boolean(locked || (unit.inReserve && !affordable));
       button.setAttribute('aria-pressed', String(!unit.inReserve));
       button.setAttribute('aria-label', unit.missionKing ? t('ui.mission.king_aria') : t('ui.deployment.unit_aria', { action: t(unit.inReserve ? 'ui.deployment.select' : 'ui.deployment.reposition'), name: pieceName(unit), points: cost, status: t(unit.inReserve ? 'ui.deployment.status_pending_lower' : 'ui.deployment.status_board_lower'), evolved: unit.evolutionStage === 'evolved' ? t('ui.board.evolved') : '' }));
