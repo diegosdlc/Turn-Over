@@ -111,12 +111,12 @@ test('session restoration preserves mission king and migrates legacy snapshots m
 
 test('invalid mission king coordinates are rejected by balance CSV validator', () => {
   assert.throws(() => parseBalanceTables({
-    ...files, levels: files.levels.replace('tutorial-02,campaign,Nivel 2 · Escolta,level.tutorial_02,escort-king,tutorial-03,22,0,,3,0.02,450,2,7',
-      'tutorial-02,campaign,Nivel 2 · Escolta,level.tutorial_02,escort-king,tutorial-03,22,0,,3,0.02,450,2,5')
+    ...files, levels: files.levels.replace('tutorial-02,campaign,Nivel 2 · Escolta,level.tutorial_02,escort-king,tutorial-03,24,0,,6,0.02,1000,2,7',
+      'tutorial-02,campaign,Nivel 2 · Escolta,level.tutorial_02,escort-king,tutorial-03,24,0,,6,0.02,1000,2,5')
   }), /Rey de misión inválido/);
   assert.throws(() => parseBalanceTables({
-    ...files, levels: files.levels.replace('tutorial-04,campaign,Nivel 4 · Supervivencia,level.tutorial_04,survive,,20,,8,2,0,450,,,10,4,aggressive',
-      'tutorial-04,campaign,Nivel 4 · Supervivencia,level.tutorial_04,survive,,20,,8,2,0,450,2,7,10,4,aggressive')
+    ...files, levels: files.levels.replace('tutorial-04,campaign,Nivel 4 · Supervivencia,level.tutorial_04,survive,,24,,20,10,0,2000,,,10,4,aggressive',
+      'tutorial-04,campaign,Nivel 4 · Supervivencia,level.tutorial_04,survive,,24,,20,10,0,2000,2,7,10,4,aggressive')
   }), /Rey de misión inválido/);
 });
 
