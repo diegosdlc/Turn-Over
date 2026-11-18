@@ -105,7 +105,8 @@ export function parseBalanceTables({ pieces, levels, enemies, obstacles, playerP
     const id = row.level_id;
     if (!id || levelDefinitions[id] || !['campaign', 'lab'].includes(row.kind) ||
         !VICTORIES.has(row.victory)) throw new Error('Nivel inválido/repetido: ' + id);
-    const limit = numeric(row.point_limit, id + '.point_limit', { integer: true, min: 1 });
+    const limit = numeric(row.point_limit, id + '.point_limit', { integer: true, min: 3 });
+    if (limit % 3 !== 0) throw new Error('El presupuesto debe ser divisible por 3: ' + id);
     const targetRow = optionalNumber(row.target_row, id + '.target_row', { integer: true, max: 7 });
     const surviveRounds = optionalNumber(row.survive_rounds, id + '.survive_rounds', { integer: true, min: 1 });
     if (row.victory === 'escort-king' && targetRow === null) throw new Error('Falta target_row en ' + id);
@@ -226,11 +227,13 @@ export function parseBalanceTables({ pieces, levels, enemies, obstacles, playerP
   if (playerPresets !== null) {
     for (const level of campaign) {
       if (!playerPresetBands[level.id].length) throw new Error('Falta banda de prueba en ' + level.id);
-      const accessible = playerPresetBands[level.id].some(unit => {
+      const affordable = playerPresetBands[level.id].filter(unit => {
         const type = unit.pieceType === 'special' ? 'bishop' : unit.pieceType;
-        return pieceCosts[type][unit.evolutionStage] <= level.pointLimit;
+        return pieceCosts[type][unit.evolutionStage] <= level.pointLimit / 3;
       });
-      if (!accessible) throw new Error('Ninguna pieza asequible en la banda de prueba de ' + level.id);
+      if (affordable.length < 3) {
+        throw new Error('La banda de prueba necesita al menos tres piezas asequibles, una por ronda: ' + level.id);
+      }
     }
   }
 
