@@ -143,23 +143,28 @@
     <dialog id="faction-dialog" class="faction-dialog" aria-labelledby="faction-title">
       <section class="modal-card faction-selection-card">
         <button id="close-faction-selection" class="dialog-close" type="button" aria-label="Cerrar selección" data-i18n-aria="ui.dialog.close_faction">×</button>
-        <p class="eyebrow" data-i18n="ui.home.new">Nueva partida</p>
-        <h2 id="faction-title" data-i18n="ui.faction.select">Elige una facción</h2>
-        <p class="faction-intro" data-i18n="ui.faction.intro">Tu banda comenzará con rey, reina, peón y la pieza especial de la facción.</p>
-        <div class="settings-preference"><label for="faction-gender" data-i18n="ui.settings.gender">Género del jugador</label><select id="faction-gender" data-i18n-gender><option value="masculine" data-i18n="ui.gender.masculine">Masculino</option><option value="feminine" data-i18n="ui.gender.feminine">Femenino</option><option value="neutral" data-i18n="ui.gender.neutral">Neutro</option></select></div>
-        <p class="faction-intro" data-i18n-player="player.greeting">Te damos la bienvenida.</p>
+        <p class="faction-greeting">
+          <select id="faction-gender" data-i18n-gender data-i18n-aria="ui.settings.gender" aria-label="Género del jugador">
+            <option value="feminine" data-i18n="ui.faction.greeting.feminine">Bienvenida</option>
+            <option value="masculine" data-i18n="ui.faction.greeting.masculine">Bienvenido</option>
+            <option value="neutral" data-i18n="ui.faction.greeting.neutral">Bienvenide</option>
+          </select>
+          <span data-i18n="ui.faction.greeting.end">Comandante a Turn Over.</span>
+        </p>
+        <p class="faction-intro" data-i18n="ui.faction.intro">Selecciona a tu banda, supera los obstáculos en tu camino y diseña tu estrategia hacia la victoria.</p>
+        <h2 id="faction-title" data-i18n="ui.faction.select">Elige tu facción:</h2>
         <div class="faction-options">
           <button class="faction-option faction-green" type="button" data-player-faction="green">
             <span class="faction-piece" aria-hidden="true">♝</span>
-            <span><strong data-i18n="ui.faction.green">Verde</strong><small data-i18n="ui.faction.green.special">Pieza especial: alfil</small></span>
+            <span><strong data-i18n="ui.faction.green.option">Tolias Sol:</strong><small data-i18n="ui.faction.green.special">sus Alfiles pueden atacar las diagonales e impulsarse en los bordes del tablero.</small></span>
           </button>
           <button class="faction-option faction-red" type="button" data-player-faction="red">
             <span class="faction-piece" aria-hidden="true">♜</span>
-            <span><strong data-i18n="ui.faction.red">Roja</strong><small data-i18n="ui.faction.red.special">Pieza especial: torre</small></span>
+            <span><strong data-i18n="ui.faction.red.option">Kuntdora:</strong><small data-i18n="ui.faction.red.special">sus altas Torres dominan el campo y cuentan con una resistencia superior.</small></span>
           </button>
           <button class="faction-option faction-yellow" type="button" data-player-faction="yellow">
             <span class="faction-piece" aria-hidden="true">♞</span>
-            <span><strong data-i18n="ui.faction.yellow">Amarilla</strong><small data-i18n="ui.faction.yellow.special">Pieza especial: caballo</small></span>
+            <span><strong data-i18n="ui.faction.yellow.option">Gwol Tsung:</strong><small data-i18n="ui.faction.yellow.special">su veloz Caballería es capaz de saltar obstáculos y desplegarse en la vanguardia de tu territorio.</small></span>
           </button>
         </div>
         <label class="faction-tutorial-toggle" for="faction-tutorials">
