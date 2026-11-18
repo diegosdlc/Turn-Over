@@ -8,6 +8,25 @@ function mechanicsLabOptions() {
     .join('');
 }
 
+const NOTEBOOK_RULE_PAGES = [
+  { titleKey: 'notebook.rules.deploy.title', bodyKey: 'notebook.rules.deploy.budget', image: 'deployment-points.webp', altKey: 'notebook.rules.deploy.budget.alt', imageSide: 'right' },
+  { titleKey: 'notebook.rules.deploy.title', bodyKey: 'notebook.rules.deploy.area', image: 'deployment-zones.webp', altKey: 'notebook.rules.deploy.area.alt', imageSide: 'left' },
+  { titleKey: 'notebook.rules.movement.title', bodyKey: 'notebook.rules.movement.body', image: 'movement.webp', altKey: 'notebook.rules.movement.alt', imageSide: 'left' },
+  { titleKey: 'notebook.rules.capture.title', bodyKey: 'notebook.rules.capture.body', image: 'capture-destruction.webp', altKey: 'notebook.rules.capture.alt', imageSide: 'right' }
+];
+
+function notebookRulePages() {
+  return NOTEBOOK_RULE_PAGES.map(({ titleKey, bodyKey, image, altKey, imageSide }) => ({
+    title: t(titleKey),
+    html: `<div class="notebook-rule-pair notebook-rule-pair--image-${imageSide}">
+      <div class="notebook-rule-copy">${t(bodyKey)}</div>
+      <figure class="notebook-rule-illustration">
+        <img src="./assets/notebook/rules/${image}" alt="${t(altKey)}" loading="lazy" decoding="async" />
+      </figure>
+    </div>`
+  }));
+}
+
 function notebookSections() {
   const level = window.turnOverNotebookLevel;
   const missionBody = level
@@ -21,12 +40,7 @@ function notebookSections() {
     mission: [
       { title: t('notebook.mission.title'), html: missionBody }
     ],
-    rules: [
-      { title: t('notebook.rules.title'), html: t('notebook.rules.body') },
-      { title: t('notebook.deployment.title'), html: t('notebook.deployment.body') },
-      { title: t('notebook.turn.title'), html: t('notebook.turn.body') },
-      { title: t('notebook.evolution.title'), html: t('notebook.evolution.body') }
-    ],
+    rules: notebookRulePages(),
     settings: [
       { title: t('notebook.settings.title'), html: `
         <div class="notebook-settings-row"><label for="notebook-volume">${t('ui.music')}</label><input id="notebook-volume" type="range" min="0" max="100" step="1" value="45" aria-label="${t('ui.music.volume')}"></div>
