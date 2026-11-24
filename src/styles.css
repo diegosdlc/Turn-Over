@@ -286,6 +286,19 @@ button{font:inherit;letter-spacing:.02em}
   border-top-color:var(--pencil);
 }
 .tutorial-tooltip p{margin:0;font-size:.82rem;line-height:1.35}
+.tutorial-tooltip{max-height:min(65vh,340px);overflow-y:auto}
+.tutorial-continue{
+  display:block;
+  margin:9px 0 0 auto;
+  border:1px solid var(--green-pencil);
+  border-radius:5px;
+  background:rgba(73,113,71,.1);
+  color:var(--green-pencil);
+  font-size:.75rem;
+  font-weight:700;
+  padding:4px 9px;
+  cursor:pointer;
+}
 .tutorial-dismiss{
   display:block;
   margin:8px 0 0 auto;

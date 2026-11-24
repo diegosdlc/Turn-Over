@@ -157,7 +157,7 @@ Reserve pieces are excluded from `state.active()`. Consequently they do not cont
 
 ### Tutorial
 
-Tutorial steps do not render/advance during deployment. Tutorial progression starts after **Iniciar partida**.
+Tutorial guidance may appear during deployment. In level 1 it explains selecting a reserve piece, placing it on a legal square, and confirming the point-limited three-round deployment. Level 2 begins with an explanation of upgraded pieces and their abilities. Combat lessons only become active after **Iniciar partida**; a contextual tip about permanent closing squares appears when the first closure warning is shown.
 
 ## Notebook access during deployment
 

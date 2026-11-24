@@ -234,14 +234,14 @@ class GameApp {
   }
 
   render() {
+    this.tutorial.setPhase(this.state.isDeploying() ? 'deployment' : 'play');
     this.renderSurvivalCounter();
     window.turnOverNotebookState = { units: this.state.units, assets: this.assets, level: this.level };
     window.dispatchEvent(new Event('game:rosters-updated'));
     this.renderer.render();
     this.renderDeployment();
-    if (!this.state.isDeploying()) {
-      this.tutorial.render(this.board, anchor => this.renderer.resolveTutorialAnchor(anchor));
-    }
+    if (this.state.pendingClosure) this.tutorial.notify('trap-warning');
+    this.tutorial.render(this.board, anchor => this.renderer.resolveTutorialAnchor(anchor));
   }
 
   renderSurvivalCounter() {
@@ -378,7 +378,10 @@ class GameApp {
       button.addEventListener('click', () => {
         if (!playerTurn || unit.missionKing || (alternating && this.state.isDeploymentCommitted(unit))) return;
         if (this.state.selectedId === unit.id) this.state.clearSelection();
-        else this.state.setSelected(unit.id);
+        else {
+          this.state.setSelected(unit.id);
+          if (unit.inReserve) this.tutorial.notify('deployment-unit-selected');
+        }
         this.render();
       });
       const status = document.createElement('div');
@@ -494,6 +497,7 @@ class GameApp {
     if (from) this.renderer.queueMovement(selected, from);
     else this.renderer.queueDeployment(selected);
     this.state.clearSelection();
+    this.tutorial.notify('deployment-unit-placed');
     this.saveSession();
     this.render();
   }
@@ -515,6 +519,7 @@ class GameApp {
     if (this.state?.isAlternatingDeployment() && this.state.deploymentRound < 3) {
       if (!this.state.canFinishDeploymentRound() || !this.state.advanceDeploymentRound()) return;
       this.deployEnemy();
+      this.tutorial.notify('deployment-round-confirmed');
       this.saveSession();
       this.render();
       return;

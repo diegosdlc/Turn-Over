@@ -20,11 +20,30 @@ export function defaultEvolvedBand(playerFactionId) {
   }));
 }
 
+// Introduce the evolved roster before the player commits the level 2 lineup.
+const PROMOTION_TUTORIAL_STEPS = Object.freeze([
+  {
+    id: 'promoted-pieces',
+    textKey: 'tutorial.promoted_pieces',
+    anchor: { type: 'board' },
+    phase: 'deployment',
+    advanceOn: 'acknowledged'
+  },
+  {
+    id: 'promoted-abilities',
+    textKey: 'tutorial.promoted_abilities',
+    anchor: { type: 'board' },
+    phase: 'deployment',
+    advanceOn: 'acknowledged'
+  }
+]);
+
 export function createTutorial02({ playerFactionId = 'green', playerBand = null } = {}) {
   return createTutorialEncounter({
     id: 'tutorial-02',
     playerFactionId,
-    playerBand: playerBand?.length ? playerBand : defaultEvolvedBand(playerFactionId)
+    playerBand: playerBand?.length ? playerBand : defaultEvolvedBand(playerFactionId),
+    tutorialSteps: PROMOTION_TUTORIAL_STEPS
   });
 }
 

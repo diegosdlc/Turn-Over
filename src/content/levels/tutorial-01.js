@@ -40,11 +40,21 @@ function cleanCarriedBand(playerBand, playerFactionId) {
   });
 }
 
+// The first closing-cell warning is a timed lesson across all campaign levels.
+const TRAP_TUTORIAL_TIP = Object.freeze({
+  id: 'arena-traps',
+  textKey: 'tutorial.arena_traps',
+  anchor: { type: 'board' },
+  phase: 'play',
+  trigger: 'trap-warning'
+});
+
 export function createTutorialEncounter({
   id,
   playerFactionId = 'green',
   playerBand = null,
-  tutorialSteps = []
+  tutorialSteps = [],
+  tutorialTips = []
 }) {
   const balance = levelBalance(id);
   const aiProfile = aiProfileForLevel(id);
@@ -112,12 +122,37 @@ export function createTutorialEncounter({
     specialTiles: [],
     tutorial: {
       enabledByDefault: false,
-      steps: tutorialSteps
+      steps: tutorialSteps,
+      tips: [
+        ...tutorialTips,
+        ...(Number.isInteger(balance.encroachmentStartAction) ? [TRAP_TUTORIAL_TIP] : [])
+      ]
     }
   });
 }
 
 const TUTORIAL_STEPS = Object.freeze([
+  {
+    id: 'deployment-select',
+    textKey: 'tutorial.deployment_select',
+    anchor: { type: 'board' },
+    phase: 'deployment',
+    advanceOn: 'deployment-unit-selected'
+  },
+  {
+    id: 'deployment-place',
+    textKey: 'tutorial.deployment_place',
+    anchor: { type: 'board' },
+    phase: 'deployment',
+    advanceOn: 'deployment-unit-placed'
+  },
+  {
+    id: 'deployment-rounds',
+    textKey: 'tutorial.deployment_rounds',
+    anchor: { type: 'board' },
+    phase: 'deployment',
+    advanceOn: 'deployment-round-confirmed'
+  },
   {
     id: 'select-piece',
     text: 'Toca una de tus piezas para ver sus movimientos posibles.', textKey: 'tutorial.select_piece',
@@ -129,6 +164,13 @@ const TUTORIAL_STEPS = Object.freeze([
     text: 'Las casillas verdes son movimientos disponibles. Toca una para mover.', textKey: 'tutorial.move_piece',
     anchor: { type: 'cell', x: 2, y: 6 },
     advanceOn: 'move-completed'
+  },
+  {
+    id: 'pawn-promotion',
+    textKey: 'tutorial.pawn_promotion',
+    anchor: { type: 'board' },
+    phase: 'play',
+    advanceOn: 'acknowledged'
   },
   {
     id: 'capture-choice',
