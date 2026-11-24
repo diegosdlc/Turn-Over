@@ -65,7 +65,7 @@ test('new faction strings in CSV match the requested UI copy', () => {
     'ui.faction.greeting.feminine': 'Bienvenida',
     'ui.faction.greeting.neutral': 'Bienvenide',
     'ui.faction.greeting.end': 'Comandante a Turn Over.',
-    'ui.faction.intro': 'Selecciona a tu banda, supera los obstáculos en tu camino y diseña tu estrategia hacia la victoria.',
+    'ui.faction.intro': 'Selecciona a tu banda, supera los obstáculos en tu camino y diseña tu estrategia hacia la victoria. La facción que elijas otorgará a tu banda su pieza especial inicial.',
     'ui.faction.select': 'Elige tu facción:',
     'ui.faction.green.option': 'Tolias Sol:',
     'ui.faction.green.special': 'sus Alfiles pueden atacar las diagonales e impulsarse en los bordes del tablero.',

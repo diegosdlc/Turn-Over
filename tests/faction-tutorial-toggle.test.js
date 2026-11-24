@@ -102,7 +102,7 @@ test('the faction intro explains the starting special piece in both locales and 
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const csv = parseCSV(readFileSync(new URL('../locales/texts.csv', import.meta.url), 'utf8'));
   const row = csv.find(([key]) => key === 'ui.faction.intro');
-  assert.ok(row?.[2].includes('la facción que elijas otorgará'.replace('la', 'La')) || row?.[2].includes('La facción que elijas otorgará'));
+  assert.ok(row?.[2].includes('La facción que elijas otorgará'));
   assert.ok(row?.[2].includes('pieza especial inicial'));
   assert.ok(row?.[3].includes('starting special piece'));
   assert.ok(html.includes('data-i18n="ui.faction.intro">' + row[2] + '</p>'));
