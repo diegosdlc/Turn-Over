@@ -135,34 +135,37 @@ const TUTORIAL_STEPS = Object.freeze([
   {
     id: 'deployment-select',
     textKey: 'tutorial.deployment_select',
-    anchor: { type: 'board' },
+    anchor: { type: 'notebook' },
     phase: 'deployment',
     advanceOn: 'deployment-unit-selected'
   },
   {
     id: 'deployment-place',
     textKey: 'tutorial.deployment_place',
-    anchor: { type: 'board' },
+    anchor: { type: 'deployment-board' },
     phase: 'deployment',
     advanceOn: 'deployment-unit-placed'
   },
   {
     id: 'deployment-rounds',
     textKey: 'tutorial.deployment_rounds',
-    anchor: { type: 'board' },
+    anchor: { type: 'notebook' },
     phase: 'deployment',
     advanceOn: 'deployment-round-confirmed'
   },
   {
     id: 'select-piece',
     text: 'Toca una de tus piezas para ver sus movimientos posibles.', textKey: 'tutorial.select_piece',
-    anchor: { type: 'unit', id: 'player-king' },
+    anchor: { type: 'board' },
+    phase: 'play',
     advanceOn: 'unit-selected'
   },
   {
     id: 'move-piece',
     text: 'Las casillas verdes son movimientos disponibles. Toca una para mover.', textKey: 'tutorial.move_piece',
-    anchor: { type: 'cell', x: 2, y: 6 },
+    // Avoid anchoring the card directly on a highlighted move square.
+    anchor: { type: 'board' },
+    phase: 'play',
     advanceOn: 'move-completed'
   },
   {
@@ -176,6 +179,7 @@ const TUTORIAL_STEPS = Object.freeze([
     id: 'capture-choice',
     text: 'Al atacar una pieza puedes capturarla o destruirla desde los botones que emergen de ella.', textKey: 'tutorial.capture_choice',
     anchor: { type: 'board' },
+    phase: 'play',
     advanceOn: 'capture-resolved'
   }
 ]);

@@ -91,6 +91,8 @@ class GameApp {
     });
 
     document.addEventListener('pointerdown', () => this.audio.unlock(), { passive: true });
+    window.addEventListener('resize', () => this.tutorial.reposition(), { passive: true });
+    window.visualViewport?.addEventListener('resize', () => this.tutorial.reposition(), { passive: true });
   }
 
   bindMenu() {
@@ -144,6 +146,7 @@ class GameApp {
     this.cancelAiTurn();
     if (this.welcomeDialog?.open) this.welcomeDialog.close();
     this.renderer?.clearVisualEffects();
+    this.tutorial.clearTooltip();
     if (this.factionDialog.open) this.factionDialog.close();
     this.gameShell.hidden = true;
     this.homeScreen.hidden = false;
@@ -173,6 +176,7 @@ class GameApp {
   loadLevel(level, { forceTutorial = false, savedState = null } = {}) {
     if (!level) throw new Error(t('ui.game.no_level'));
     this.cancelAiTurn();
+    this.tutorial.clearTooltip();
     if (this.welcomeDialog?.open) this.welcomeDialog.close();
     this.nextPlayerBand = null;
     this.level = level;
@@ -241,7 +245,11 @@ class GameApp {
     this.renderer.render();
     this.renderDeployment();
     if (this.state.pendingClosure) this.tutorial.notify('trap-warning');
-    this.tutorial.render(this.board, anchor => this.renderer.resolveTutorialAnchor(anchor));
+    this.tutorial.render(this.board, anchor => {
+      if (anchor?.type === 'notebook') return this.deploymentPieces?.getBoundingClientRect();
+      if (anchor?.type === 'deployment-board' || anchor?.type === 'board') return this.board.getBoundingClientRect();
+      return null;
+    }, { notebook: this.notebook });
   }
 
   renderSurvivalCounter() {

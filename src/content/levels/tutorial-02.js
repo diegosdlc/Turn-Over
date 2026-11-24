@@ -25,14 +25,14 @@ const PROMOTION_TUTORIAL_STEPS = Object.freeze([
   {
     id: 'promoted-pieces',
     textKey: 'tutorial.promoted_pieces',
-    anchor: { type: 'board' },
+    anchor: { type: 'notebook' },
     phase: 'deployment',
     advanceOn: 'acknowledged'
   },
   {
     id: 'promoted-abilities',
     textKey: 'tutorial.promoted_abilities',
-    anchor: { type: 'board' },
+    anchor: { type: 'notebook' },
     phase: 'deployment',
     advanceOn: 'acknowledged'
   }
