@@ -35,7 +35,7 @@
 "ui.faction.greeting.masculine","Palabra de bienvenida seleccionable para género masculino.","Bienvenido","Welcome","Facciones"
 "ui.faction.greeting.neutral","Palabra de bienvenida seleccionable para género neutro.","Bienvenide","Welcome","Facciones"
 "ui.faction.greeting.end","Continuación del saludo tras el selector de género.","Comandante a Turn Over.","to Turn Over, Commander.","Facciones"
-"ui.faction.intro","Texto introductorio en la selección de facción.","Selecciona a tu banda, supera los obstáculos en tu camino y diseña tu estrategia hacia la victoria.","Select your band, overcome the obstacles in your path, and devise your strategy for victory.","Facciones"
+"ui.faction.intro","Texto introductorio en la selección de facción.","Selecciona a tu banda, supera los obstáculos en tu camino y diseña tu estrategia hacia la victoria. La facción que elijas otorgará a tu banda su pieza especial inicial.","Select your band, overcome the obstacles in your path, and devise your strategy for victory. The faction you choose will grant your band its starting special piece.","Facciones"
 "ui.faction.select","Encabezado que precede a las opciones de facción.","Elige tu facción:","Choose your faction:","Facciones"
 "ui.faction.tutorials","Checkbox bajo la selección de facción para activar o desactivar los tutoriales.","Mostrar tutoriales","Show tutorials","Facciones"
 "ui.faction.green.option","Nombre de la facción verde con puntuación en la tarjeta de selección.","Tolias Sol:","Tolias Sol:","Facciones"

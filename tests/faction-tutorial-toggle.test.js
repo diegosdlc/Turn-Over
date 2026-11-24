@@ -52,7 +52,7 @@ test('faction selection uses the requested editable text and inline gender greet
     ['ui.faction.greeting.masculine', 'Bienvenido'],
     ['ui.faction.greeting.neutral', 'Bienvenide'],
     ['ui.faction.greeting.end', 'Comandante a Turn Over.'],
-    ['ui.faction.intro', 'Selecciona a tu banda, supera los obstáculos en tu camino y diseña tu estrategia hacia la victoria.'],
+    ['ui.faction.intro', 'Selecciona a tu banda, supera los obstáculos en tu camino y diseña tu estrategia hacia la victoria. La facción que elijas otorgará a tu banda su pieza especial inicial.'],
     ['ui.faction.select', 'Elige tu facción:'],
     ['ui.faction.green.option', 'Tolias Sol:'],
     ['ui.faction.green.special', 'sus Alfiles pueden atacar las diagonales e impulsarse en los bordes del tablero.'],
@@ -77,7 +77,7 @@ test('faction selection has visible Spanish fallbacks even before its CSV is loa
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   for (const phrase of [
     'Bienvenido', 'Bienvenida', 'Bienvenide', 'Comandante a Turn Over.',
-    'Selecciona a tu banda, supera los obstáculos en tu camino y diseña tu estrategia hacia la victoria.',
+    'Selecciona a tu banda, supera los obstáculos en tu camino y diseña tu estrategia hacia la victoria. La facción que elijas otorgará a tu banda su pieza especial inicial.',
     'Elige tu facción:', 'Tolias Sol:', 'Gwol Tsung:', 'Kuntdora:',
     'sus Alfiles pueden atacar las diagonales e impulsarse en los bordes del tablero.',
     'su veloz Caballería es capaz de saltar obstáculos y desplegarse en la vanguardia de tu territorio.',
@@ -96,4 +96,14 @@ test('faction UI cannot be overwritten with stale CSV or translation key names',
   assert.match(source, /FACTION_COPY_KEYS\.every\(key => catalog\.has\(key\)\)/);
   assert.match(source, /if \(!catalog\.has\(node\.dataset\.i18n\)\) return/);
   assert.match(source, /!factionCopyReady && node\.closest\?\.\('#faction-dialog'\)/);
+});
+
+test('the faction intro explains the starting special piece in both locales and in the HTML fallback', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const csv = parseCSV(readFileSync(new URL('../locales/texts.csv', import.meta.url), 'utf8'));
+  const row = csv.find(([key]) => key === 'ui.faction.intro');
+  assert.ok(row?.[2].includes('la facción que elijas otorgará'.replace('la', 'La')) || row?.[2].includes('La facción que elijas otorgará'));
+  assert.ok(row?.[2].includes('pieza especial inicial'));
+  assert.ok(row?.[3].includes('starting special piece'));
+  assert.ok(html.includes('data-i18n="ui.faction.intro">' + row[2] + '</p>'));
 });
