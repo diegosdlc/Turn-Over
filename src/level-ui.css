@@ -189,6 +189,66 @@
   order:-1;
 }
 
+
+/* Arena traps use the same compact illustrated page layout as promotion. */
+.notebook-traps-illustration{
+  border:1px solid rgba(80,73,59,.38);
+  border-radius:3px;
+  background:repeating-linear-gradient(0deg,rgba(75,92,69,.055) 0 1px,transparent 1px 19px),rgba(248,241,219,.62);
+  padding:clamp(5px,.8vw,10px);
+}
+.notebook-traps-sequence{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  gap:clamp(2px,.4vw,7px);
+  align-items:center;
+  min-width:0;
+}
+.notebook-traps-stage{
+  min-width:0;
+  display:grid;
+  justify-items:center;
+  gap:clamp(3px,.6vw,7px);
+}
+.notebook-traps-cell{
+  display:grid;
+  place-items:center;
+  width:min(100%,clamp(38px,5vw,67px));
+  aspect-ratio:1;
+  border:2px solid rgba(80,73,59,.6);
+  border-radius:3px;
+  font-size:clamp(1.25rem,2.6vw,2.2rem);
+  font-weight:800;
+  line-height:1;
+}
+.notebook-traps-cell--warning{
+  background:rgba(247,192,75,.32);
+  color:#8a5223;
+  box-shadow:inset 0 0 0 2px rgba(187,103,37,.24);
+}
+.notebook-traps-cell--blocked{
+  background:rgba(88,98,88,.73);
+  color:#f3edde;
+  box-shadow:inset 0 0 0 2px rgba(56,65,57,.38);
+}
+.notebook-traps-stage small{
+  font-size:clamp(.48rem,.72vw,.69rem);
+  line-height:1.2;
+  text-align:center;
+  font-weight:700;
+  overflow-wrap:anywhere;
+  max-width:100%;
+}
+.notebook-traps-arrow{
+  font-size:clamp(.85rem,1.7vw,1.45rem);
+  color:#527c56;
+}
+@media (max-width:900px){
+  .notebook-traps-illustration{padding:4px}
+  .notebook-traps-cell{width:min(100%,clamp(27px,4.2vw,45px));font-size:clamp(1rem,2vw,1.4rem)}
+  .notebook-traps-stage small{font-size:clamp(.41rem,.9vw,.54rem)}
+}
+
 /* Promotion sketch follows the existing illustrated notebook grid. */
 .notebook-promotion-illustration{
   border:1px solid rgba(80,73,59,.38);

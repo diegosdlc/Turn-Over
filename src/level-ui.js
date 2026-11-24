@@ -13,8 +13,25 @@ const NOTEBOOK_RULE_PAGES = [
   { titleKey: 'notebook.rules.deploy.title', bodyKey: 'notebook.rules.deploy.area', image: 'deployment-zones.webp', altKey: 'notebook.rules.deploy.area.alt', imageSide: 'left' },
   { titleKey: 'notebook.rules.movement.title', bodyKey: 'notebook.rules.movement.body', image: 'movement.webp', altKey: 'notebook.rules.movement.alt', imageSide: 'left' },
   { titleKey: 'notebook.rules.capture.title', bodyKey: 'notebook.rules.capture.body', image: 'capture-destruction.webp', altKey: 'notebook.rules.capture.alt', imageSide: 'right' },
+  { titleKey: 'notebook.rules.traps.title', bodyKey: 'notebook.rules.traps.body', illustration: 'traps', altKey: 'notebook.rules.traps.alt', imageSide: 'left' },
   { titleKey: 'notebook.rules.promotion.title', bodyKey: 'notebook.rules.promotion.body', illustration: 'promotion', altKey: 'notebook.rules.promotion.alt', imageSide: 'right' }
 ];
+
+function notebookTrapsIllustration(altKey) {
+  return `<figure class="notebook-rule-illustration notebook-traps-illustration" role="img" aria-label="${t(altKey)}">
+    <div class="notebook-traps-sequence">
+      <div class="notebook-traps-stage">
+        <span class="notebook-traps-cell notebook-traps-cell--warning" aria-hidden="true">!</span>
+        <small>${t('notebook.rules.traps.warning')}</small>
+      </div>
+      <span class="notebook-traps-arrow" aria-hidden="true">→</span>
+      <div class="notebook-traps-stage">
+        <span class="notebook-traps-cell notebook-traps-cell--blocked" aria-hidden="true">×</span>
+        <small>${t('notebook.rules.traps.blocked')}</small>
+      </div>
+    </div>
+  </figure>`;
+}
 
 function notebookPromotionIllustration(altKey) {
   return `<figure class="notebook-rule-illustration notebook-promotion-illustration" role="img" aria-label="${t(altKey)}">
@@ -38,9 +55,11 @@ function notebookRulePages() {
     title: t(titleKey),
     html: `<div class="notebook-rule-pair notebook-rule-pair--image-${imageSide}">
       <div class="notebook-rule-copy">${t(bodyKey)}</div>
-      ${illustration === 'promotion'
-        ? notebookPromotionIllustration(altKey)
-        : `<figure class="notebook-rule-illustration">
+      ${illustration === 'traps'
+        ? notebookTrapsIllustration(altKey)
+        : illustration === 'promotion'
+          ? notebookPromotionIllustration(altKey)
+          : `<figure class="notebook-rule-illustration">
           <img src="./assets/notebook/rules/${image}" alt="${t(altKey)}" loading="lazy" decoding="async" />
         </figure>`}
     </div>`
