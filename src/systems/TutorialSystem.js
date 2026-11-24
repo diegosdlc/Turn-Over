@@ -1,5 +1,53 @@
 import { t } from '../i18n/index.js';
 
+const overlapArea = (a, b) =>
+  Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) *
+  Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+
+/**
+ * Place a readable, viewport-sized card next to the notebook/board rather than
+ * inside the scaled board artwork. Prefer not to cover legal move targets.
+ */
+export function positionTutorialCard({ surface, kind, width, height, viewport, avoid = [] }) {
+  const margin = 12;
+  const gap = 14;
+  const leftEdge = viewport.left + margin;
+  const rightEdge = viewport.left + viewport.width - margin - width;
+  const topEdge = viewport.top + margin;
+  const bottomEdge = viewport.top + viewport.height - margin - height;
+  const centerX = surface.left + (surface.width - width) / 2;
+  const centerY = surface.top + (surface.height - height) / 2;
+  const spots = kind === 'notebook' ? [
+    [centerX, surface.top - height - gap],
+    [surface.right + gap, centerY],
+    [surface.left - width - gap, centerY],
+    [surface.left + 10, surface.top + 10],
+    [centerX, surface.bottom + gap],
+    [surface.right - width - 10, surface.top + 10]
+  ] : [
+    [surface.right - width - 12, surface.bottom + gap],
+    [surface.right - width - 12, surface.top - height - gap],
+    [surface.right - width - 12, surface.top + 12],
+    [surface.left + 12, surface.top + 12],
+    [surface.right - width - 12, surface.bottom - height - 12],
+    [surface.left + 12, surface.bottom - height - 12],
+    [surface.right + gap, centerY],
+    [surface.left - width - gap, centerY]
+  ];
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  let best = null;
+  for (const [index, [rawX, rawY]] of spots.entries()) {
+    const x = clamp(rawX, leftEdge, Math.max(leftEdge, rightEdge));
+    const y = clamp(rawY, topEdge, Math.max(topEdge, bottomEdge));
+    const box = { left: x, right: x + width, top: y, bottom: y + height };
+    const overlapping = avoid.reduce((score, item) => score + overlapArea(box, item), 0);
+    const clipped = Math.abs(x - rawX) + Math.abs(y - rawY);
+    const score = index * 12 + clipped * 1.5 + overlapping / Math.max(1, width * height) * 1400;
+    if (!best || score < best.score) best = { left: Math.round(x), top: Math.round(y), score };
+  }
+  return { left: best?.left ?? Math.round(leftEdge), top: best?.top ?? Math.round(topEdge) };
+}
+
 export class TutorialSystem {
   constructor({ storagePrefix }) {
     this.storagePrefix = storagePrefix;
@@ -10,9 +58,12 @@ export class TutorialSystem {
     this.activeTip = null;
     this.seenTips = new Set();
     this.enabled = false;
+    this.tooltip = null;
+    this.lastLayout = null;
   }
 
   configure(levelId, tutorial, { forceEnabled = false } = {}) {
+    this.clearTooltip();
     this.levelId = levelId;
     this.tutorial = tutorial ?? null;
     this.index = 0;
@@ -25,8 +76,7 @@ export class TutorialSystem {
 
   setPhase(phase) {
     this.phase = phase;
-    // Saved campaigns may resume directly in play. Do not strand the tutorial
-    // behind deployment steps that can no longer be completed.
+    // A resumed session may already be in combat: skip unfinished setup steps.
     if (phase === 'play') {
       while (this.tutorial?.steps?.[this.index]?.phase === 'deployment') this.index += 1;
     }
@@ -36,16 +86,15 @@ export class TutorialSystem {
     if (!this.enabled) return null;
     if (this.activeTip) return this.activeTip;
     const step = this.tutorial?.steps?.[this.index] ?? null;
-    return step && (!step.phase || step.phase === this.phase) ? step : null;
+    // Missing phase means play, never both phases.
+    return step && (step.phase ?? 'play') === this.phase ? step : null;
   }
 
   notify(eventName) {
     if (!this.enabled) return false;
-    // Contextual tips are independent of the linear lesson: the first warning
-    // about a closing tile should never depend on completing a capture lesson.
     if (!this.activeTip) {
       const tip = this.tutorial?.tips?.find(item =>
-        item.trigger === eventName && (!item.phase || item.phase === this.phase) &&
+        item.trigger === eventName && (item.phase ?? 'play') === this.phase &&
         !this.seenTips.has(item.id)
       );
       if (tip) {
@@ -54,9 +103,8 @@ export class TutorialSystem {
       }
     }
     const step = this.tutorial?.steps?.[this.index];
-    if (!step || (step.phase && step.phase !== this.phase) || step.advanceOn !== eventName) return false;
+    if (!step || (step.phase ?? 'play') !== this.phase || step.advanceOn !== eventName) return false;
     this.index += 1;
-    // Keep listening for contextual tips even after the last scripted lesson.
     if (this.index >= this.tutorial.steps.length && !this.tutorial?.tips?.length) this.complete();
     return true;
   }
@@ -73,19 +121,62 @@ export class TutorialSystem {
     return this.notify('acknowledged');
   }
 
-  render(board, anchorResolver) {
-    const step = this.currentStep();
-    if (!step) return;
-    const anchor = anchorResolver(step.anchor);
-    if (!anchor) return;
+  clearTooltip() {
+    this.tooltip?.remove();
+    this.tooltip = null;
+    this.lastLayout = null;
+  }
 
+  reposition() {
+    if (!this.tooltip || !this.lastLayout) return;
+    const { board, anchorResolver, options, step } = this.lastLayout;
+    const rect = anchorResolver(step.anchor);
+    if (!rect) return;
+    const kind = step.anchor?.type === 'notebook' ? 'notebook' : 'board';
+    const tooltip = this.tooltip;
+    // Measure actual rendered size; it is not scaled together with the artwork.
+    const width = tooltip.offsetWidth;
+    const height = tooltip.offsetHeight;
+    const notebookRect = options.notebook?.getBoundingClientRect();
+    const avoid = [...board.querySelectorAll(
+      '.iso-cell.move-target, .iso-cell.capture-target, .iso-cell.rescue-target, .iso-cell.royal-swap-target, .iso-cell.deployment-target, .unit.selected, .encroachment-warning'
+    )].map(item => item.getBoundingClientRect());
+    if (kind === 'notebook') {
+      avoid.push(board.getBoundingClientRect());
+      const roster = document.querySelector('#deployment-pieces');
+      if (roster) avoid.push(roster.getBoundingClientRect());
+    } else if (notebookRect) {
+      avoid.push(notebookRect);
+    }
+    const visual = window.visualViewport;
+    const viewport = {
+      left: visual?.offsetLeft ?? 0,
+      top: visual?.offsetTop ?? 0,
+      width: visual?.width ?? window.innerWidth,
+      height: visual?.height ?? window.innerHeight
+    };
+    const surface = kind === 'notebook' && notebookRect ? notebookRect : rect;
+    const pos = positionTutorialCard({ surface, kind, width, height, viewport, avoid });
+    tooltip.style.left = pos.left + 'px';
+    tooltip.style.top = pos.top + 'px';
+    tooltip.style.visibility = 'visible';
+  }
+
+  render(board, anchorResolver, options = {}) {
+    this.clearTooltip();
+    const step = this.currentStep();
+    if (!step || !anchorResolver(step.anchor)) return;
     const tooltip = document.createElement('aside');
     tooltip.className = 'tutorial-tooltip';
     tooltip.setAttribute('role', 'status');
+    tooltip.style.visibility = 'hidden';
 
-    const text = document.createElement('p');
-    text.textContent = step.textKey ? t(step.textKey) : step.text;
-    tooltip.append(text);
+    const context = document.createElement('strong');
+    context.className = 'tutorial-context';
+    context.textContent = t(step.anchor?.type === 'notebook' ? 'ui.tutorial.notebook' : 'ui.tutorial.board');
+    const content = document.createElement('p');
+    content.textContent = step.textKey ? t(step.textKey) : step.text;
+    tooltip.append(context, content);
 
     if (this.activeTip || step.advanceOn === 'acknowledged') {
       const gotIt = document.createElement('button');
@@ -95,12 +186,10 @@ export class TutorialSystem {
       gotIt.addEventListener('click', event => {
         event.stopPropagation();
         this.acknowledge();
-        tooltip.remove();
-        this.render(board, anchorResolver);
+        this.render(board, anchorResolver, options);
       });
       tooltip.append(gotIt);
     }
-
     const dismiss = document.createElement('button');
     dismiss.type = 'button';
     dismiss.className = 'tutorial-dismiss';
@@ -108,18 +197,18 @@ export class TutorialSystem {
     dismiss.addEventListener('click', event => {
       event.stopPropagation();
       this.complete();
-      tooltip.remove();
     });
-
     tooltip.append(dismiss);
-    tooltip.style.left = `${((anchor.left + anchor.width / 2) / anchor.projection.width) * 100}%`;
-    tooltip.style.top = `${((anchor.top + anchor.height / 2) / anchor.projection.height) * 100}%`;
-    board.append(tooltip);
+    document.body.append(tooltip);
+    this.tooltip = tooltip;
+    this.lastLayout = { board, anchorResolver, options, step };
+    this.reposition();
   }
 
   complete() {
     this.enabled = false;
     this.activeTip = null;
+    this.clearTooltip();
     try {
       localStorage.setItem(`${this.storagePrefix}${this.levelId}`, '1');
     } catch {}
