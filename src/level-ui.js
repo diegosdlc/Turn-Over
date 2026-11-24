@@ -142,7 +142,6 @@ class NotebookUI {
     if (this.indicator) this.indicator.textContent = `${this.page + 1} / ${pages.length}`;
     if (this.previous) this.previous.disabled = this.page === 0;
     if (this.next) this.next.disabled = this.page >= pages.length - 1;
-    this.renderFixedActions();
     this.bindSettingsControls();
     this.renderRosters();
   }
@@ -218,16 +217,6 @@ class NotebookUI {
     }
   }
 
-  renderFixedActions() {
-    if (!this.fixedActions) return;
-    const showMainMenu = this.section === 'settings';
-    this.fixedActions.hidden = !showMainMenu;
-    this.fixedActions.innerHTML = showMainMenu
-      ? `<button id="notebook-main-menu" class="notebook-menu-button" type="button">${t('ui.notebook.home')}</button>`
-      : '';
-    this.pageElement?.classList.toggle('has-fixed-actions', showMainMenu);
-  }
-
   bindSettingsControls() {
     const language = this.root.querySelector('#notebook-language');
     const gender = this.root.querySelector('#notebook-gender');
@@ -248,9 +237,6 @@ class NotebookUI {
       }
     });
 
-    const mainMenu = this.root.querySelector('#notebook-main-menu');
-    mainMenu?.addEventListener('click', () => window.dispatchEvent(new Event('game:return-home')));
-
     const volume = this.root.querySelector('#notebook-volume');
     const legacy = document.querySelector('#music-volume');
     if (!volume || !legacy) return;
@@ -269,6 +255,7 @@ class LevelControls {
     this.pause = document.querySelector('#pause-toggle');
     this.pauseDialog = document.querySelector('#pause-dialog');
     this.resume = document.querySelector('#resume-game');
+    this.mainMenu = document.querySelector('#pause-main-menu');
     this.legacyVolume = document.querySelector('#music-volume');
     this.previousVolume = Number(this.legacyVolume?.value ?? 45) || 45;
   }
@@ -277,6 +264,10 @@ class LevelControls {
     this.mute?.addEventListener('click', () => this.toggleMute());
     this.pause?.addEventListener('click', () => this.openPause());
     this.resume?.addEventListener('click', () => this.closePause());
+    this.mainMenu?.addEventListener('click', () => {
+      this.closePause();
+      window.dispatchEvent(new Event('game:return-home'));
+    });
     this.pauseDialog?.addEventListener('cancel', event => {
       event.preventDefault();
       this.closePause();

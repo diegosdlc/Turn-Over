@@ -453,6 +453,7 @@
   padding:20px 22px;
 }
 .pause-card .result-actions{margin-top:18px}
+.pause-card .result-actions .secondary-button{width:100%}
 
 .level-screen > #game-settings,
 .level-screen .legacy-audio-control{display:none!important}
