@@ -12,17 +12,37 @@ const NOTEBOOK_RULE_PAGES = [
   { titleKey: 'notebook.rules.deploy.title', bodyKey: 'notebook.rules.deploy.budget', image: 'deployment-points.webp', altKey: 'notebook.rules.deploy.budget.alt', imageSide: 'right' },
   { titleKey: 'notebook.rules.deploy.title', bodyKey: 'notebook.rules.deploy.area', image: 'deployment-zones.webp', altKey: 'notebook.rules.deploy.area.alt', imageSide: 'left' },
   { titleKey: 'notebook.rules.movement.title', bodyKey: 'notebook.rules.movement.body', image: 'movement.webp', altKey: 'notebook.rules.movement.alt', imageSide: 'left' },
-  { titleKey: 'notebook.rules.capture.title', bodyKey: 'notebook.rules.capture.body', image: 'capture-destruction.webp', altKey: 'notebook.rules.capture.alt', imageSide: 'right' }
+  { titleKey: 'notebook.rules.capture.title', bodyKey: 'notebook.rules.capture.body', image: 'capture-destruction.webp', altKey: 'notebook.rules.capture.alt', imageSide: 'right' },
+  { titleKey: 'notebook.rules.promotion.title', bodyKey: 'notebook.rules.promotion.body', illustration: 'promotion', altKey: 'notebook.rules.promotion.alt', imageSide: 'right' }
 ];
 
+function notebookPromotionIllustration(altKey) {
+  return `<figure class="notebook-rule-illustration notebook-promotion-illustration" role="img" aria-label="${t(altKey)}">
+    <div class="notebook-promotion-row">
+      <div class="notebook-promotion-piece">
+        <span class="notebook-promotion-glyph" aria-hidden="true">♟</span>
+        <small>${t('notebook.rules.promotion.base')}</small>
+      </div>
+      <span class="notebook-promotion-arrow" aria-hidden="true">→</span>
+      <div class="notebook-promotion-piece notebook-promotion-piece--evolved">
+        <span class="notebook-promotion-glyph" aria-hidden="true">♟<sup>+</sup></span>
+        <small>${t('notebook.rules.promotion.evolved')}</small>
+      </div>
+    </div>
+    <div class="notebook-promotion-other" aria-hidden="true">♞+ · ♝+ · ♜+ · ♚+ · ♛+</div>
+  </figure>`;
+}
+
 function notebookRulePages() {
-  return NOTEBOOK_RULE_PAGES.map(({ titleKey, bodyKey, image, altKey, imageSide }) => ({
+  return NOTEBOOK_RULE_PAGES.map(({ titleKey, bodyKey, image, illustration, altKey, imageSide }) => ({
     title: t(titleKey),
     html: `<div class="notebook-rule-pair notebook-rule-pair--image-${imageSide}">
       <div class="notebook-rule-copy">${t(bodyKey)}</div>
-      <figure class="notebook-rule-illustration">
-        <img src="./assets/notebook/rules/${image}" alt="${t(altKey)}" loading="lazy" decoding="async" />
-      </figure>
+      ${illustration === 'promotion'
+        ? notebookPromotionIllustration(altKey)
+        : `<figure class="notebook-rule-illustration">
+          <img src="./assets/notebook/rules/${image}" alt="${t(altKey)}" loading="lazy" decoding="async" />
+        </figure>`}
     </div>`
   }));
 }
