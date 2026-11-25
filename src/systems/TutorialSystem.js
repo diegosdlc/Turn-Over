@@ -82,22 +82,24 @@ export class TutorialSystem {
     this.index = 0;
     this.phase = 'play';
     this.activeTip = null;
+    this.closedStep = null;
     this.seenTips = new Set();
     this.enabled = false;
     this.tooltip = null;
     this.lastLayout = null;
   }
 
-  configure(levelId, tutorial, { forceEnabled = false } = {}) {
+  configure(levelId, tutorial, { forceEnabled = false, preferenceEnabled = true } = {}) {
     this.clearTooltip();
     this.levelId = levelId;
     this.tutorial = tutorial ?? null;
     this.index = 0;
     this.phase = 'play';
     this.activeTip = null;
+    this.closedStep = null;
     this.seenTips.clear();
     const hasGuidance = Boolean(this.tutorial?.steps?.length || this.tutorial?.tips?.length);
-    this.enabled = hasGuidance && (forceEnabled || (this.tutorial.enabledByDefault && !this.isCompleted()));
+    this.enabled = hasGuidance && (forceEnabled || (preferenceEnabled && this.tutorial.enabledByDefault && !this.isCompleted()));
   }
 
   setPhase(phase) {
@@ -113,7 +115,24 @@ export class TutorialSystem {
     if (this.activeTip) return this.activeTip;
     const step = this.tutorial?.steps?.[this.index] ?? null;
     // Missing phase means play, never both phases.
-    return step && (step.phase ?? 'play') === this.phase ? step : null;
+    return step && step !== this.closedStep && (step.phase ?? 'play') === this.phase ? step : null;
+  }
+
+  setEnabled(enabled) {
+    this.enabled = Boolean(enabled && (this.tutorial?.steps?.length || this.tutorial?.tips?.length));
+    if (!this.enabled) this.clearTooltip();
+    else this.closedStep = null;
+  }
+
+  closeCurrent() {
+    const step = this.currentStep();
+    if (!step) return false;
+    // Action-driven lessons stay hidden until the real action advances them.
+    // Acknowledgement-only lessons and contextual tips count as read.
+    if (this.activeTip || step.advanceOn === 'acknowledged') this.acknowledge();
+    else this.closedStep = step;
+    this.clearTooltip();
+    return true;
   }
 
   notify(eventName) {
@@ -132,6 +151,7 @@ export class TutorialSystem {
     if (!step || (step.phase ?? 'play') !== this.phase ||
         (step.advanceOn !== eventName && !step.alsoAdvanceOn?.includes(eventName))) return false;
     this.index += 1;
+    this.closedStep = null;
     if (this.index >= this.tutorial.steps.length && !this.tutorial?.tips?.length) this.complete();
     return true;
   }
@@ -226,7 +246,16 @@ export class TutorialSystem {
     context.textContent = t(step.anchor?.type === 'notebook' ? 'ui.tutorial.notebook' : 'ui.tutorial.board');
     const content = document.createElement('p');
     content.textContent = step.textKey ? t(step.textKey) : step.text;
-    tooltip.append(context, content);
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'tutorial-close';
+    close.textContent = '×';
+    close.setAttribute('aria-label', t('ui.tutorial.close'));
+    close.addEventListener('click', event => {
+      event.stopPropagation();
+      this.closeCurrent();
+    });
+    tooltip.append(close, context, content);
 
     if (this.activeTip || step.advanceOn === 'acknowledged') {
       const gotIt = document.createElement('button');
@@ -246,7 +275,9 @@ export class TutorialSystem {
     dismiss.textContent = t('ui.tutorial.skip');
     dismiss.addEventListener('click', event => {
       event.stopPropagation();
-      this.complete();
+      if (!window.confirm(t('ui.tutorial.skip_confirm'))) return;
+      if (options.onSkipTutorials) options.onSkipTutorials();
+      else this.setEnabled(false);
     });
     tooltip.append(dismiss);
     document.body.append(tooltip);
