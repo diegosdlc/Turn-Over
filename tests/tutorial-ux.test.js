@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { getLevel } from '../src/content/levels/index.js';
-import { TutorialSystem, positionTutorialCard } from '../src/systems/TutorialSystem.js';
+import { TutorialSystem, positionTutorialCard, notebookFreeRegion } from '../src/systems/TutorialSystem.js';
 import { parseCSV } from '../src/i18n/index.js';
 
 const source = file => readFileSync(new URL('../' + file, import.meta.url), 'utf8');
@@ -90,4 +90,38 @@ test('explanations are editable in both languages', () => {
   assert.ok(keyMap.get('tutorial.deployment_select')[2].includes('cuaderno'));
   assert.ok(keyMap.get('tutorial.deployment_place')[2].includes('casilla verde'));
   assert.ok(keyMap.get('tutorial.deployment_rounds')[2].includes('Confirmar ronda'));
+});
+
+test('round explanation closes on confirming or selecting another reserve piece', () => {
+  for (const event of ['deployment-round-confirmed', 'deployment-unit-selected']) {
+    const tutorial = new TutorialSystem({storagePrefix: 'tutorial-test:'});
+    tutorial.configure('round-regression', tutorial1, {forceEnabled: true});
+    tutorial.setPhase('deployment');
+    tutorial.notify('deployment-unit-selected');
+    tutorial.notify('deployment-unit-placed');
+    assert.equal(tutorial.currentStep().id, 'deployment-rounds');
+    assert.equal(tutorial.currentStep().keepNotebookClear, true);
+    assert.equal(tutorial.notify(event), true);
+    assert.equal(tutorial.currentStep(), null);
+    tutorial.notify('deployment-unit-placed');
+    assert.equal(tutorial.currentStep(), null, 'do not repeat the explanation');
+    tutorial.setPhase('play');
+    assert.equal(tutorial.currentStep()?.id, 'select-piece');
+  }
+});
+
+test('round explanation has a notebook-free region on desktop and mobile', () => {
+  for (const [viewport, notebook] of [
+    [{left:0,top:0,width:1280,height:720},{left:-12,top:320,right:500,bottom:732}],
+    [{left:0,top:0,width:390,height:700},{left:20,top:375,right:370,bottom:690}],
+    [{left:0,top:0,width:780,height:350},{left:0,top:35,right:330,bottom:350}]
+  ]) {
+    const region = notebookFreeRegion(viewport, notebook);
+    assert.ok(region && region.width > 0 && region.height > 0);
+    assert.ok(region.right <= notebook.left || region.left >= notebook.right ||
+      region.bottom <= notebook.top || region.top >= notebook.bottom);
+    assert.ok(region.left >= viewport.left && region.top >= viewport.top);
+    assert.ok(region.right <= viewport.left + viewport.width &&
+      region.bottom <= viewport.top + viewport.height);
+  }
 });
