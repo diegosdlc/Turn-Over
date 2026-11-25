@@ -79,7 +79,22 @@ test('a deadline before any completed evaluation still returns a legal move', ()
 test('worker watchdog is independent of the search and is cleared on cancel, failure and result', () => {
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   assert.match(main, /request\.watchdog = window\.setTimeout/);
-  assert.match(main, /this\.ai\.searchBudgetMs \+ 2500/);
+  assert.match(main, /this\.ai\.searchBudgetMs \+ 1000/);
   assert.match(main, /clearTimeout\(this\.aiRequest\.watchdog\)/);
-  assert.equal([...main.matchAll(/clearTimeout\(request\.watchdog\)/g)].length, 2);
+  assert.match(main, /clearTimeout\(request\.watchdog\)/);
+  assert.match(main, /request\.earliestApply - performance\.now\(\)/);
+});
+
+test('worker reports actual completed depth and elapsed time without changing configured depth', () => {
+  const { state, level } = searchFixture();
+  let stats;
+  const action = chooseAiAction(structuredClone(aiRequestFor(state, {
+    ...level, ai: { ...level.ai, depth: 2 }
+  })), result => { stats = result; });
+  assert.ok(action);
+  assert.equal(stats.requestedDepth, 2);
+  assert.equal(stats.completedDepth, 2);
+  assert.equal(stats.timedOut, false);
+  assert.ok(stats.elapsedMs >= 0);
+  assert.equal(DEFAULT_AI_SEARCH_BUDGET_MS, 4000);
 });

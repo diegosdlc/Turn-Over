@@ -1,4 +1,4 @@
-import { AIController } from './AIController.js?v=20261125-search-budget-1';
+import { AIController } from './AIController.js?v=20261125-search-budget-2';
 import { GameState } from '../core/GameState.js?v=20261118-deployment-points-1';
 
 // Only clone the rules-facing level data, not UI metadata or behavior hooks.
@@ -12,17 +12,22 @@ export function aiRequestFor(state, level) {
   };
 }
 
-export function chooseAiAction({ snapshot, level, config }) {
+export function chooseAiAction({ snapshot, level, config }, onStats = null) {
   // structured cloning removes class prototypes. Restore the same state
   // methods used by the human player and minimax, without resetting the game.
   const state = Object.assign(Object.create(GameState.prototype), snapshot, { level });
-  return new AIController(config).chooseAction(state, level);
+  const ai = new AIController(config);
+  const action = ai.chooseAction(state, level);
+  onStats?.({ ...ai.lastSearch, requestedDepth: ai.depth });
+  return action;
 }
 
 if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) {
   self.addEventListener('message', event => {
     try {
-      self.postMessage({ action: chooseAiAction(event.data) });
+      let stats;
+      const action = chooseAiAction(event.data, value => { stats = value; });
+      self.postMessage({ action, stats });
     } catch (error) {
       self.postMessage({ error: String(error) });
     }

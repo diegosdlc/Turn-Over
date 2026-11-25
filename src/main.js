@@ -12,8 +12,8 @@ import { TutorialSystem } from './systems/TutorialSystem.js?v=20261125-promotion
 import { loadTutorialPreference, saveTutorialPreference } from './systems/TutorialPreference.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20261125-turn-status-1';
 import { turnStatusFor } from './render/turnStatus.js';
-import { AIController } from './ai/AIController.js?v=20261125-search-budget-1';
-import { aiRequestFor } from './ai/AIWorker.js?v=20261125-search-budget-1';
+import { AIController } from './ai/AIController.js?v=20261125-search-budget-2';
+import { aiRequestFor } from './ai/AIWorker.js?v=20261125-search-budget-2';
 import { legalActionsFor } from './core/rules.js?v=20260821-evolution-3';
 import { victoryResultFor } from './core/victory.js';
 import { survivalProgressFor, countSkippedSurvivalTurn } from './core/survival.js';
@@ -284,7 +284,7 @@ class GameApp {
 
   renderTurnIndicator() {
     if (!this.turnIndicator) return;
-    const status = turnStatusFor(this.state, Boolean(this.aiRequest));
+    const status = turnStatusFor(this.state, Boolean(this.aiRequest?.searching));
     this.turnIndicator.hidden = !status;
     if (!status) return;
     this.turnIndicator.dataset.status = status.kind;
@@ -734,10 +734,8 @@ class GameApp {
     this.cancelAiTurn();
     if (!this.ai?.isTurn(this.state)) return;
 
-    this.aiTimer = window.setTimeout(() => {
-      this.aiTimer = null;
-      this.requestAiAction();
-    }, Math.max(this.ai.thinkDelayMs, this.renderer?.remainingAnimationMs() ?? 0));
+    // Think during the animation/artificial delay instead of wasting it.
+    this.requestAiAction(Math.max(this.ai.thinkDelayMs, this.renderer?.remainingAnimationMs() ?? 0));
   }
 
   cancelAiTurn() {
@@ -753,9 +751,10 @@ class GameApp {
     }
   }
 
-  requestAiAction() {
+  requestAiAction(minDelayMs = 0) {
     if (!this.ai?.isTurn(this.state)) return;
-    const request = { state: this.state, level: this.level };
+    const request = { state: this.state, level: this.level, searching: true,
+      earliestApply: performance.now() + minDelayMs };
     this.aiRequest = request;
     this.renderTurnIndicator();
 
@@ -763,36 +762,48 @@ class GameApp {
       this.state === request.state && this.level === request.level &&
       !this.gameShell.hidden && this.ai?.isTurn(this.state);
 
-    const fail = error => {
-      if (!isCurrent()) return;
+    const applyResult = action => {
+      if (!isCurrent() || !request.searching) return;
       window.clearTimeout(request.watchdog);
-      this.aiRequest = null;
+      request.searching = false;
+      this.renderTurnIndicator();
+      const apply = () => {
+        this.aiTimer = null;
+        if (!isCurrent()) return;
+        this.aiRequest = null;
+        this.playAiTurn(action);
+      };
+      const remaining = request.earliestApply - performance.now();
+      if (remaining > 0) this.aiTimer = window.setTimeout(apply, remaining);
+      else apply();
+    };
+
+    const fail = error => {
+      if (!isCurrent() || !request.searching) return;
       this.aiWorker?.terminate();
       this.aiWorker = null;
       this.renderTurnIndicator();
       console.error('AI worker failed; using a legal move without search', error);
       // Keep the game playable without ever moving minimax onto the UI thread.
-      this.playAiTurn(legalActionsFor(this.state, this.level)[0] ?? null);
+      applyResult(legalActionsFor(this.state, this.level)[0] ?? null);
     };
 
     try {
-      this.aiWorker ??= new Worker(new URL('./ai/AIWorker.js?v=20261125-search-budget-1', import.meta.url), { type: 'module' });
+      this.aiWorker ??= new Worker(new URL('./ai/AIWorker.js?v=20261125-search-budget-2', import.meta.url), { type: 'module' });
       this.aiWorker.onmessage = event => {
         if (!isCurrent()) return;
         if (event.data.error) {
           fail(event.data.error);
           return;
         }
-        window.clearTimeout(request.watchdog);
-        this.aiRequest = null;
-        this.renderTurnIndicator();
-        this.playAiTurn(event.data.action);
+        if (event.data.stats) console.debug('AI search', this.level.id, event.data.stats);
+        applyResult(event.data.action);
       };
       this.aiWorker.onerror = event => fail(event.message);
       this.aiWorker.onmessageerror = event => fail(event);
       // Independent hard watchdog also covers worker startup or a stalled search.
       request.watchdog = window.setTimeout(() => fail('AI worker exceeded its deadline'),
-        this.ai.searchBudgetMs + 2500);
+        this.ai.searchBudgetMs + 1000);
       this.aiWorker.postMessage(aiRequestFor(this.state, this.level));
     } catch (error) {
       fail(error);

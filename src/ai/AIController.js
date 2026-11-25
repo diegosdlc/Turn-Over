@@ -3,7 +3,7 @@ import { applyRookShieldRejection, applyRoyalSwap, completeUnitMove } from '../c
 import { objectiveScoreFor, victoryResultFor } from '../core/victory.js?v=20260822-victory-1';
 import { applyEncroachment } from '../core/encroachment.js';
 
-export const DEFAULT_AI_SEARCH_BUDGET_MS = 1500;
+export const DEFAULT_AI_SEARCH_BUDGET_MS = 4000;
 const SEARCH_TIMEOUT = Symbol('AI search deadline');
 const monotonicNow = () => globalThis.performance?.now() ?? Date.now();
 
@@ -186,6 +186,10 @@ function simulate(state, level, action, simulateImmediateClosure = false) {
   return finishSimulatedAction();
 }
 
+function defaultActive(unit) {
+  return Boolean(unit && !unit.captured && !unit.destroyed && !unit.inReserve);
+}
+
 function cloneState(state) {
   const units = typeof structuredClone === 'function'
     ? structuredClone(state.units)
@@ -206,11 +210,10 @@ function cloneState(state) {
     pendingClosure: state.pendingClosure ? {...state.pendingClosure} : null,
     roundsElapsed: state.roundsElapsed ?? 0,
     isDeploying() { return this.phase === 'deployment'; },
-    active(unit) {
-      if (typeof state.active === 'function') return state.active.call(this, unit);
-      return Boolean(unit && !unit.captured && !unit.destroyed && !unit.inReserve);
-    },
-    activeAt(x, y) { return this.units.find(unit => this.active(unit) && unit.x === x && unit.y === y) ?? null; },
+    // Reuse the authoritative method directly instead of wrapping it at every
+    // depth; check coordinates before the more expensive objective-aware test.
+    active: typeof state.active === 'function' ? state.active : defaultActive,
+    activeAt(x, y) { return this.units.find(unit => unit.x === x && unit.y === y && this.active(unit)) ?? null; },
     prisonersAt(x, y) { return this.units.filter(unit => unit.captured && !unit.destroyed && unit.x === x && unit.y === y); }
   };
 }
@@ -241,10 +244,17 @@ function evaluate(state, level, aiTeam, ai, result) {
     else if (unit.captured && !unit.destroyed) score -= sign * value * ai.weights.captured;
   }
 
-  score += prisonerPositionScore(state, level, aiTeam, ai);
-  score += (mobilityFor(state, level, aiTeam) - mobilityFor(state, level, opponent)) * ai.weights.mobility;
+  // All these heuristics inspect the same unchanged position. Generate each
+  // unit's options at most once, with its team active, and share the result.
+  const cache = new Map();
+  const movesFor = (position, board, unit) => {
+    if (!cache.has(unit)) cache.set(unit, optionsFor(position, board, unit));
+    return cache.get(unit);
+  };
+  score += prisonerPositionScore(state, level, aiTeam, ai, movesFor);
+  score += (mobilityFor(state, level, aiTeam, movesFor) - mobilityFor(state, level, opponent, movesFor)) * ai.weights.mobility;
   score += objectiveScoreFor(state, level, aiTeam) * ai.weights.objective;
-  score += profileTacticalScore(state, level, aiTeam, ai);
+  score += profileTacticalScore(state, level, aiTeam, ai, movesFor);
   if (Number.isInteger(level.rules?.encroachmentStartAction)) {
     // Adjacent free cells give a team local options when the arena contracts.
     const approaching = Math.min(1, (state.combatActionsCompleted ?? 0) /
@@ -255,7 +265,7 @@ function evaluate(state, level, aiTeam, ai, result) {
   return score;
 }
 
-function prisonerPositionScore(state, level, aiTeam, ai) {
+function prisonerPositionScore(state, level, aiTeam, ai, movesFor) {
   let score = 0;
 
   for (const prisoner of state.units) {
@@ -268,7 +278,7 @@ function prisonerPositionScore(state, level, aiTeam, ai) {
 
     // A prisoner that can already be reached by its own side is much closer to returning
     // than the flat captured-material score suggests.
-    if (canTeamReachSquare(state, level, owner, prisoner.x, prisoner.y, ['move-frozen'])) {
+    if (canTeamReachSquare(state, level, owner, prisoner.x, prisoner.y, ['move-frozen'], movesFor)) {
       const recovery = prisonerValue * ai.weights.rescuePotential;
       score += owner === aiTeam ? recovery : -recovery;
     }
@@ -279,7 +289,7 @@ function prisonerPositionScore(state, level, aiTeam, ai) {
     // standing on its prisoner, the capture is insecure. Discount the prisoner and charge
     // part of the exposed captor's value, because the following exchange tends to restore
     // the frozen material instead of creating a durable material lead.
-    if (canTeamReachSquare(state, level, owner, captor.x, captor.y, ['capture'])) {
+    if (canTeamReachSquare(state, level, owner, captor.x, captor.y, ['capture'], movesFor)) {
       const captorValue = ai.values[captor.pieceType] ?? 250;
       const risk = (prisonerValue + captorValue * 0.5) * ai.weights.prisonerSafety;
       score += capturingTeam === aiTeam ? -risk : risk;
@@ -289,25 +299,25 @@ function prisonerPositionScore(state, level, aiTeam, ai) {
   return score;
 }
 
-function canTeamReachSquare(state, level, team, x, y, kinds) {
+function canTeamReachSquare(state, level, team, x, y, kinds, movesFor = optionsFor) {
   const previousTurn = state.currentTurn;
   state.currentTurn = team;
   try {
     return state.units.some(unit =>
       state.active(unit) && unit.team === team &&
-      optionsFor(state, level, unit).some(option => option.x === x && option.y === y && kinds.includes(option.kind))
+      movesFor(state, level, unit).some(option => option.x === x && option.y === y && kinds.includes(option.kind))
     );
   } finally {
     state.currentTurn = previousTurn;
   }
 }
 
-function mobilityFor(state, level, team) {
+function mobilityFor(state, level, team, movesFor = optionsFor) {
   const previousTurn = state.currentTurn;
   state.currentTurn = team;
   let moves = 0;
   for (const unit of state.units) {
-    if (state.active(unit) && unit.team === team) moves += optionsFor(state, level, unit).length;
+    if (state.active(unit) && unit.team === team) moves += movesFor(state, level, unit).length;
   }
   state.currentTurn = previousTurn;
   return moves;
@@ -379,7 +389,7 @@ export function survivalAssaultScore(state, level, ai) {
 }
 
 
-export function profileTacticalScore(state, level, aiTeam, ai) {
+export function profileTacticalScore(state, level, aiTeam, ai, movesFor = optionsFor) {
   const tactics = ai.tactics ?? {};
   const opponent = aiTeam === 'player' ? 'enemy' : 'player';
   let score = 0;
@@ -387,13 +397,13 @@ export function profileTacticalScore(state, level, aiTeam, ai) {
     score += proximityScore(state, aiTeam) * tactics.pursuit;
   }
   if (tactics.threat) {
-    score += (threatenedUnits(state, level, aiTeam).size -
-      threatenedUnits(state, level, opponent).size) * tactics.threat;
+    score += (threatenedUnits(state, level, aiTeam, movesFor).size -
+      threatenedUnits(state, level, opponent, movesFor).size) * tactics.threat;
   }
   if (tactics.kingSafety) {
     const king = state.units.find(unit =>
       unit.team === aiTeam && unit.pieceType === 'king' && state.active(unit));
-    if (king && canTeamReachSquare(state, level, opponent, king.x, king.y, ['capture'])) {
+    if (king && canTeamReachSquare(state, level, opponent, king.x, king.y, ['capture'], movesFor)) {
       score -= tactics.kingSafety;
     }
   }
@@ -412,14 +422,14 @@ function proximityScore(state, team) {
   return -distance;
 }
 
-function threatenedUnits(state, level, team) {
+function threatenedUnits(state, level, team, movesFor = optionsFor) {
   const targets = new Set();
   const previousTurn = state.currentTurn;
   state.currentTurn = team;
   try {
     for (const unit of state.units) {
       if (!state.active(unit) || unit.team !== team) continue;
-      for (const move of optionsFor(state, level, unit)) {
+      for (const move of movesFor(state, level, unit)) {
         if (move.kind !== 'capture') continue;
         const occupant = state.activeAt(move.x, move.y);
         if (occupant && occupant.team !== team) targets.add(occupant.id);
