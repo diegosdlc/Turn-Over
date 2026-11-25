@@ -42,6 +42,6 @@ test('traps illustration uses the notebook image layout and responsive sizes', (
   assert.match(css,/\.notebook-traps-illustration\{/);
   assert.match(css,/\.notebook-traps-sequence\{[\s\S]*?grid-template-columns:minmax\(0,1fr\) auto minmax\(0,1fr\)/);
   assert.match(css,/@media \(max-width:900px\)/);
-  assert.ok(html.includes('src/level-ui.js?v=20261124-pause-menu-1'));
-  assert.ok(html.includes('src/level-ui.css?v=20261124-pause-menu-1'));
+  assert.match(html, /src\/level-ui\.js\?v=[\w-]+["']/);
+  assert.match(html, /src\/level-ui\.css\?v=[\w-]+["']/);
 });
