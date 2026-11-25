@@ -12,6 +12,7 @@ import { TutorialSystem } from './systems/TutorialSystem.js?v=20261125-promotion
 import { loadTutorialPreference, saveTutorialPreference } from './systems/TutorialPreference.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20261111-campaign-playtests-1';
 import { AIController } from './ai/AIController.js?v=20261111-ai-profiles-1';
+import { aiRequestFor } from './ai/AIWorker.js?v=20261125-ai-worker-1';
 import { legalActionsFor } from './core/rules.js?v=20260821-evolution-3';
 import { victoryResultFor } from './core/victory.js';
 import { survivalProgressFor, countSkippedSurvivalTurn } from './core/survival.js';
@@ -58,6 +59,8 @@ class GameApp {
     this.renderer = null;
     this.ai = null;
     this.aiTimer = null;
+    this.aiWorker = null;
+    this.aiRequest = null;
     this.isTestMode = false;
     this.nextPlayerBand = null;
     this.lastDialog = null;
@@ -720,18 +723,61 @@ class GameApp {
 
     this.aiTimer = window.setTimeout(() => {
       this.aiTimer = null;
-      this.playAiTurn();
+      this.requestAiAction();
     }, Math.max(this.ai.thinkDelayMs, this.renderer?.remainingAnimationMs() ?? 0));
   }
 
   cancelAiTurn() {
     if (this.aiTimer != null) window.clearTimeout(this.aiTimer);
     this.aiTimer = null;
+    // Terminate an in-flight search on reset, level change or exit.
+    if (this.aiRequest) {
+      this.aiRequest = null;
+      this.aiWorker?.terminate();
+      this.aiWorker = null;
+    }
   }
 
-  playAiTurn() {
+  requestAiAction() {
     if (!this.ai?.isTurn(this.state)) return;
-    const action = this.ai.chooseAction(this.state, this.level);
+    const request = { state: this.state, level: this.level };
+    this.aiRequest = request;
+
+    const isCurrent = () => this.aiRequest === request &&
+      this.state === request.state && this.level === request.level &&
+      !this.gameShell.hidden && this.ai?.isTurn(this.state);
+
+    const fail = error => {
+      if (!isCurrent()) return;
+      this.aiRequest = null;
+      this.aiWorker?.terminate();
+      this.aiWorker = null;
+      console.error('AI worker failed; using a legal move without search', error);
+      // Keep the game playable without ever moving minimax onto the UI thread.
+      this.playAiTurn(legalActionsFor(this.state, this.level)[0] ?? null);
+    };
+
+    try {
+      this.aiWorker ??= new Worker(new URL('./ai/AIWorker.js?v=20261125-ai-worker-1', import.meta.url), { type: 'module' });
+      this.aiWorker.onmessage = event => {
+        if (!isCurrent()) return;
+        if (event.data.error) {
+          fail(event.data.error);
+          return;
+        }
+        this.aiRequest = null;
+        this.playAiTurn(event.data.action);
+      };
+      this.aiWorker.onerror = event => fail(event.message);
+      this.aiWorker.onmessageerror = event => fail(event);
+      this.aiWorker.postMessage(aiRequestFor(this.state, this.level));
+    } catch (error) {
+      fail(error);
+    }
+  }
+
+  playAiTurn(action) {
+    if (!this.ai?.isTurn(this.state)) return;
     if (!action) {
       this.resolveTurn();
       return;
