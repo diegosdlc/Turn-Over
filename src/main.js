@@ -10,7 +10,8 @@ import { GameSessionStore, restoreSessionState } from './systems/GameSessionStor
 import { ProgressionStore } from './systems/ProgressionStore.js?v=20260821-evolution-3';
 import { TutorialSystem } from './systems/TutorialSystem.js?v=20261125-promotion-close-1';
 import { loadTutorialPreference, saveTutorialPreference } from './systems/TutorialPreference.js';
-import { BoardRenderer } from './render/BoardRenderer.js?v=20261111-campaign-playtests-1';
+import { BoardRenderer } from './render/BoardRenderer.js?v=20261125-turn-status-1';
+import { turnStatusFor } from './render/turnStatus.js';
 import { AIController } from './ai/AIController.js?v=20261111-ai-profiles-1';
 import { aiRequestFor } from './ai/AIWorker.js?v=20261125-ai-worker-1';
 import { legalActionsFor } from './core/rules.js?v=20260821-evolution-3';
@@ -41,6 +42,7 @@ class GameApp {
     this.deploymentStatus = document.querySelector('#deployment-status');
     this.enemyDeploymentPieces = document.querySelector('#enemy-deployment-pieces');
     this.deploymentRoundLabel = document.querySelector('#deployment-round-label');
+    this.turnIndicator = document.querySelector('#turn-indicator');
     this.survivalCounter = document.querySelector('#survival-counter');
     this.survivalRemaining = document.querySelector('#survival-rounds-remaining');
     this.survivalTotal = document.querySelector('#survival-rounds-total');
@@ -266,6 +268,7 @@ class GameApp {
 
   render() {
     this.tutorial.setPhase(this.state.isDeploying() ? 'deployment' : 'play');
+    this.renderTurnIndicator();
     this.renderSurvivalCounter();
     window.turnOverNotebookState = { units: this.state.units, assets: this.assets, level: this.level };
     window.dispatchEvent(new Event('game:rosters-updated'));
@@ -277,6 +280,16 @@ class GameApp {
       if (anchor?.type === 'deployment-board' || anchor?.type === 'board') return this.board.getBoundingClientRect();
       return null;
     }, { notebook: this.notebook, onSkipTutorials: () => this.setTutorialPreference(false) });
+  }
+
+  renderTurnIndicator() {
+    if (!this.turnIndicator) return;
+    const status = turnStatusFor(this.state, Boolean(this.aiRequest));
+    this.turnIndicator.hidden = !status;
+    if (!status) return;
+    this.turnIndicator.dataset.status = status.kind;
+    const label = t(status.key);
+    if (this.turnIndicator.textContent !== label) this.turnIndicator.textContent = label;
   }
 
   renderSurvivalCounter() {
@@ -735,6 +748,7 @@ class GameApp {
       this.aiRequest = null;
       this.aiWorker?.terminate();
       this.aiWorker = null;
+      this.renderTurnIndicator();
     }
   }
 
@@ -742,6 +756,7 @@ class GameApp {
     if (!this.ai?.isTurn(this.state)) return;
     const request = { state: this.state, level: this.level };
     this.aiRequest = request;
+    this.renderTurnIndicator();
 
     const isCurrent = () => this.aiRequest === request &&
       this.state === request.state && this.level === request.level &&
@@ -752,6 +767,7 @@ class GameApp {
       this.aiRequest = null;
       this.aiWorker?.terminate();
       this.aiWorker = null;
+      this.renderTurnIndicator();
       console.error('AI worker failed; using a legal move without search', error);
       // Keep the game playable without ever moving minimax onto the UI thread.
       this.playAiTurn(legalActionsFor(this.state, this.level)[0] ?? null);
@@ -766,6 +782,7 @@ class GameApp {
           return;
         }
         this.aiRequest = null;
+        this.renderTurnIndicator();
         this.playAiTurn(event.data.action);
       };
       this.aiWorker.onerror = event => fail(event.message);
