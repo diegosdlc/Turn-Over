@@ -12,8 +12,8 @@ import { TutorialSystem } from './systems/TutorialSystem.js?v=20261125-promotion
 import { loadTutorialPreference, saveTutorialPreference } from './systems/TutorialPreference.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20261125-turn-status-1';
 import { turnStatusFor } from './render/turnStatus.js';
-import { AIController } from './ai/AIController.js?v=20261125-search-budget-2';
-import { aiRequestFor } from './ai/AIWorker.js?v=20261125-search-budget-2';
+import { AIController, emergencyAiAction } from './ai/AIController.js?v=20261125-search-budget-3';
+import { aiRequestFor } from './ai/AIWorker.js?v=20261125-search-budget-3';
 import { legalActionsFor } from './core/rules.js?v=20260821-evolution-3';
 import { victoryResultFor } from './core/victory.js';
 import { survivalProgressFor, countSkippedSurvivalTurn } from './core/survival.js';
@@ -783,15 +783,19 @@ class GameApp {
       this.aiWorker?.terminate();
       this.aiWorker = null;
       this.renderTurnIndicator();
-      console.error('AI worker failed; using a legal move without search', error);
-      // Keep the game playable without ever moving minimax onto the UI thread.
-      applyResult(legalActionsFor(this.state, this.level)[0] ?? null);
+      console.error('AI worker failed', this.level.id, error, request.progress?.completedDepth ?? null);
+      // Preserve the best result already obtained, even if the worker stalls.
+      applyResult(request.progress?.action ?? emergencyAiAction(this.state, this.level, this.ai));
     };
 
     try {
-      this.aiWorker ??= new Worker(new URL('./ai/AIWorker.js?v=20261125-search-budget-2', import.meta.url), { type: 'module' });
+      this.aiWorker ??= new Worker(new URL('./ai/AIWorker.js?v=20261125-search-budget-3', import.meta.url), { type: 'module' });
       this.aiWorker.onmessage = event => {
         if (!isCurrent()) return;
+        if (event.data.progress) {
+          request.progress = event.data.progress;
+          return;
+        }
         if (event.data.error) {
           fail(event.data.error);
           return;

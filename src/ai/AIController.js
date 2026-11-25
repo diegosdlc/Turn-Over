@@ -1,7 +1,7 @@
 import { legalActionsFor, optionsFor } from '../core/rules.js?v=20260821-evolution-3';
 import { applyRookShieldRejection, applyRoyalSwap, completeUnitMove } from '../core/GameState.js?v=20261111-ai-profiles-1';
 import { objectiveScoreFor, victoryResultFor } from '../core/victory.js?v=20260822-victory-1';
-import { applyEncroachment } from '../core/encroachment.js';
+import { applyEncroachment } from '../core/encroachment.js?v=20261125-ai-search-3';
 
 export const DEFAULT_AI_SEARCH_BUDGET_MS = 4000;
 const SEARCH_TIMEOUT = Symbol('AI search deadline');
@@ -49,16 +49,16 @@ export class AIController {
     return !state.finished && state.currentTurn === this.team;
   }
 
-  chooseAction(state, level, { now = monotonicNow } = {}) {
+  chooseAction(state, level, { now = monotonicNow, onProgress = null, pruneRoot = true, random = Math.random } = {}) {
     const started = now();
-    const search = { now, deadline: started + this.searchBudgetMs };
+    const search = { now, deadline: started + this.searchBudgetMs, nodes: 0 };
     const actions = legalActions(state, level);
     this.lastSearch = { completedDepth: 0, timedOut: false, elapsedMs: 0 };
     if (!actions.length) return null;
 
     // Iterative deepening retains the best fully evaluated iteration. A partial
     // first iteration is still preferable to returning no move at all.
-    let ordered = actions.map(action => ({ action, next: null }));
+    let ordered = orderedActions(state, actions, this).map(action => ({ action, next: null }));
     let completed = [];
     let partial = [];
     let completedDepth = 0;
@@ -66,27 +66,42 @@ export class AIController {
     try {
       for (let depth = 1; depth <= this.depth; depth++) {
         partial = [];
+        let best = -Infinity;
         for (const item of ordered) {
           checkDeadline(search);
-          // Immediate closure is simulated once per root action, not per depth.
+          // A root move below the randomness window cannot be selected.
+          // Fail-low values are upper bounds, not exact scores.
+          const alpha = pruneRoot && depth > 1 && Number.isFinite(best) &&
+            this.randomness >= 0 && this.randomness <= 1
+            ? best - Math.abs(best * this.randomness + 8) - 1e-7 : -Infinity;
           item.next ??= simulate(state, level, item.action, true);
-          const score = minimax(item.next, level, depth - 1, -Infinity, Infinity, this.team, this, search);
-          partial.push({ ...item, score });
+          const score = minimax(item.next, level, depth - 1, alpha, Infinity, this.team, this, search);
+          const exact = score > alpha || alpha === -Infinity;
+          partial.push({ ...item, score, exact });
+          if (exact && score > best) {
+            best = score;
+            if (!completedDepth) onProgress?.({ action: item.action, completedDepth: 0 });
+          }
         }
-        completed = partial.sort((a, b) => b.score - a.score);
+        ordered = partial.sort((a, b) => b.score - a.score);
+        completed = ordered.filter(item => item.exact);
         completedDepth = depth;
-        ordered = completed;
+        onProgress?.({ action: completed[0].action, completedDepth });
       }
     } catch (error) {
       if (error !== SEARCH_TIMEOUT) throw error;
       timedOut = true;
     }
 
-    this.lastSearch = { completedDepth, timedOut, elapsedMs: Math.max(0, now() - started) };
-    const scored = completed.length ? completed : partial.sort((a, b) => b.score - a.score);
-    if (!scored.length) return actions[0];
-    const candidates = scored.filter(item => item.score >= scored[0].score - Math.abs(scored[0].score * this.randomness + 8));
-    return candidates[Math.floor(Math.random() * candidates.length)]?.action ?? scored[0].action;
+    const scored = completed.length ? completed : partial.filter(item => item.exact).sort((a, b) => b.score - a.score);
+    this.lastSearch = { completedDepth, timedOut, elapsedMs: Math.max(0, now() - started),
+      nodes: search.nodes, bestScore: scored[0]?.score ?? null };
+    if (!scored.length) return orderedActions(state, actions, this)[0];
+    // Never randomize away an immediate forced win or into a forced loss.
+    const candidates = scored.filter(item => item.score >= scored[0].score - Math.abs(scored[0].score * this.randomness + 8) &&
+      (scored[0].score !== 100000 || item.score === 100000) &&
+      (scored[0].score === -100000 || item.score !== -100000));
+    return candidates[Math.floor(random() * candidates.length)]?.action ?? scored[0].action;
   }
 }
 
@@ -94,12 +109,40 @@ export function legalActions(state, level) {
   return legalActionsFor(state, level);
 }
 
+// Order tactical moves first for alpha-beta cutoffs. All legal moves remain
+// eligible; order does not change the evaluation or the configured depth.
+function orderedActions(state, actions, ai) {
+  const attacks = [];
+  const quiet = [];
+  for (const action of actions) {
+    if (action.kind === 'capture' || action.kind === 'destroy') {
+      const target = state.units.find(unit => unit.id === action.targetId);
+      const attacker = state.units.find(unit => unit.id === action.unitId);
+      const priority = (target?.missionKing ? 10000 : ai.values[target?.pieceType] ?? 250) * 10 -
+        (ai.values[attacker?.pieceType] ?? 250) + (action.kind === 'destroy' ? 1 : 0);
+      attacks.push({ action, priority });
+    } else quiet.push(action);
+  }
+  attacks.sort((a, b) => b.priority - a.priority);
+  return [...attacks.map(item => item.action), ...quiet];
+}
+
+export function emergencyAiAction(state, level, ai) {
+  const actions = legalActions(state, level);
+  // This is only for a failed worker before any result. Avoid a warned cell
+  // when possible and prefer tactical actions over arbitrary piece order.
+  const warning = state.pendingClosure;
+  const safe = actions.filter(action => !warning || action.x !== warning.x || action.y !== warning.y);
+  return orderedActions(state, safe.length ? safe : actions, ai)[0] ?? null;
+}
+
 function minimax(state, level, depth, alpha, beta, aiTeam, ai, search) {
   checkDeadline(search);
+  search.nodes++;
   const result = state.forcedClosureLoss ? { winner: 'enemy', reason: 'encroachment' } : victoryResultFor(state, level);
   if (result || depth <= 0) return evaluate(state, level, aiTeam, ai, result);
 
-  const actions = legalActions(state, level);
+  const actions = orderedActions(state, legalActions(state, level), ai);
   if (!actions.length) return evaluate(state, level, aiTeam, ai, result);
   const maximizing = state.currentTurn === aiTeam;
 
@@ -191,15 +234,14 @@ function defaultActive(unit) {
 }
 
 function cloneState(state) {
-  const units = typeof structuredClone === 'function'
-    ? structuredClone(state.units)
-    : JSON.parse(JSON.stringify(state.units));
-  const teamEvolution = typeof structuredClone === 'function'
-    ? structuredClone(state.teamEvolution)
-    : JSON.parse(JSON.stringify(state.teamEvolution));
-  const boardElements = typeof structuredClone === 'function'
-    ? structuredClone(state.boardElements ?? levelBoardElements(state))
-    : JSON.parse(JSON.stringify(state.boardElements ?? levelBoardElements(state)));
+  // Only these flat objects and evolution counters are mutated by the
+  // simulation. Board elements are immutable records; only the list changes.
+  const units = state.units.map(unit => ({
+    ...unit, evolutionState: unit.evolutionState ? { ...unit.evolutionState } : unit.evolutionState
+  }));
+  const teamEvolution = Object.fromEntries(Object.entries(state.teamEvolution ?? {})
+    .map(([team, counters]) => [team, { ...counters }]));
+  const boardElements = [...(state.boardElements ?? levelBoardElements(state))];
   return {
     ...state,
     units,

@@ -70,7 +70,7 @@ test('a deadline before any completed evaluation still returns a legal move', ()
   let ticks = 0;
   const ai = new AIController({ ...level.ai, depth: 10, searchBudgetMs: 1 });
   const action = ai.chooseAction(state, level, { now: () => ticks++ });
-  assert.deepEqual(action, legalActionsFor(state, level)[0]);
+  assert.ok(legalActionsFor(state, level).some(candidate => JSON.stringify(candidate) === JSON.stringify(action)));
   assert.equal(ai.lastSearch.completedDepth, 0);
   assert.equal(ai.lastSearch.timedOut, true);
   assert.equal(new AIController().searchBudgetMs, DEFAULT_AI_SEARCH_BUDGET_MS);
@@ -97,4 +97,30 @@ test('worker reports actual completed depth and elapsed time without changing co
   assert.equal(stats.timedOut, false);
   assert.ok(stats.elapsedMs >= 0);
   assert.equal(DEFAULT_AI_SEARCH_BUDGET_MS, 4000);
+});
+
+test('root pruning preserves best exact evaluation and chosen move', () => {
+  const { state, level } = searchFixture();
+  const config = { ...level.ai, depth: 3, randomness: 0, searchBudgetMs: 100000 };
+  const full = new AIController(config);
+  const pruned = new AIController(config);
+  const options = { now: () => 0, random: () => 0 };
+  const expected = full.chooseAction(state, level, { ...options, pruneRoot: false });
+  const actual = pruned.chooseAction(state, level, options);
+  assert.equal(pruned.lastSearch.bestScore, full.lastSearch.bestScore);
+  assert.deepEqual(actual, expected);
+  assert.ok(pruned.lastSearch.nodes <= full.lastSearch.nodes);
+});
+
+test('worker sends progressively deeper legal choices before the final result', () => {
+  const { state, level } = searchFixture();
+  const progress = [];
+  const action = chooseAiAction(structuredClone(aiRequestFor(state, {
+    ...level, ai: { ...level.ai, depth: 2 }
+  })), null, item => progress.push(item));
+  assert.ok(action);
+  assert.equal(progress.at(-1).completedDepth, 2);
+  for (const item of progress) {
+    assert.ok(legalActionsFor(state, level).some(candidate => JSON.stringify(candidate) === JSON.stringify(item.action)));
+  }
 });
