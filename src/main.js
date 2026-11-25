@@ -8,7 +8,7 @@ import { AssetRegistry } from './systems/AssetRegistry.js';
 import { AudioManager } from './systems/AudioManager.js?v=20260814-1700';
 import { GameSessionStore, restoreSessionState } from './systems/GameSessionStore.js?v=20261111-rival-factions-1';
 import { ProgressionStore } from './systems/ProgressionStore.js?v=20260821-evolution-3';
-import { TutorialSystem } from './systems/TutorialSystem.js?v=20261125-deployment-rounds-1';
+import { TutorialSystem } from './systems/TutorialSystem.js?v=20261125-tutorial-controls-2';
 import { loadTutorialPreference, saveTutorialPreference } from './systems/TutorialPreference.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20261111-campaign-playtests-1';
 import { AIController } from './ai/AIController.js?v=20261111-ai-profiles-1';
@@ -105,11 +105,19 @@ class GameApp {
     document.querySelector('#settings-gender')?.addEventListener('change', event => setGender(event.target.value));
     document.querySelector('#faction-gender')?.addEventListener('change', event => setGender(event.target.value));
     this.tutorialCheckbox?.addEventListener('change', event => {
-      this.tutorialsEnabled = saveTutorialPreference(event.target.checked);
+      this.setTutorialPreference(event.target.checked);
     });
+    document.querySelector('#settings-tutorials')?.addEventListener('change', event => {
+      this.setTutorialPreference(event.target.checked);
+    });
+    window.addEventListener('game:tutorial-preference', event => {
+      this.setTutorialPreference(event.detail.enabled);
+    });
+    this.syncTutorialSettings();
     document.querySelector('#close-faction-selection').addEventListener('click', () => this.factionDialog.close());
     this.deploymentStart?.addEventListener('click', () => this.startDeployedGame());
     this.welcomeStart?.addEventListener('click', () => this.welcomeDialog?.close());
+    document.querySelector('#welcome-close')?.addEventListener('click', () => this.welcomeDialog?.close());
     document.querySelectorAll('[data-player-faction]').forEach(button => {
       button.addEventListener('click', () => this.startNewGame(button.dataset.playerFaction));
     });
@@ -134,7 +142,7 @@ class GameApp {
 
   startNewGame(playerFactionId) {
     if (!PLAYER_FACTION_IDS.includes(playerFactionId)) return;
-    if (this.tutorialCheckbox) this.tutorialsEnabled = saveTutorialPreference(this.tutorialCheckbox.checked);
+    if (this.tutorialCheckbox) this.setTutorialPreference(this.tutorialCheckbox.checked);
     this.isTestMode = false;
     this.session.clear();
     if (this.factionDialog.open) this.factionDialog.close();
@@ -170,7 +178,23 @@ class GameApp {
     this.startGame(level, { savedState: saved.state });
   }
 
+  syncTutorialSettings() {
+    window.turnOverTutorialsEnabled = this.tutorialsEnabled;
+    for (const id of ['faction-tutorials', 'settings-tutorials', 'notebook-tutorials']) {
+      const checkbox = document.getElementById(id);
+      if (checkbox) checkbox.checked = this.tutorialsEnabled;
+    }
+  }
+
+  setTutorialPreference(enabled) {
+    this.tutorialsEnabled = saveTutorialPreference(enabled);
+    this.syncTutorialSettings();
+    this.tutorial.setEnabled(this.tutorialsEnabled);
+    if (this.tutorialsEnabled && this.state && this.renderer && !this.gameShell.hidden) this.render();
+  }
+
   openSettings() {
+    this.syncTutorialSettings();
     if (!this.settingsDialog.open) this.settingsDialog.showModal();
   }
   loadLevel(level, { forceTutorial = false, savedState = null } = {}) {
@@ -194,7 +218,7 @@ class GameApp {
       onCaptureAction: action => this.resolveCapture(action)
     });
     this.audio.configure(level.music);
-    this.tutorial.configure(level.id, level.tutorial, { forceEnabled: forceTutorial || this.tutorialsEnabled });
+    this.tutorial.configure(level.id, level.tutorial, { forceEnabled: forceTutorial || this.tutorialsEnabled, preferenceEnabled: this.tutorialsEnabled });
     if (this.resultDialog.open) this.resultDialog.close();
     this.resolvePhase();
     this.saveSession();
@@ -249,7 +273,7 @@ class GameApp {
       if (anchor?.type === 'notebook') return this.deploymentPieces?.getBoundingClientRect();
       if (anchor?.type === 'deployment-board' || anchor?.type === 'board') return this.board.getBoundingClientRect();
       return null;
-    }, { notebook: this.notebook });
+    }, { notebook: this.notebook, onSkipTutorials: () => this.setTutorialPreference(false) });
   }
 
   renderSurvivalCounter() {
