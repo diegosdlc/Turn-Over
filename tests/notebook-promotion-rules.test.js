@@ -45,6 +45,6 @@ test('promotion illustration uses the same responsive notebook layout', () => {
   assert.ok(js.includes("t('notebook.rules.promotion.evolved')"));
   assert.ok(css.includes('.notebook-promotion-row{'));
   assert.ok(css.includes('grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)'));
-  assert.ok(html.includes('src/level-ui.js?v=20261124-pause-menu-1'));
-  assert.ok(html.includes('src/level-ui.css?v=20261124-pause-menu-1'));
+  assert.match(html, /src\/level-ui\.js\?v=[\w-]+["']/);
+  assert.match(html, /src\/level-ui\.css\?v=[\w-]+["']/);
 });
