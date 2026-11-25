@@ -21,12 +21,12 @@ function notebookTrapsIllustration(altKey) {
   return `<figure class="notebook-rule-illustration notebook-traps-illustration" role="img" aria-label="${t(altKey)}">
     <div class="notebook-traps-sequence">
       <div class="notebook-traps-stage">
-        <span class="notebook-traps-cell notebook-traps-cell--warning" aria-hidden="true">!</span>
+        <img src="./assets/notebook/rules/trap-warning.webp" alt="" loading="lazy" decoding="async" width="192" height="130" />
         <small>${t('notebook.rules.traps.warning')}</small>
       </div>
       <span class="notebook-traps-arrow" aria-hidden="true">→</span>
       <div class="notebook-traps-stage">
-        <span class="notebook-traps-cell notebook-traps-cell--blocked" aria-hidden="true">×</span>
+        <img src="./assets/notebook/rules/trap-activated.webp" alt="" loading="lazy" decoding="async" width="192" height="133" />
         <small>${t('notebook.rules.traps.blocked')}</small>
       </div>
     </div>

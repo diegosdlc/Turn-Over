@@ -1,4 +1,4 @@
-import { legalActionsFor } from './rules.js';
+import { optionsFor } from './rules.js';
 import { victoryResultFor } from './victory.js';
 
 // Geometric connectivity ignores movable units but respects every permanent wall.
@@ -35,11 +35,11 @@ function components(state, level) {
   return found;
 }
 
-function actionsForTeam(state, level, team) {
+function hasActionForTeam(state, level, team) {
   const original = state.currentTurn;
   state.currentTurn = team;
   try {
-    return legalActionsFor(state, level).length;
+    return state.units.some(unit => unit.team === team && state.active(unit) && optionsFor(state, level, unit).length > 0);
   } finally {
     state.currentTurn = original;
   }
@@ -100,7 +100,7 @@ export function canCloseCell(state, level, x, y) {
     destroyAt(state,x,y);
     if (victoryResultFor(state,level)) return true;
     return connectedAfterClosure(state,level) &&
-      actionsForTeam(state,level,'player')>0 && actionsForTeam(state,level,'enemy')>0;
+      hasActionForTeam(state,level,'player') && hasActionForTeam(state,level,'enemy');
   } finally {
     state.boardElements.pop();
     for (const saved of original) Object.assign(saved.unit, {

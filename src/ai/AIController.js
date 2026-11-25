@@ -1,12 +1,22 @@
 import { legalActionsFor, optionsFor } from '../core/rules.js?v=20260821-evolution-3';
 import { applyRookShieldRejection, applyRoyalSwap, completeUnitMove } from '../core/GameState.js?v=20261111-ai-profiles-1';
 import { objectiveScoreFor, victoryResultFor } from '../core/victory.js?v=20260822-victory-1';
-import { applyEncroachment } from '../core/encroachment.js';
+import { applyEncroachment } from '../core/encroachment.js?v=20261125-ai-search-3';
+
+export const DEFAULT_AI_SEARCH_BUDGET_MS = 4000;
+const SEARCH_TIMEOUT = Symbol('AI search deadline');
+const monotonicNow = () => globalThis.performance?.now() ?? Date.now();
+
+function checkDeadline(search) {
+  if (search.now() >= search.deadline) throw SEARCH_TIMEOUT;
+}
 
 export class AIController {
   constructor(config = {}) {
     this.team = config.team ?? 'enemy';
-    this.depth = config.depth ?? 2;
+    this.depth = Number.isFinite(config.depth) ? Math.max(1, Math.floor(config.depth)) : 2;
+    this.searchBudgetMs = Number.isFinite(config.searchBudgetMs) && config.searchBudgetMs > 0
+      ? config.searchBudgetMs : DEFAULT_AI_SEARCH_BUDGET_MS;
     this.randomness = config.randomness ?? 0.08;
     // A tunable assault profile is active only in survival. Other objectives
     // retain their existing material-conscious minimax evaluation.
@@ -39,20 +49,59 @@ export class AIController {
     return !state.finished && state.currentTurn === this.team;
   }
 
-  chooseAction(state, level) {
+  chooseAction(state, level, { now = monotonicNow, onProgress = null, pruneRoot = true, random = Math.random } = {}) {
+    const started = now();
+    const search = { now, deadline: started + this.searchBudgetMs, nodes: 0 };
     const actions = legalActions(state, level);
+    this.lastSearch = { completedDepth: 0, timedOut: false, elapsedMs: 0 };
     if (!actions.length) return null;
 
-    const scored = actions.map(action => {
-      const next = simulate(state, level, action, true);
-      return {
-        action,
-        score: minimax(next, level, this.depth - 1, -Infinity, Infinity, this.team, this)
-      };
-    }).sort((a, b) => b.score - a.score);
+    // Iterative deepening retains the best fully evaluated iteration. A partial
+    // first iteration is still preferable to returning no move at all.
+    let ordered = orderedActions(state, actions, this).map(action => ({ action, next: null }));
+    let completed = [];
+    let partial = [];
+    let completedDepth = 0;
+    let timedOut = false;
+    try {
+      for (let depth = 1; depth <= this.depth; depth++) {
+        partial = [];
+        let best = -Infinity;
+        for (const item of ordered) {
+          checkDeadline(search);
+          // A root move below the randomness window cannot be selected.
+          // Fail-low values are upper bounds, not exact scores.
+          const alpha = pruneRoot && depth > 1 && Number.isFinite(best) &&
+            this.randomness >= 0 && this.randomness <= 1
+            ? best - Math.abs(best * this.randomness + 8) - 1e-7 : -Infinity;
+          item.next ??= simulate(state, level, item.action, true);
+          const score = minimax(item.next, level, depth - 1, alpha, Infinity, this.team, this, search);
+          const exact = score > alpha || alpha === -Infinity;
+          partial.push({ ...item, score, exact });
+          if (exact && score > best) {
+            best = score;
+            if (!completedDepth) onProgress?.({ action: item.action, completedDepth: 0 });
+          }
+        }
+        ordered = partial.sort((a, b) => b.score - a.score);
+        completed = ordered.filter(item => item.exact);
+        completedDepth = depth;
+        onProgress?.({ action: completed[0].action, completedDepth });
+      }
+    } catch (error) {
+      if (error !== SEARCH_TIMEOUT) throw error;
+      timedOut = true;
+    }
 
-    const candidates = scored.filter(item => item.score >= scored[0].score - Math.abs(scored[0].score * this.randomness + 8));
-    return candidates[Math.floor(Math.random() * candidates.length)]?.action ?? scored[0].action;
+    const scored = completed.length ? completed : partial.filter(item => item.exact).sort((a, b) => b.score - a.score);
+    this.lastSearch = { completedDepth, timedOut, elapsedMs: Math.max(0, now() - started),
+      nodes: search.nodes, bestScore: scored[0]?.score ?? null };
+    if (!scored.length) return orderedActions(state, actions, this)[0];
+    // Never randomize away an immediate forced win or into a forced loss.
+    const candidates = scored.filter(item => item.score >= scored[0].score - Math.abs(scored[0].score * this.randomness + 8) &&
+      (scored[0].score !== 100000 || item.score === 100000) &&
+      (scored[0].score === -100000 || item.score !== -100000));
+    return candidates[Math.floor(random() * candidates.length)]?.action ?? scored[0].action;
   }
 }
 
@@ -60,18 +109,47 @@ export function legalActions(state, level) {
   return legalActionsFor(state, level);
 }
 
-function minimax(state, level, depth, alpha, beta, aiTeam, ai) {
+// Order tactical moves first for alpha-beta cutoffs. All legal moves remain
+// eligible; order does not change the evaluation or the configured depth.
+function orderedActions(state, actions, ai) {
+  const attacks = [];
+  const quiet = [];
+  for (const action of actions) {
+    if (action.kind === 'capture' || action.kind === 'destroy') {
+      const target = state.units.find(unit => unit.id === action.targetId);
+      const attacker = state.units.find(unit => unit.id === action.unitId);
+      const priority = (target?.missionKing ? 10000 : ai.values[target?.pieceType] ?? 250) * 10 -
+        (ai.values[attacker?.pieceType] ?? 250) + (action.kind === 'destroy' ? 1 : 0);
+      attacks.push({ action, priority });
+    } else quiet.push(action);
+  }
+  attacks.sort((a, b) => b.priority - a.priority);
+  return [...attacks.map(item => item.action), ...quiet];
+}
+
+export function emergencyAiAction(state, level, ai) {
+  const actions = legalActions(state, level);
+  // This is only for a failed worker before any result. Avoid a warned cell
+  // when possible and prefer tactical actions over arbitrary piece order.
+  const warning = state.pendingClosure;
+  const safe = actions.filter(action => !warning || action.x !== warning.x || action.y !== warning.y);
+  return orderedActions(state, safe.length ? safe : actions, ai)[0] ?? null;
+}
+
+function minimax(state, level, depth, alpha, beta, aiTeam, ai, search) {
+  checkDeadline(search);
+  search.nodes++;
   const result = state.forcedClosureLoss ? { winner: 'enemy', reason: 'encroachment' } : victoryResultFor(state, level);
   if (result || depth <= 0) return evaluate(state, level, aiTeam, ai, result);
 
-  const actions = legalActions(state, level);
+  const actions = orderedActions(state, legalActions(state, level), ai);
   if (!actions.length) return evaluate(state, level, aiTeam, ai, result);
   const maximizing = state.currentTurn === aiTeam;
 
   if (maximizing) {
     let best = -Infinity;
     for (const action of actions) {
-      best = Math.max(best, minimax(simulate(state, level, action), level, depth - 1, alpha, beta, aiTeam, ai));
+      best = Math.max(best, minimax(simulate(state, level, action), level, depth - 1, alpha, beta, aiTeam, ai, search));
       alpha = Math.max(alpha, best);
       if (beta <= alpha) break;
     }
@@ -80,7 +158,7 @@ function minimax(state, level, depth, alpha, beta, aiTeam, ai) {
 
   let best = Infinity;
   for (const action of actions) {
-    best = Math.min(best, minimax(simulate(state, level, action), level, depth - 1, alpha, beta, aiTeam, ai));
+    best = Math.min(best, minimax(simulate(state, level, action), level, depth - 1, alpha, beta, aiTeam, ai, search));
     beta = Math.min(beta, best);
     if (beta <= alpha) break;
   }
@@ -151,16 +229,19 @@ function simulate(state, level, action, simulateImmediateClosure = false) {
   return finishSimulatedAction();
 }
 
+function defaultActive(unit) {
+  return Boolean(unit && !unit.captured && !unit.destroyed && !unit.inReserve);
+}
+
 function cloneState(state) {
-  const units = typeof structuredClone === 'function'
-    ? structuredClone(state.units)
-    : JSON.parse(JSON.stringify(state.units));
-  const teamEvolution = typeof structuredClone === 'function'
-    ? structuredClone(state.teamEvolution)
-    : JSON.parse(JSON.stringify(state.teamEvolution));
-  const boardElements = typeof structuredClone === 'function'
-    ? structuredClone(state.boardElements ?? levelBoardElements(state))
-    : JSON.parse(JSON.stringify(state.boardElements ?? levelBoardElements(state)));
+  // Only these flat objects and evolution counters are mutated by the
+  // simulation. Board elements are immutable records; only the list changes.
+  const units = state.units.map(unit => ({
+    ...unit, evolutionState: unit.evolutionState ? { ...unit.evolutionState } : unit.evolutionState
+  }));
+  const teamEvolution = Object.fromEntries(Object.entries(state.teamEvolution ?? {})
+    .map(([team, counters]) => [team, { ...counters }]));
+  const boardElements = [...(state.boardElements ?? levelBoardElements(state))];
   return {
     ...state,
     units,
@@ -171,11 +252,10 @@ function cloneState(state) {
     pendingClosure: state.pendingClosure ? {...state.pendingClosure} : null,
     roundsElapsed: state.roundsElapsed ?? 0,
     isDeploying() { return this.phase === 'deployment'; },
-    active(unit) {
-      if (typeof state.active === 'function') return state.active.call(this, unit);
-      return Boolean(unit && !unit.captured && !unit.destroyed && !unit.inReserve);
-    },
-    activeAt(x, y) { return this.units.find(unit => this.active(unit) && unit.x === x && unit.y === y) ?? null; },
+    // Reuse the authoritative method directly instead of wrapping it at every
+    // depth; check coordinates before the more expensive objective-aware test.
+    active: typeof state.active === 'function' ? state.active : defaultActive,
+    activeAt(x, y) { return this.units.find(unit => unit.x === x && unit.y === y && this.active(unit)) ?? null; },
     prisonersAt(x, y) { return this.units.filter(unit => unit.captured && !unit.destroyed && unit.x === x && unit.y === y); }
   };
 }
@@ -206,10 +286,17 @@ function evaluate(state, level, aiTeam, ai, result) {
     else if (unit.captured && !unit.destroyed) score -= sign * value * ai.weights.captured;
   }
 
-  score += prisonerPositionScore(state, level, aiTeam, ai);
-  score += (mobilityFor(state, level, aiTeam) - mobilityFor(state, level, opponent)) * ai.weights.mobility;
+  // All these heuristics inspect the same unchanged position. Generate each
+  // unit's options at most once, with its team active, and share the result.
+  const cache = new Map();
+  const movesFor = (position, board, unit) => {
+    if (!cache.has(unit)) cache.set(unit, optionsFor(position, board, unit));
+    return cache.get(unit);
+  };
+  score += prisonerPositionScore(state, level, aiTeam, ai, movesFor);
+  score += (mobilityFor(state, level, aiTeam, movesFor) - mobilityFor(state, level, opponent, movesFor)) * ai.weights.mobility;
   score += objectiveScoreFor(state, level, aiTeam) * ai.weights.objective;
-  score += profileTacticalScore(state, level, aiTeam, ai);
+  score += profileTacticalScore(state, level, aiTeam, ai, movesFor);
   if (Number.isInteger(level.rules?.encroachmentStartAction)) {
     // Adjacent free cells give a team local options when the arena contracts.
     const approaching = Math.min(1, (state.combatActionsCompleted ?? 0) /
@@ -220,7 +307,7 @@ function evaluate(state, level, aiTeam, ai, result) {
   return score;
 }
 
-function prisonerPositionScore(state, level, aiTeam, ai) {
+function prisonerPositionScore(state, level, aiTeam, ai, movesFor) {
   let score = 0;
 
   for (const prisoner of state.units) {
@@ -233,7 +320,7 @@ function prisonerPositionScore(state, level, aiTeam, ai) {
 
     // A prisoner that can already be reached by its own side is much closer to returning
     // than the flat captured-material score suggests.
-    if (canTeamReachSquare(state, level, owner, prisoner.x, prisoner.y, ['move-frozen'])) {
+    if (canTeamReachSquare(state, level, owner, prisoner.x, prisoner.y, ['move-frozen'], movesFor)) {
       const recovery = prisonerValue * ai.weights.rescuePotential;
       score += owner === aiTeam ? recovery : -recovery;
     }
@@ -244,7 +331,7 @@ function prisonerPositionScore(state, level, aiTeam, ai) {
     // standing on its prisoner, the capture is insecure. Discount the prisoner and charge
     // part of the exposed captor's value, because the following exchange tends to restore
     // the frozen material instead of creating a durable material lead.
-    if (canTeamReachSquare(state, level, owner, captor.x, captor.y, ['capture'])) {
+    if (canTeamReachSquare(state, level, owner, captor.x, captor.y, ['capture'], movesFor)) {
       const captorValue = ai.values[captor.pieceType] ?? 250;
       const risk = (prisonerValue + captorValue * 0.5) * ai.weights.prisonerSafety;
       score += capturingTeam === aiTeam ? -risk : risk;
@@ -254,25 +341,25 @@ function prisonerPositionScore(state, level, aiTeam, ai) {
   return score;
 }
 
-function canTeamReachSquare(state, level, team, x, y, kinds) {
+function canTeamReachSquare(state, level, team, x, y, kinds, movesFor = optionsFor) {
   const previousTurn = state.currentTurn;
   state.currentTurn = team;
   try {
     return state.units.some(unit =>
       state.active(unit) && unit.team === team &&
-      optionsFor(state, level, unit).some(option => option.x === x && option.y === y && kinds.includes(option.kind))
+      movesFor(state, level, unit).some(option => option.x === x && option.y === y && kinds.includes(option.kind))
     );
   } finally {
     state.currentTurn = previousTurn;
   }
 }
 
-function mobilityFor(state, level, team) {
+function mobilityFor(state, level, team, movesFor = optionsFor) {
   const previousTurn = state.currentTurn;
   state.currentTurn = team;
   let moves = 0;
   for (const unit of state.units) {
-    if (state.active(unit) && unit.team === team) moves += optionsFor(state, level, unit).length;
+    if (state.active(unit) && unit.team === team) moves += movesFor(state, level, unit).length;
   }
   state.currentTurn = previousTurn;
   return moves;
@@ -344,7 +431,7 @@ export function survivalAssaultScore(state, level, ai) {
 }
 
 
-export function profileTacticalScore(state, level, aiTeam, ai) {
+export function profileTacticalScore(state, level, aiTeam, ai, movesFor = optionsFor) {
   const tactics = ai.tactics ?? {};
   const opponent = aiTeam === 'player' ? 'enemy' : 'player';
   let score = 0;
@@ -352,13 +439,13 @@ export function profileTacticalScore(state, level, aiTeam, ai) {
     score += proximityScore(state, aiTeam) * tactics.pursuit;
   }
   if (tactics.threat) {
-    score += (threatenedUnits(state, level, aiTeam).size -
-      threatenedUnits(state, level, opponent).size) * tactics.threat;
+    score += (threatenedUnits(state, level, aiTeam, movesFor).size -
+      threatenedUnits(state, level, opponent, movesFor).size) * tactics.threat;
   }
   if (tactics.kingSafety) {
     const king = state.units.find(unit =>
       unit.team === aiTeam && unit.pieceType === 'king' && state.active(unit));
-    if (king && canTeamReachSquare(state, level, opponent, king.x, king.y, ['capture'])) {
+    if (king && canTeamReachSquare(state, level, opponent, king.x, king.y, ['capture'], movesFor)) {
       score -= tactics.kingSafety;
     }
   }
@@ -377,14 +464,14 @@ function proximityScore(state, team) {
   return -distance;
 }
 
-function threatenedUnits(state, level, team) {
+function threatenedUnits(state, level, team, movesFor = optionsFor) {
   const targets = new Set();
   const previousTurn = state.currentTurn;
   state.currentTurn = team;
   try {
     for (const unit of state.units) {
       if (!state.active(unit) || unit.team !== team) continue;
-      for (const move of optionsFor(state, level, unit)) {
+      for (const move of movesFor(state, level, unit)) {
         if (move.kind !== 'capture') continue;
         const occupant = state.activeAt(move.x, move.y);
         if (occupant && occupant.team !== team) targets.add(occupant.id);

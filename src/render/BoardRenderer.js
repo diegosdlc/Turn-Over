@@ -99,14 +99,20 @@ export class BoardRenderer {
     this.renderSpecialTiles();
     this.renderEscortGoals();
 
-    for (let diagonal = 0; diagonal <= (size - 1) * 2; diagonal += 1) {
-      for (let y = 0; y < size; y += 1) {
-        const x = diagonal - y;
-        if (x < 0 || x >= size) continue;
-        const unit = this.state.activeAt(x, y);
-        const option = selectedOptions.find(item => item.x === x && item.y === y);
-        this.renderCell(x, y, option, unit);
+    // Paint pieces from the back of the projected board to the front.
+    // Selected and animated pieces keep the same stacking layer.
+    const cells = [];
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) {
+        const box = cellBox(this.projection, x, y);
+        cells.push({ x, y, depth: box.top + box.height });
       }
+    }
+    cells.sort((a, b) => a.depth - b.depth || a.y - b.y || a.x - b.x);
+    for (const { x, y } of cells) {
+      const unit = this.state.activeAt(x, y);
+      const option = selectedOptions.find(item => item.x === x && item.y === y);
+      this.renderCell(x, y, option, unit);
     }
 
     this.renderBoardElements();

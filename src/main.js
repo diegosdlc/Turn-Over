@@ -10,8 +10,10 @@ import { GameSessionStore, restoreSessionState } from './systems/GameSessionStor
 import { ProgressionStore } from './systems/ProgressionStore.js?v=20260821-evolution-3';
 import { TutorialSystem } from './systems/TutorialSystem.js?v=20261125-promotion-close-1';
 import { loadTutorialPreference, saveTutorialPreference } from './systems/TutorialPreference.js';
-import { BoardRenderer } from './render/BoardRenderer.js?v=20261111-campaign-playtests-1';
-import { AIController } from './ai/AIController.js?v=20261111-ai-profiles-1';
+import { BoardRenderer } from './render/BoardRenderer.js?v=20261125-turn-status-1';
+import { turnStatusFor } from './render/turnStatus.js';
+import { AIController, emergencyAiAction } from './ai/AIController.js?v=20261125-search-budget-3';
+import { aiRequestFor } from './ai/AIWorker.js?v=20261125-search-budget-3';
 import { legalActionsFor } from './core/rules.js?v=20260821-evolution-3';
 import { victoryResultFor } from './core/victory.js';
 import { survivalProgressFor, countSkippedSurvivalTurn } from './core/survival.js';
@@ -40,6 +42,7 @@ class GameApp {
     this.deploymentStatus = document.querySelector('#deployment-status');
     this.enemyDeploymentPieces = document.querySelector('#enemy-deployment-pieces');
     this.deploymentRoundLabel = document.querySelector('#deployment-round-label');
+    this.turnIndicator = document.querySelector('#turn-indicator');
     this.survivalCounter = document.querySelector('#survival-counter');
     this.survivalRemaining = document.querySelector('#survival-rounds-remaining');
     this.survivalTotal = document.querySelector('#survival-rounds-total');
@@ -58,6 +61,8 @@ class GameApp {
     this.renderer = null;
     this.ai = null;
     this.aiTimer = null;
+    this.aiWorker = null;
+    this.aiRequest = null;
     this.isTestMode = false;
     this.nextPlayerBand = null;
     this.lastDialog = null;
@@ -263,6 +268,7 @@ class GameApp {
 
   render() {
     this.tutorial.setPhase(this.state.isDeploying() ? 'deployment' : 'play');
+    this.renderTurnIndicator();
     this.renderSurvivalCounter();
     window.turnOverNotebookState = { units: this.state.units, assets: this.assets, level: this.level };
     window.dispatchEvent(new Event('game:rosters-updated'));
@@ -274,6 +280,16 @@ class GameApp {
       if (anchor?.type === 'deployment-board' || anchor?.type === 'board') return this.board.getBoundingClientRect();
       return null;
     }, { notebook: this.notebook, onSkipTutorials: () => this.setTutorialPreference(false) });
+  }
+
+  renderTurnIndicator() {
+    if (!this.turnIndicator) return;
+    const status = turnStatusFor(this.state, Boolean(this.aiRequest?.searching));
+    this.turnIndicator.hidden = !status;
+    if (!status) return;
+    this.turnIndicator.dataset.status = status.kind;
+    const label = t(status.key);
+    if (this.turnIndicator.textContent !== label) this.turnIndicator.textContent = label;
   }
 
   renderSurvivalCounter() {
@@ -718,20 +734,88 @@ class GameApp {
     this.cancelAiTurn();
     if (!this.ai?.isTurn(this.state)) return;
 
-    this.aiTimer = window.setTimeout(() => {
-      this.aiTimer = null;
-      this.playAiTurn();
-    }, Math.max(this.ai.thinkDelayMs, this.renderer?.remainingAnimationMs() ?? 0));
+    // Think during the animation/artificial delay instead of wasting it.
+    this.requestAiAction(Math.max(this.ai.thinkDelayMs, this.renderer?.remainingAnimationMs() ?? 0));
   }
 
   cancelAiTurn() {
     if (this.aiTimer != null) window.clearTimeout(this.aiTimer);
     this.aiTimer = null;
+    // Terminate an in-flight search on reset, level change or exit.
+    if (this.aiRequest) {
+      window.clearTimeout(this.aiRequest.watchdog);
+      this.aiRequest = null;
+      this.aiWorker?.terminate();
+      this.aiWorker = null;
+      this.renderTurnIndicator();
+    }
   }
 
-  playAiTurn() {
+  requestAiAction(minDelayMs = 0) {
     if (!this.ai?.isTurn(this.state)) return;
-    const action = this.ai.chooseAction(this.state, this.level);
+    const request = { state: this.state, level: this.level, searching: true,
+      earliestApply: performance.now() + minDelayMs };
+    this.aiRequest = request;
+    this.renderTurnIndicator();
+
+    const isCurrent = () => this.aiRequest === request &&
+      this.state === request.state && this.level === request.level &&
+      !this.gameShell.hidden && this.ai?.isTurn(this.state);
+
+    const applyResult = action => {
+      if (!isCurrent() || !request.searching) return;
+      window.clearTimeout(request.watchdog);
+      request.searching = false;
+      this.renderTurnIndicator();
+      const apply = () => {
+        this.aiTimer = null;
+        if (!isCurrent()) return;
+        this.aiRequest = null;
+        this.playAiTurn(action);
+      };
+      const remaining = request.earliestApply - performance.now();
+      if (remaining > 0) this.aiTimer = window.setTimeout(apply, remaining);
+      else apply();
+    };
+
+    const fail = error => {
+      if (!isCurrent() || !request.searching) return;
+      this.aiWorker?.terminate();
+      this.aiWorker = null;
+      this.renderTurnIndicator();
+      console.error('AI worker failed', this.level.id, error, request.progress?.completedDepth ?? null);
+      // Preserve the best result already obtained, even if the worker stalls.
+      applyResult(request.progress?.action ?? emergencyAiAction(this.state, this.level, this.ai));
+    };
+
+    try {
+      this.aiWorker ??= new Worker(new URL('./ai/AIWorker.js?v=20261125-search-budget-3', import.meta.url), { type: 'module' });
+      this.aiWorker.onmessage = event => {
+        if (!isCurrent()) return;
+        if (event.data.progress) {
+          request.progress = event.data.progress;
+          return;
+        }
+        if (event.data.error) {
+          fail(event.data.error);
+          return;
+        }
+        if (event.data.stats) console.debug('AI search', this.level.id, event.data.stats);
+        applyResult(event.data.action);
+      };
+      this.aiWorker.onerror = event => fail(event.message);
+      this.aiWorker.onmessageerror = event => fail(event);
+      // Independent hard watchdog also covers worker startup or a stalled search.
+      request.watchdog = window.setTimeout(() => fail('AI worker exceeded its deadline'),
+        this.ai.searchBudgetMs + 1000);
+      this.aiWorker.postMessage(aiRequestFor(this.state, this.level));
+    } catch (error) {
+      fail(error);
+    }
+  }
+
+  playAiTurn(action) {
+    if (!this.ai?.isTurn(this.state)) return;
     if (!action) {
       this.resolveTurn();
       return;
