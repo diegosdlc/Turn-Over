@@ -364,10 +364,13 @@ class GameApp {
       button.className = `deployment-piece ${unit.id === this.state.selectedId ? 'selected' : ''} ${unit.inReserve ? 'in-reserve' : 'in-lineup'}${unit.missionKing ? ' mission-king' : ''}`;
       const cost = this.state.deploymentUnitCost(unit);
       const affordable = this.state.canAffordDeploymentUnit(unit);
+      const insufficientPoints = unit.inReserve && !affordable;
+      const statusKey = insufficientPoints ? 'ui.deployment.status_insufficient_points' :
+        unit.inReserve ? 'ui.deployment.status_pending' : 'ui.deployment.status_board';
       const locked = unit.missionKing || (alternating && (this.state.isDeploymentCommitted(unit) || !playerTurn));
-      button.disabled = Boolean(locked || (unit.inReserve && !affordable));
+      button.disabled = Boolean(locked || insufficientPoints);
       button.setAttribute('aria-pressed', String(!unit.inReserve));
-      button.setAttribute('aria-label', unit.missionKing ? t('ui.mission.king_aria') : t('ui.deployment.unit_aria', { action: t(unit.inReserve ? 'ui.deployment.select' : 'ui.deployment.reposition'), name: pieceName(unit), points: cost, status: t(unit.inReserve ? 'ui.deployment.status_pending_lower' : 'ui.deployment.status_board_lower'), evolved: unit.evolutionStage === 'evolved' ? t('ui.board.evolved') : '' }));
+      button.setAttribute('aria-label', unit.missionKing ? t('ui.mission.king_aria') : t('ui.deployment.unit_aria', { action: t(unit.inReserve ? 'ui.deployment.select' : 'ui.deployment.reposition'), name: pieceName(unit), points: cost, status: t(statusKey + '_lower'), evolved: unit.evolutionStage === 'evolved' ? t('ui.board.evolved') : '' }));
       this.applyDeploymentPalette(button, unit);
 
       const fallback = document.createElement('span');
@@ -419,7 +422,8 @@ class GameApp {
       const status = document.createElement('div');
       status.className = 'deployment-piece-meta';
       const statusLabel = document.createElement('span');
-      statusLabel.textContent = unit.missionKing ? t('ui.mission.king_status') : t(unit.inReserve ? 'ui.deployment.status_pending' : 'ui.deployment.status_board');
+      if (insufficientPoints) status.classList.add('insufficient-points');
+      statusLabel.textContent = unit.missionKing ? t('ui.mission.king_status') : t(statusKey);
       status.append(statusLabel);
 
       if (budgeted && !unit.missionKing && !unit.inReserve && (!alternating || (playerTurn && !this.state.isDeploymentCommitted(unit)))) {
