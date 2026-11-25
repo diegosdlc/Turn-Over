@@ -3,10 +3,20 @@ import { applyRookShieldRejection, applyRoyalSwap, completeUnitMove } from '../c
 import { objectiveScoreFor, victoryResultFor } from '../core/victory.js?v=20260822-victory-1';
 import { applyEncroachment } from '../core/encroachment.js';
 
+export const DEFAULT_AI_SEARCH_BUDGET_MS = 1500;
+const SEARCH_TIMEOUT = Symbol('AI search deadline');
+const monotonicNow = () => globalThis.performance?.now() ?? Date.now();
+
+function checkDeadline(search) {
+  if (search.now() >= search.deadline) throw SEARCH_TIMEOUT;
+}
+
 export class AIController {
   constructor(config = {}) {
     this.team = config.team ?? 'enemy';
-    this.depth = config.depth ?? 2;
+    this.depth = Number.isFinite(config.depth) ? Math.max(1, Math.floor(config.depth)) : 2;
+    this.searchBudgetMs = Number.isFinite(config.searchBudgetMs) && config.searchBudgetMs > 0
+      ? config.searchBudgetMs : DEFAULT_AI_SEARCH_BUDGET_MS;
     this.randomness = config.randomness ?? 0.08;
     // A tunable assault profile is active only in survival. Other objectives
     // retain their existing material-conscious minimax evaluation.
@@ -39,18 +49,42 @@ export class AIController {
     return !state.finished && state.currentTurn === this.team;
   }
 
-  chooseAction(state, level) {
+  chooseAction(state, level, { now = monotonicNow } = {}) {
+    const started = now();
+    const search = { now, deadline: started + this.searchBudgetMs };
     const actions = legalActions(state, level);
+    this.lastSearch = { completedDepth: 0, timedOut: false, elapsedMs: 0 };
     if (!actions.length) return null;
 
-    const scored = actions.map(action => {
-      const next = simulate(state, level, action, true);
-      return {
-        action,
-        score: minimax(next, level, this.depth - 1, -Infinity, Infinity, this.team, this)
-      };
-    }).sort((a, b) => b.score - a.score);
+    // Iterative deepening retains the best fully evaluated iteration. A partial
+    // first iteration is still preferable to returning no move at all.
+    let ordered = actions.map(action => ({ action, next: null }));
+    let completed = [];
+    let partial = [];
+    let completedDepth = 0;
+    let timedOut = false;
+    try {
+      for (let depth = 1; depth <= this.depth; depth++) {
+        partial = [];
+        for (const item of ordered) {
+          checkDeadline(search);
+          // Immediate closure is simulated once per root action, not per depth.
+          item.next ??= simulate(state, level, item.action, true);
+          const score = minimax(item.next, level, depth - 1, -Infinity, Infinity, this.team, this, search);
+          partial.push({ ...item, score });
+        }
+        completed = partial.sort((a, b) => b.score - a.score);
+        completedDepth = depth;
+        ordered = completed;
+      }
+    } catch (error) {
+      if (error !== SEARCH_TIMEOUT) throw error;
+      timedOut = true;
+    }
 
+    this.lastSearch = { completedDepth, timedOut, elapsedMs: Math.max(0, now() - started) };
+    const scored = completed.length ? completed : partial.sort((a, b) => b.score - a.score);
+    if (!scored.length) return actions[0];
     const candidates = scored.filter(item => item.score >= scored[0].score - Math.abs(scored[0].score * this.randomness + 8));
     return candidates[Math.floor(Math.random() * candidates.length)]?.action ?? scored[0].action;
   }
@@ -60,7 +94,8 @@ export function legalActions(state, level) {
   return legalActionsFor(state, level);
 }
 
-function minimax(state, level, depth, alpha, beta, aiTeam, ai) {
+function minimax(state, level, depth, alpha, beta, aiTeam, ai, search) {
+  checkDeadline(search);
   const result = state.forcedClosureLoss ? { winner: 'enemy', reason: 'encroachment' } : victoryResultFor(state, level);
   if (result || depth <= 0) return evaluate(state, level, aiTeam, ai, result);
 
@@ -71,7 +106,7 @@ function minimax(state, level, depth, alpha, beta, aiTeam, ai) {
   if (maximizing) {
     let best = -Infinity;
     for (const action of actions) {
-      best = Math.max(best, minimax(simulate(state, level, action), level, depth - 1, alpha, beta, aiTeam, ai));
+      best = Math.max(best, minimax(simulate(state, level, action), level, depth - 1, alpha, beta, aiTeam, ai, search));
       alpha = Math.max(alpha, best);
       if (beta <= alpha) break;
     }
@@ -80,7 +115,7 @@ function minimax(state, level, depth, alpha, beta, aiTeam, ai) {
 
   let best = Infinity;
   for (const action of actions) {
-    best = Math.min(best, minimax(simulate(state, level, action), level, depth - 1, alpha, beta, aiTeam, ai));
+    best = Math.min(best, minimax(simulate(state, level, action), level, depth - 1, alpha, beta, aiTeam, ai, search));
     beta = Math.min(beta, best);
     if (beta <= alpha) break;
   }

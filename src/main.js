@@ -12,8 +12,8 @@ import { TutorialSystem } from './systems/TutorialSystem.js?v=20261125-promotion
 import { loadTutorialPreference, saveTutorialPreference } from './systems/TutorialPreference.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20261125-turn-status-1';
 import { turnStatusFor } from './render/turnStatus.js';
-import { AIController } from './ai/AIController.js?v=20261111-ai-profiles-1';
-import { aiRequestFor } from './ai/AIWorker.js?v=20261125-ai-worker-1';
+import { AIController } from './ai/AIController.js?v=20261125-search-budget-1';
+import { aiRequestFor } from './ai/AIWorker.js?v=20261125-search-budget-1';
 import { legalActionsFor } from './core/rules.js?v=20260821-evolution-3';
 import { victoryResultFor } from './core/victory.js';
 import { survivalProgressFor, countSkippedSurvivalTurn } from './core/survival.js';
@@ -745,6 +745,7 @@ class GameApp {
     this.aiTimer = null;
     // Terminate an in-flight search on reset, level change or exit.
     if (this.aiRequest) {
+      window.clearTimeout(this.aiRequest.watchdog);
       this.aiRequest = null;
       this.aiWorker?.terminate();
       this.aiWorker = null;
@@ -764,6 +765,7 @@ class GameApp {
 
     const fail = error => {
       if (!isCurrent()) return;
+      window.clearTimeout(request.watchdog);
       this.aiRequest = null;
       this.aiWorker?.terminate();
       this.aiWorker = null;
@@ -774,19 +776,23 @@ class GameApp {
     };
 
     try {
-      this.aiWorker ??= new Worker(new URL('./ai/AIWorker.js?v=20261125-ai-worker-1', import.meta.url), { type: 'module' });
+      this.aiWorker ??= new Worker(new URL('./ai/AIWorker.js?v=20261125-search-budget-1', import.meta.url), { type: 'module' });
       this.aiWorker.onmessage = event => {
         if (!isCurrent()) return;
         if (event.data.error) {
           fail(event.data.error);
           return;
         }
+        window.clearTimeout(request.watchdog);
         this.aiRequest = null;
         this.renderTurnIndicator();
         this.playAiTurn(event.data.action);
       };
       this.aiWorker.onerror = event => fail(event.message);
       this.aiWorker.onmessageerror = event => fail(event);
+      // Independent hard watchdog also covers worker startup or a stalled search.
+      request.watchdog = window.setTimeout(() => fail('AI worker exceeded its deadline'),
+        this.ai.searchBudgetMs + 2500);
       this.aiWorker.postMessage(aiRequestFor(this.state, this.level));
     } catch (error) {
       fail(error);

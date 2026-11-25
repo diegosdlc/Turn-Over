@@ -1,4 +1,4 @@
-import { AIController } from './AIController.js?v=20261111-ai-profiles-1';
+import { AIController } from './AIController.js?v=20261125-search-budget-1';
 import { GameState } from '../core/GameState.js?v=20261118-deployment-points-1';
 
 // Only clone the rules-facing level data, not UI metadata or behavior hooks.
