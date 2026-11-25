@@ -208,6 +208,8 @@
 "ui.deployment.status_pending_lower","Estado en minúsculas de una pieza todavía pendiente de colocar, usado en etiquetas accesibles.","pendiente","pending","Despliegue alterno"
 "ui.deployment.status_board_lower","Estado en minúsculas de una pieza ya colocada, usado en etiquetas accesibles.","en tablero","on board","Despliegue alterno"
 "ui.deployment.status_pending","Estado visible debajo de una pieza que todavía no se ha desplegado.","Pendiente","Pending","Despliegue alterno"
+"ui.deployment.status_insufficient_points","Estado visible de una pieza de reserva que supera los puntos restantes de la ronda o del nivel.","Puntos insuficientes","Insufficient points","Despliegue"
+"ui.deployment.status_insufficient_points_lower","Estado accesible en minúsculas de una pieza que no cabe en el presupuesto.","puntos insuficientes","insufficient points","Despliegue accesible"
 "ui.deployment.status_board","Estado visible debajo de una pieza que ya está colocada en el tablero.","En tablero","On board","Despliegue alterno"
 "ui.deployment.enemy_piece_aria","Etiqueta accesible de la pieza enemiga con nombre y estado de despliegue.","{name}: {status}","{name}: {status}","Despliegue alterno"
 "ui.deployment.round_progress","Progreso de puntos gastados en la ronda actual (máximo un tercio del presupuesto), sin límite de cantidad de piezas.","Ronda {round}/3 · {used}/{quota} pts esta ronda · {budget} total. Las piezas confirmadas no se pueden mover.","Round {round}/3 · {used}/{quota} pts this round · {budget} total. Confirmed pieces cannot be moved.","Despliegue alterno"
