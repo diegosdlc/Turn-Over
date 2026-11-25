@@ -180,3 +180,18 @@ test('all tutorial cards expose X and global skip requires confirmation; both se
   assert.match(rows.get('ui.tutorial.skip_confirm')[2], /Reglas/);
   assert.match(rows.get('ui.tutorial.skip_confirm')[2], /Ajustes/);
 });
+
+test('promotion lessons use X instead of the redundant Got it button', () => {
+  const system = source('src/systems/TutorialSystem.js');
+  assert.ok(system.includes("if (this.activeTip) {\n      const gotIt"));
+  assert.ok(!system.includes("if (this.activeTip || step.advanceOn === 'acknowledged') {\n      const gotIt"));
+  assert.ok(system.includes('if (this.closeCurrent()) this.render(board, anchorResolver, options);'));
+  const tutorial = new TutorialSystem({storagePrefix:'promotion-test:'});
+  tutorial.configure('tutorial-02', tutorial2, {forceEnabled:true});
+  tutorial.setPhase('deployment');
+  assert.equal(tutorial.currentStep().id, 'promoted-pieces');
+  tutorial.closeCurrent();
+  assert.equal(tutorial.currentStep().id, 'promoted-abilities');
+  tutorial.closeCurrent();
+  assert.equal(tutorial.currentStep(), null);
+});
