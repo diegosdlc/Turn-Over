@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { parseCSV } from '../src/i18n/index.js';
 import { GameState } from '../src/core/GameState.js';
 import { getLevel } from '../src/content/levels/index.js';
 import { deployEnemyWave } from '../src/ai/DeploymentAI.js';
@@ -211,3 +213,14 @@ test('schema-6 sessions preserve classic deployment and survival rounds', () => 
   restoreSessionState(again, store.load().state);
   assert.equal(again.isAlternatingDeployment(), false);
 }));
+test('unaffordable reserves have a distinct localized status, including accessible labels', () => {
+  const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  const rows = new Map(parseCSV(readFileSync(new URL('../locales/texts.csv', import.meta.url), 'utf8')).map(row => [row[0], row]));
+  assert.equal(rows.get('ui.deployment.status_insufficient_points')[2], 'Puntos insuficientes');
+  assert.equal(rows.get('ui.deployment.status_insufficient_points')[3], 'Insufficient points');
+  assert.equal(rows.get('ui.deployment.status_insufficient_points_lower')[2], 'puntos insuficientes');
+  assert.ok(main.includes('const insufficientPoints = unit.inReserve && !affordable;'));
+  assert.ok(main.includes("const statusKey = insufficientPoints ? 'ui.deployment.status_insufficient_points'"));
+  assert.ok(main.includes("status: t(statusKey + '_lower')"));
+  assert.ok(main.includes("statusLabel.textContent = unit.missionKing ? t('ui.mission.king_status') : t(statusKey);"));
+});
