@@ -8,7 +8,7 @@ import { AssetRegistry } from './systems/AssetRegistry.js';
 import { AudioManager } from './systems/AudioManager.js?v=20260814-1700';
 import { GameSessionStore, restoreSessionState } from './systems/GameSessionStore.js?v=20261111-rival-factions-1';
 import { ProgressionStore } from './systems/ProgressionStore.js?v=20260821-evolution-3';
-import { TutorialSystem } from './systems/TutorialSystem.js?v=20261125-tutorial-controls-2';
+import { TutorialSystem } from './systems/TutorialSystem.js?v=20261125-promotion-close-1';
 import { loadTutorialPreference, saveTutorialPreference } from './systems/TutorialPreference.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20261111-campaign-playtests-1';
 import { AIController } from './ai/AIController.js?v=20261111-ai-profiles-1';
