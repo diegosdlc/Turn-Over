@@ -45,3 +45,18 @@ test('traps illustration uses the notebook image layout and responsive sizes', (
   assert.match(html, /src\/level-ui\.js\?v=[\w-]+["']/);
   assert.match(html, /src\/level-ui\.css\?v=[\w-]+["']/);
 });
+
+test('traps show the two gameplay screenshots in warning-to-activated order', () => {
+  const warning = './assets/notebook/rules/trap-warning.webp';
+  const activated = './assets/notebook/rules/trap-activated.webp';
+  const illustration = js.slice(js.indexOf('function notebookTrapsIllustration'), js.indexOf('function notebookPromotionIllustration'));
+  assert.ok(illustration.includes('src="' + warning + '"'));
+  assert.ok(illustration.includes('src="' + activated + '"'));
+  assert.ok(illustration.indexOf(warning) < illustration.indexOf(activated));
+  assert.doesNotMatch(illustration, /notebook-traps-cell/);
+  for (const image of [warning, activated]) {
+    const bytes = readFileSync(new URL('../' + image.slice(2), import.meta.url));
+    assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
+    assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
+  }
+});
