@@ -2,13 +2,13 @@ import { initI18n, t, pieceName, factionName, onLocaleChange, setLanguage, setGe
 import { GAME_CONFIG } from './config/gameConfig.js';
 import { welcomeTextFor } from './content/mission.js?v=20261111-level-welcome-merged-1';
 import { FACTIONS, PLAYER_FACTION_IDS } from './content/factions.js?v=20261111-green-characters-1';
-import { getLevel, getNextLevel, listMechanicLabs, playerPresetBandForLevel } from './content/levels/index.js?v=20261111-ai-profiles-1';
+import { getLevel, getNextLevel, listMechanicLabs, playerPresetBandForLevel } from './content/levels/index.js?v=20261125-deployment-rounds-1';
 import { GameState } from './core/GameState.js?v=20261118-deployment-points-1';
 import { AssetRegistry } from './systems/AssetRegistry.js';
 import { AudioManager } from './systems/AudioManager.js?v=20260814-1700';
 import { GameSessionStore, restoreSessionState } from './systems/GameSessionStore.js?v=20261111-rival-factions-1';
 import { ProgressionStore } from './systems/ProgressionStore.js?v=20260821-evolution-3';
-import { TutorialSystem } from './systems/TutorialSystem.js';
+import { TutorialSystem } from './systems/TutorialSystem.js?v=20261125-promotion-close-1';
 import { loadTutorialPreference, saveTutorialPreference } from './systems/TutorialPreference.js';
 import { BoardRenderer } from './render/BoardRenderer.js?v=20261111-campaign-playtests-1';
 import { AIController } from './ai/AIController.js?v=20261111-ai-profiles-1';
@@ -105,11 +105,19 @@ class GameApp {
     document.querySelector('#settings-gender')?.addEventListener('change', event => setGender(event.target.value));
     document.querySelector('#faction-gender')?.addEventListener('change', event => setGender(event.target.value));
     this.tutorialCheckbox?.addEventListener('change', event => {
-      this.tutorialsEnabled = saveTutorialPreference(event.target.checked);
+      this.setTutorialPreference(event.target.checked);
     });
+    document.querySelector('#settings-tutorials')?.addEventListener('change', event => {
+      this.setTutorialPreference(event.target.checked);
+    });
+    window.addEventListener('game:tutorial-preference', event => {
+      this.setTutorialPreference(event.detail.enabled);
+    });
+    this.syncTutorialSettings();
     document.querySelector('#close-faction-selection').addEventListener('click', () => this.factionDialog.close());
     this.deploymentStart?.addEventListener('click', () => this.startDeployedGame());
     this.welcomeStart?.addEventListener('click', () => this.welcomeDialog?.close());
+    document.querySelector('#welcome-close')?.addEventListener('click', () => this.welcomeDialog?.close());
     document.querySelectorAll('[data-player-faction]').forEach(button => {
       button.addEventListener('click', () => this.startNewGame(button.dataset.playerFaction));
     });
@@ -134,7 +142,7 @@ class GameApp {
 
   startNewGame(playerFactionId) {
     if (!PLAYER_FACTION_IDS.includes(playerFactionId)) return;
-    if (this.tutorialCheckbox) this.tutorialsEnabled = saveTutorialPreference(this.tutorialCheckbox.checked);
+    if (this.tutorialCheckbox) this.setTutorialPreference(this.tutorialCheckbox.checked);
     this.isTestMode = false;
     this.session.clear();
     if (this.factionDialog.open) this.factionDialog.close();
@@ -170,7 +178,23 @@ class GameApp {
     this.startGame(level, { savedState: saved.state });
   }
 
+  syncTutorialSettings() {
+    window.turnOverTutorialsEnabled = this.tutorialsEnabled;
+    for (const id of ['faction-tutorials', 'settings-tutorials', 'notebook-tutorials']) {
+      const checkbox = document.getElementById(id);
+      if (checkbox) checkbox.checked = this.tutorialsEnabled;
+    }
+  }
+
+  setTutorialPreference(enabled) {
+    this.tutorialsEnabled = saveTutorialPreference(enabled);
+    this.syncTutorialSettings();
+    this.tutorial.setEnabled(this.tutorialsEnabled);
+    if (this.tutorialsEnabled && this.state && this.renderer && !this.gameShell.hidden) this.render();
+  }
+
   openSettings() {
+    this.syncTutorialSettings();
     if (!this.settingsDialog.open) this.settingsDialog.showModal();
   }
   loadLevel(level, { forceTutorial = false, savedState = null } = {}) {
@@ -194,7 +218,7 @@ class GameApp {
       onCaptureAction: action => this.resolveCapture(action)
     });
     this.audio.configure(level.music);
-    this.tutorial.configure(level.id, level.tutorial, { forceEnabled: forceTutorial || this.tutorialsEnabled });
+    this.tutorial.configure(level.id, level.tutorial, { forceEnabled: forceTutorial || this.tutorialsEnabled, preferenceEnabled: this.tutorialsEnabled });
     if (this.resultDialog.open) this.resultDialog.close();
     this.resolvePhase();
     this.saveSession();
@@ -249,7 +273,7 @@ class GameApp {
       if (anchor?.type === 'notebook') return this.deploymentPieces?.getBoundingClientRect();
       if (anchor?.type === 'deployment-board' || anchor?.type === 'board') return this.board.getBoundingClientRect();
       return null;
-    }, { notebook: this.notebook });
+    }, { notebook: this.notebook, onSkipTutorials: () => this.setTutorialPreference(false) });
   }
 
   renderSurvivalCounter() {
@@ -340,10 +364,13 @@ class GameApp {
       button.className = `deployment-piece ${unit.id === this.state.selectedId ? 'selected' : ''} ${unit.inReserve ? 'in-reserve' : 'in-lineup'}${unit.missionKing ? ' mission-king' : ''}`;
       const cost = this.state.deploymentUnitCost(unit);
       const affordable = this.state.canAffordDeploymentUnit(unit);
+      const insufficientPoints = unit.inReserve && !affordable;
+      const statusKey = insufficientPoints ? 'ui.deployment.status_insufficient_points' :
+        unit.inReserve ? 'ui.deployment.status_pending' : 'ui.deployment.status_board';
       const locked = unit.missionKing || (alternating && (this.state.isDeploymentCommitted(unit) || !playerTurn));
-      button.disabled = Boolean(locked || (unit.inReserve && !affordable));
+      button.disabled = Boolean(locked || insufficientPoints);
       button.setAttribute('aria-pressed', String(!unit.inReserve));
-      button.setAttribute('aria-label', unit.missionKing ? t('ui.mission.king_aria') : t('ui.deployment.unit_aria', { action: t(unit.inReserve ? 'ui.deployment.select' : 'ui.deployment.reposition'), name: pieceName(unit), points: cost, status: t(unit.inReserve ? 'ui.deployment.status_pending_lower' : 'ui.deployment.status_board_lower'), evolved: unit.evolutionStage === 'evolved' ? t('ui.board.evolved') : '' }));
+      button.setAttribute('aria-label', unit.missionKing ? t('ui.mission.king_aria') : t('ui.deployment.unit_aria', { action: t(unit.inReserve ? 'ui.deployment.select' : 'ui.deployment.reposition'), name: pieceName(unit), points: cost, status: t(statusKey + '_lower'), evolved: unit.evolutionStage === 'evolved' ? t('ui.board.evolved') : '' }));
       this.applyDeploymentPalette(button, unit);
 
       const fallback = document.createElement('span');
@@ -395,7 +422,8 @@ class GameApp {
       const status = document.createElement('div');
       status.className = 'deployment-piece-meta';
       const statusLabel = document.createElement('span');
-      statusLabel.textContent = unit.missionKing ? t('ui.mission.king_status') : t(unit.inReserve ? 'ui.deployment.status_pending' : 'ui.deployment.status_board');
+      if (insufficientPoints) status.classList.add('insufficient-points');
+      statusLabel.textContent = unit.missionKing ? t('ui.mission.king_status') : t(statusKey);
       status.append(statusLabel);
 
       if (budgeted && !unit.missionKing && !unit.inReserve && (!alternating || (playerTurn && !this.state.isDeploymentCommitted(unit)))) {

@@ -45,7 +45,7 @@ export function parseCSV(source) {
 }
 
 // A unique revision avoids stale CDN copies; no-store keeps CSV edits visible after reload.
-const TEXTS_REVISION = '20261118-faction-copy-fix-1';
+const TEXTS_REVISION = '20261125-deployment-status-1';
 const FACTION_COPY_KEYS = [
   'ui.faction.greeting.masculine',
   'ui.faction.greeting.feminine',

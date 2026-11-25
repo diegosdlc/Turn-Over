@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#efefeb" />
     <title>Turn Over</title>
-    <link rel="stylesheet" href="./src/styles.css?v=20261124-readable-tutorials-1" />
+    <link rel="stylesheet" href="./src/styles.css?v=20261125-tutorial-controls-2" />
     <link rel="stylesheet" href="./src/home-screen.css?v=20260824-deploy-6" />
     <link rel="stylesheet" href="./src/audio-controls.css?v=20260814-1700" />
     <link rel="stylesheet" href="./src/level-ui.css?v=20261124-pause-menu-1" />
-    <link rel="stylesheet" href="./src/deployment.css?v=20261118-notebook-labels-1" />
+    <link rel="stylesheet" href="./src/deployment.css?v=20261125-deployment-status-1" />
     <link rel="stylesheet" href="./src/level-ui-mobile.css?v=20260825-notebook-ui-1" />
     <link rel="stylesheet" href="./src/localization.css" />
     <script type="importmap">
@@ -135,6 +135,7 @@
 
     <dialog id="welcome-dialog" class="welcome-dialog" aria-labelledby="welcome-title" aria-describedby="welcome-message">
       <section class="modal-card welcome-card">
+        <button id="welcome-close" class="dialog-close" type="button" aria-label="Cerrar aviso" data-i18n-aria="ui.tutorial.close">×</button>
         <p class="eyebrow" data-i18n="ui.welcome.eyebrow">Objetivo de la misión</p>
         <h2 id="welcome-title"></h2>
         <p id="welcome-message"></p>
@@ -192,6 +193,7 @@
           <div class="settings-preference"><label for="settings-gender" data-i18n="ui.settings.gender">Género del jugador</label><select id="settings-gender" data-i18n-gender><option value="masculine" data-i18n="ui.gender.masculine">Masculino</option><option value="feminine" data-i18n="ui.gender.feminine">Femenino</option><option value="neutral" data-i18n="ui.gender.neutral">Neutro</option></select></div>
           <p class="settings-preference-help" data-i18n="ui.gender.help">Se usa para adaptar los textos dirigidos a ti.</p>
           <p class="settings-preference-help" data-i18n-player="player.greeting">Te damos la bienvenida.</p>
+          <div><label for="settings-tutorials" data-i18n="ui.faction.tutorials">Mostrar tutoriales</label><input id="settings-tutorials" type="checkbox" checked /></div>
           <div><span data-i18n="ui.music">Música</span><strong data-i18n="ui.settings.soon">Próximamente</strong></div>
           <div><span data-i18n="ui.settings.difficulty">Dificultad</span><strong data-i18n="ui.settings.soon">Próximamente</strong></div>
           <div><span data-i18n="ui.settings.controls">Controles</span><strong data-i18n="ui.settings.soon">Próximamente</strong></div>
@@ -200,7 +202,7 @@
     </dialog>
 
     <script type="module" src="./src/viewport.js?v=20260825-landscape-1"></script>
-    <script type="module" src="./src/main.js?v=20261124-readable-tutorials-1"></script>
-    <script type="module" src="./src/level-ui.js?v=20261124-pause-menu-1"></script>
+    <script type="module" src="./src/main.js?v=20261125-promotion-close-1"></script>
+    <script type="module" src="./src/level-ui.js?v=20261125-tutorial-controls-2"></script>
   </body>
 </html>

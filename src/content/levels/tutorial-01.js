@@ -151,7 +151,9 @@ const TUTORIAL_STEPS = Object.freeze([
     textKey: 'tutorial.deployment_rounds',
     anchor: { type: 'notebook' },
     phase: 'deployment',
-    advanceOn: 'deployment-round-confirmed'
+    advanceOn: 'deployment-round-confirmed',
+    alsoAdvanceOn: ['deployment-unit-selected'],
+    keepNotebookClear: true
   },
   {
     id: 'select-piece',

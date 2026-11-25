@@ -85,6 +85,7 @@ function notebookSections() {
         <div class="notebook-settings-row"><label for="notebook-volume">${t('ui.music')}</label><input id="notebook-volume" type="range" min="0" max="100" step="1" value="45" aria-label="${t('ui.music.volume')}"></div>
         <div class="notebook-settings-row"><label for="notebook-language">${t('ui.settings.language')}</label><select id="notebook-language"><option value="es">${t('ui.language.es')}</option><option value="en">${t('ui.language.en')}</option></select></div>
         <div class="notebook-settings-row"><label for="notebook-gender">${t('ui.settings.gender')}</label><select id="notebook-gender"><option value="masculine">${t('ui.gender.masculine')}</option><option value="feminine">${t('ui.gender.feminine')}</option><option value="neutral">${t('ui.gender.neutral')}</option></select></div>
+        <label class="notebook-tutorial-toggle"><input id="notebook-tutorials" type="checkbox"> ${t('ui.faction.tutorials')}</label>
         <p>${playerText('player.greeting')}</p><p>${t('notebook.settings.audio_help')}</p><h3>${t('notebook.settings.labs')}</h3>
         <div class="notebook-lab-list"><label class="notebook-lab-label" for="notebook-mechanics-lab">${t('notebook.settings.scenario')}</label>
         <select id="notebook-mechanics-lab" class="notebook-lab-select"><option value="">${t('notebook.settings.select_lab')}</option>${mechanicsLabOptions()}</select></div>` }
@@ -222,6 +223,13 @@ class NotebookUI {
     const gender = this.root.querySelector('#notebook-gender');
     if (language) { language.value = getLanguage(); language.addEventListener('change', () => setLanguage(language.value)); }
     if (gender) { gender.value = getGender(); gender.addEventListener('change', () => setGender(gender.value)); }
+    const tutorials = this.root.querySelector('#notebook-tutorials');
+    if (tutorials) {
+      tutorials.checked = window.turnOverTutorialsEnabled ?? true;
+      tutorials.addEventListener('change', () => window.dispatchEvent(new CustomEvent('game:tutorial-preference', {
+        detail: { enabled: tutorials.checked }
+      })));
+    }
     const mechanicsLab = this.root.querySelector('#notebook-mechanics-lab');
     if (mechanicsLab && window.turnOverNotebookLevel?.playtest) {
       mechanicsLab.value = window.turnOverNotebookLevel.id;

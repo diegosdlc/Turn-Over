@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { getLevel } from '../src/content/levels/index.js';
-import { TutorialSystem, positionTutorialCard } from '../src/systems/TutorialSystem.js';
+import { TutorialSystem, positionTutorialCard, notebookFreeRegion } from '../src/systems/TutorialSystem.js';
 import { parseCSV } from '../src/i18n/index.js';
 
 const source = file => readFileSync(new URL('../' + file, import.meta.url), 'utf8');
@@ -90,4 +90,108 @@ test('explanations are editable in both languages', () => {
   assert.ok(keyMap.get('tutorial.deployment_select')[2].includes('cuaderno'));
   assert.ok(keyMap.get('tutorial.deployment_place')[2].includes('casilla verde'));
   assert.ok(keyMap.get('tutorial.deployment_rounds')[2].includes('Confirmar ronda'));
+});
+
+test('round explanation closes on confirming or selecting another reserve piece', () => {
+  for (const event of ['deployment-round-confirmed', 'deployment-unit-selected']) {
+    const tutorial = new TutorialSystem({storagePrefix: 'tutorial-test:'});
+    tutorial.configure('round-regression', tutorial1, {forceEnabled: true});
+    tutorial.setPhase('deployment');
+    tutorial.notify('deployment-unit-selected');
+    tutorial.notify('deployment-unit-placed');
+    assert.equal(tutorial.currentStep().id, 'deployment-rounds');
+    assert.equal(tutorial.currentStep().keepNotebookClear, true);
+    assert.equal(tutorial.notify(event), true);
+    assert.equal(tutorial.currentStep(), null);
+    tutorial.notify('deployment-unit-placed');
+    assert.equal(tutorial.currentStep(), null, 'do not repeat the explanation');
+    tutorial.setPhase('play');
+    assert.equal(tutorial.currentStep()?.id, 'select-piece');
+  }
+});
+
+test('round explanation has a notebook-free region on desktop and mobile', () => {
+  for (const [viewport, notebook] of [
+    [{left:0,top:0,width:1280,height:720},{left:-12,top:320,right:500,bottom:732}],
+    [{left:0,top:0,width:390,height:700},{left:20,top:375,right:370,bottom:690}],
+    [{left:0,top:0,width:780,height:350},{left:0,top:35,right:330,bottom:350}]
+  ]) {
+    const region = notebookFreeRegion(viewport, notebook);
+    assert.ok(region && region.width > 0 && region.height > 0);
+    assert.ok(region.right <= notebook.left || region.left >= notebook.right ||
+      region.bottom <= notebook.top || region.top >= notebook.bottom);
+    assert.ok(region.left >= viewport.left && region.top >= viewport.top);
+    assert.ok(region.right <= viewport.left + viewport.width &&
+      region.bottom <= viewport.top + viewport.height);
+  }
+});
+
+test('closing the X hides only the active action-driven lesson until its event', () => {
+  const tutorial = new TutorialSystem({storagePrefix:'tutorial-test:'});
+  tutorial.configure('close-regression', tutorial1, {forceEnabled:true});
+  tutorial.setPhase('deployment');
+  assert.equal(tutorial.closeCurrent(), true);
+  assert.equal(tutorial.currentStep(), null);
+  assert.equal(tutorial.enabled, true);
+  assert.equal(tutorial.notify('deployment-unit-selected'), true);
+  assert.equal(tutorial.currentStep().id, 'deployment-place');
+});
+
+test('closing an acknowledgement lesson or contextual tip leaves tutorials enabled', () => {
+  const tutorial = new TutorialSystem({storagePrefix:'tutorial-test:'});
+  tutorial.configure('close-regression', tutorial2, {forceEnabled:true});
+  tutorial.setPhase('deployment');
+  assert.equal(tutorial.closeCurrent(), true);
+  assert.equal(tutorial.currentStep().id, 'promoted-abilities');
+  tutorial.setPhase('play');
+  tutorial.notify('trap-warning');
+  assert.equal(tutorial.currentStep().id, 'arena-traps');
+  tutorial.closeCurrent();
+  assert.equal(tutorial.notify('trap-warning'), false);
+});
+
+test('global skip and recovery preserve the current lesson without resetting the game', () => {
+  const tutorial = new TutorialSystem({storagePrefix:'tutorial-test:'});
+  tutorial.configure('preference-regression', tutorial1, {forceEnabled:true});
+  tutorial.setPhase('deployment');
+  tutorial.notify('deployment-unit-selected');
+  tutorial.setEnabled(false);
+  assert.equal(tutorial.currentStep(), null);
+  assert.equal(tutorial.notify('deployment-unit-placed'), false);
+  tutorial.setEnabled(true);
+  assert.equal(tutorial.currentStep().id, 'deployment-place');
+  tutorial.notify('deployment-unit-placed');
+  assert.equal(tutorial.currentStep().id, 'deployment-rounds');
+});
+
+test('all tutorial cards expose X and global skip requires confirmation; both settings expose recovery', () => {
+  const system = source('src/systems/TutorialSystem.js');
+  const main = source('src/main.js');
+  const html = source('index.html');
+  const ui = source('src/level-ui.js');
+  assert.ok(system.includes("close.className = 'tutorial-close'"));
+  assert.ok(system.includes("if (!window.confirm(t('ui.tutorial.skip_confirm'))) return;"));
+  assert.ok(main.includes('onSkipTutorials: () => this.setTutorialPreference(false)'));
+  assert.ok(main.includes('saveTutorialPreference(enabled)'));
+  assert.ok(html.includes('id="settings-tutorials"'));
+  assert.ok(ui.includes('id="notebook-tutorials"'));
+  const rows = new Map(parseCSV(source('locales/texts.csv')).map(row => [row[0],row]));
+  assert.equal(rows.get('ui.tutorial.skip')[2], 'Omitir los tutoriales');
+  assert.match(rows.get('ui.tutorial.skip_confirm')[2], /Reglas/);
+  assert.match(rows.get('ui.tutorial.skip_confirm')[2], /Ajustes/);
+});
+
+test('promotion lessons use X instead of the redundant Got it button', () => {
+  const system = source('src/systems/TutorialSystem.js');
+  assert.ok(system.includes("if (this.activeTip) {\n      const gotIt"));
+  assert.ok(!system.includes("if (this.activeTip || step.advanceOn === 'acknowledged') {\n      const gotIt"));
+  assert.ok(system.includes('if (this.closeCurrent()) this.render(board, anchorResolver, options);'));
+  const tutorial = new TutorialSystem({storagePrefix:'promotion-test:'});
+  tutorial.configure('tutorial-02', tutorial2, {forceEnabled:true});
+  tutorial.setPhase('deployment');
+  assert.equal(tutorial.currentStep().id, 'promoted-pieces');
+  tutorial.closeCurrent();
+  assert.equal(tutorial.currentStep().id, 'promoted-abilities');
+  tutorial.closeCurrent();
+  assert.equal(tutorial.currentStep(), null);
 });

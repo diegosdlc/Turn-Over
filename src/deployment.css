@@ -670,3 +670,12 @@ html.touch-ui .notebook-roster-card .deployment-piece-name{
   grid-template-rows:repeat(var(--roster-rows,1),minmax(72px,1fr));
   grid-auto-rows:minmax(72px,1fr);
 }
+
+/* The longer budget status can wrap without overflowing adjacent cards. */
+.deployment-panel .deployment-piece-meta.insufficient-points{
+  white-space:normal;
+  max-height:none;
+  min-width:0;
+  text-align:center;
+  line-height:1.05;
+}
