@@ -48,6 +48,32 @@ export function positionTutorialCard({ surface, kind, width, height, viewport, a
   return { left: best?.left ?? Math.round(leftEdge), top: best?.top ?? Math.round(topEdge) };
 }
 
+// Find a rectangular region of the visual viewport that cannot overlap the
+// notebook (including its protruding tabs). On narrow screens the card can
+// scroll within the available region instead of spilling across the notebook.
+export function notebookFreeRegion(viewport, notebook) {
+  const margin = 12;
+  const gap = 16;
+  const left = viewport.left + margin;
+  const right = viewport.left + viewport.width - margin;
+  const top = viewport.top + margin;
+  const bottom = viewport.top + viewport.height - margin;
+  const regions = [
+    { left, top, right, bottom: Math.min(bottom, notebook.top - gap) },
+    { left: Math.max(left, notebook.right + gap), top, right, bottom },
+    { left, top: Math.max(top, notebook.bottom + gap), right, bottom },
+    { left, top, right: Math.min(right, notebook.left - gap), bottom }
+  ].map(region => ({
+    ...region,
+    width: Math.min(480, Math.floor(region.right - region.left)),
+    height: Math.floor(region.bottom - region.top)
+  })).filter(region => region.width > 0 && region.height > 0);
+  const score = region => Math.min(region.height, 420) * region.width *
+    (region.width >= 280 && region.height >= 120 ? 2 : 1);
+  regions.sort((a, b) => score(b) - score(a));
+  return regions[0] ?? null;
+}
+
 export class TutorialSystem {
   constructor({ storagePrefix }) {
     this.storagePrefix = storagePrefix;
@@ -103,7 +129,8 @@ export class TutorialSystem {
       }
     }
     const step = this.tutorial?.steps?.[this.index];
-    if (!step || (step.phase ?? 'play') !== this.phase || step.advanceOn !== eventName) return false;
+    if (!step || (step.phase ?? 'play') !== this.phase ||
+        (step.advanceOn !== eventName && !step.alsoAdvanceOn?.includes(eventName))) return false;
     this.index += 1;
     if (this.index >= this.tutorial.steps.length && !this.tutorial?.tips?.length) this.complete();
     return true;
@@ -155,6 +182,29 @@ export class TutorialSystem {
       width: visual?.width ?? window.innerWidth,
       height: visual?.height ?? window.innerHeight
     };
+    if (step.keepNotebookClear) {
+      const notebook = notebookRect ?? rect;
+      const tabs = options.notebook?.querySelector('.notebook-tabs')?.getBoundingClientRect();
+      const protectedRect = tabs ? {
+        left: Math.min(notebook.left, tabs.left),
+        top: Math.min(notebook.top, tabs.top),
+        right: Math.max(notebook.right, tabs.right),
+        bottom: Math.max(notebook.bottom, tabs.bottom)
+      } : notebook;
+      const region = notebookFreeRegion(viewport, protectedRect);
+      if (!region) {
+        tooltip.style.visibility = 'hidden';
+        return;
+      }
+      tooltip.style.boxSizing = 'border-box';
+      tooltip.style.width = region.width + 'px';
+      tooltip.style.maxHeight = Math.min(region.height, 420) + 'px';
+      tooltip.style.pointerEvents = 'auto'; // Allow scrolling long text without touching the notebook.
+      tooltip.style.left = Math.round(region.left + (region.right - region.left - region.width) / 2) + 'px';
+      tooltip.style.top = Math.ceil(region.top) + 'px';
+      tooltip.style.visibility = 'visible';
+      return;
+    }
     const surface = kind === 'notebook' && notebookRect ? notebookRect : rect;
     const pos = positionTutorialCard({ surface, kind, width, height, viewport, avoid });
     tooltip.style.left = pos.left + 'px';
