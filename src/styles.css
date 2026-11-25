@@ -517,12 +517,11 @@ button{font:inherit;letter-spacing:.02em}
 
 /* Visual-only piece feedback; board coordinates and game rules remain authoritative. */
 .unit.selected:not(.unit-moving):not(.unit-deploying){
-  z-index:10;
+  /* Selection must not override the board's back-to-front paint order. */
   animation:unit-hover 1.7s ease-in-out infinite;
   filter:drop-shadow(0 11px 8px rgba(30,29,22,.36));
 }
 .unit.unit-deploying{
-  z-index:10;
   animation:unit-deploy-appear 400ms cubic-bezier(.18,.85,.3,1.15) both;
 }
 .unit-deployment-spark{
@@ -536,7 +535,6 @@ button{font:inherit;letter-spacing:.02em}
   animation:unit-spark 400ms ease-out both;
 }
 .unit.unit-moving{
-  z-index:12;
   animation:unit-travel 420ms cubic-bezier(.28,.72,.2,1) both;
   filter:drop-shadow(0 13px 9px rgba(29,33,23,.38));
   pointer-events:none;
@@ -619,16 +617,26 @@ button{font:inherit;letter-spacing:.02em}
   .escort-goal-tile{animation:none;opacity:1}
 }
 
-/* Accessible round countdown, independent of the scaled game board. */
-.survival-counter {
+/* Status badges stay outside the scaled board, clear of the global controls. */
+.game-status {
   position:fixed;
   z-index:26;
-  top:max(14px,env(safe-area-inset-top));
-  left:max(14px,env(safe-area-inset-left));
+  top:calc(var(--app-vv-y,0px) + max(12px,env(safe-area-inset-top)));
+  left:calc(var(--app-vv-x,0px) + max(12px,env(safe-area-inset-left)));
+  max-width:calc(var(--app-vw,100vw) - 126px);
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-start;
+  gap:6px;
+  pointer-events:none;
+}
+.turn-indicator,
+.survival-counter {
   display:flex;
   align-items:center;
   gap:.45rem;
-  max-width:calc(100vw - 130px);
+  max-width:100%;
+  box-sizing:border-box;
   padding:.55rem .85rem;
   background:#f6efd9;
   color:#29312b;
@@ -649,15 +657,38 @@ button{font:inherit;letter-spacing:.02em}
   font-variant-numeric:tabular-nums;
 }
 .survival-counter-total { font-family:Arial,sans-serif; font-variant-numeric:tabular-nums; }
+html.touch-ui .turn-indicator,
 html.touch-ui .survival-counter {
-  top:calc(var(--app-vv-y,0px) + max(12px,env(safe-area-inset-top)));
-  left:calc(var(--app-vv-x,0px) + max(12px,env(safe-area-inset-left)));
   padding:.42rem .58rem;
   gap:.3rem;
   font-size:.78rem;
 }
 @media (max-width:420px) {
-  .survival-counter { max-width:calc(100vw - 122px); font-size:.76rem; }
+  .turn-indicator,.survival-counter { font-size:.76rem; }
+  .game-status { flex-direction:column; }
+}
+
+.turn-indicator { font-weight:700; min-height:36px; }
+.turn-indicator[hidden],.survival-counter[hidden] { display:none; }
+.turn-indicator::before {
+  content:"";
+  width:.65rem;
+  height:.65rem;
+  flex:0 0 .65rem;
+  border-radius:50%;
+  background:#52734b;
+  border:1px solid #615c45;
+}
+.turn-indicator[data-status="enemy"]::before { background:#a03e31; }
+.turn-indicator[data-status="thinking"]::before {
+  background:transparent;
+  border:2px solid #b7a98c;
+  border-top-color:#a03e31;
+  animation:turn-wait .8s linear infinite;
+}
+@keyframes turn-wait { to { transform:rotate(360deg); } }
+@media (prefers-reduced-motion:reduce) {
+  .turn-indicator[data-status="thinking"]::before { animation:none; }
 }
 
 /* Briefing displayed at the beginning of every campaign mission. */
