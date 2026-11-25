@@ -253,11 +253,12 @@ export class TutorialSystem {
     close.setAttribute('aria-label', t('ui.tutorial.close'));
     close.addEventListener('click', event => {
       event.stopPropagation();
-      this.closeCurrent();
+      if (this.closeCurrent()) this.render(board, anchorResolver, options);
     });
     tooltip.append(close, context, content);
 
-    if (this.activeTip || step.advanceOn === 'acknowledged') {
+    // Promotion lessons advance with X; contextual tips retain their explicit acknowledgement.
+    if (this.activeTip) {
       const gotIt = document.createElement('button');
       gotIt.type = 'button';
       gotIt.className = 'tutorial-continue';
