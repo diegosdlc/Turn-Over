@@ -125,3 +125,58 @@ test('round explanation has a notebook-free region on desktop and mobile', () =>
       region.bottom <= viewport.top + viewport.height);
   }
 });
+
+test('closing the X hides only the active action-driven lesson until its event', () => {
+  const tutorial = new TutorialSystem({storagePrefix:'tutorial-test:'});
+  tutorial.configure('close-regression', tutorial1, {forceEnabled:true});
+  tutorial.setPhase('deployment');
+  assert.equal(tutorial.closeCurrent(), true);
+  assert.equal(tutorial.currentStep(), null);
+  assert.equal(tutorial.enabled, true);
+  assert.equal(tutorial.notify('deployment-unit-selected'), true);
+  assert.equal(tutorial.currentStep().id, 'deployment-place');
+});
+
+test('closing an acknowledgement lesson or contextual tip leaves tutorials enabled', () => {
+  const tutorial = new TutorialSystem({storagePrefix:'tutorial-test:'});
+  tutorial.configure('close-regression', tutorial2, {forceEnabled:true});
+  tutorial.setPhase('deployment');
+  assert.equal(tutorial.closeCurrent(), true);
+  assert.equal(tutorial.currentStep().id, 'promoted-abilities');
+  tutorial.setPhase('play');
+  tutorial.notify('trap-warning');
+  assert.equal(tutorial.currentStep().id, 'arena-traps');
+  tutorial.closeCurrent();
+  assert.equal(tutorial.notify('trap-warning'), false);
+});
+
+test('global skip and recovery preserve the current lesson without resetting the game', () => {
+  const tutorial = new TutorialSystem({storagePrefix:'tutorial-test:'});
+  tutorial.configure('preference-regression', tutorial1, {forceEnabled:true});
+  tutorial.setPhase('deployment');
+  tutorial.notify('deployment-unit-selected');
+  tutorial.setEnabled(false);
+  assert.equal(tutorial.currentStep(), null);
+  assert.equal(tutorial.notify('deployment-unit-placed'), false);
+  tutorial.setEnabled(true);
+  assert.equal(tutorial.currentStep().id, 'deployment-place');
+  tutorial.notify('deployment-unit-placed');
+  assert.equal(tutorial.currentStep().id, 'deployment-rounds');
+});
+
+test('all tutorial cards expose X and global skip requires confirmation; both settings expose recovery', () => {
+  const system = source('src/systems/TutorialSystem.js');
+  const main = source('src/main.js');
+  const html = source('index.html');
+  const ui = source('src/level-ui.js');
+  assert.ok(system.includes("close.className = 'tutorial-close'"));
+  assert.ok(system.includes("if (!window.confirm(t('ui.tutorial.skip_confirm'))) return;"));
+  assert.ok(main.includes('onSkipTutorials: () => this.setTutorialPreference(false)'));
+  assert.ok(main.includes('saveTutorialPreference(enabled)'));
+  assert.ok(html.includes('id="settings-tutorials"'));
+  assert.ok(ui.includes('id="notebook-tutorials"'));
+  const rows = new Map(parseCSV(source('locales/texts.csv')).map(row => [row[0],row]));
+  assert.equal(rows.get('ui.tutorial.skip')[2], 'Omitir los tutoriales');
+  assert.match(rows.get('ui.tutorial.skip_confirm')[2], /Reglas/);
+  assert.match(rows.get('ui.tutorial.skip_confirm')[2], /Ajustes/);
+});
